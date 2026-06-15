@@ -1,0 +1,38 @@
+---
+description: Folder structure and organization rules for agents
+globs: src/company_brain/agents/**/*.py
+alwaysApply: true
+---
+
+# Agent Organization
+
+Keep the agent tree organized by platform and hierarchy level. Use `_` (underscore) in all file and identifier names — never `-` (hyphen).
+
+## Folder Structure
+
+```
+src/company_brain/agents/
+  base.py                       # Shared base class
+  github/
+    github_manager.py           # GitHub manager — dispatches specialists
+    gh.py                       # Shared platform helpers (optional)
+    specialist_agents/          # All task-specific specialist agents
+      open_pr.py
+      feature_update.py
+      product_features.py
+      github_onboarding.py
+  <platform>/
+    <platform>_manager.py       # Platform manager agent (directly under platform folder)
+    specialist_agents/          # Specialist agents for this platform
+      <specific_agent>.py
+      <platform>_onboarding.py
+```
+
+## Placement Rules
+
+1. **Underscore naming** — all agent files and identifiers use `_`, never `-`
+2. **Group by platform** — each connected platform gets its own subfolder under `agents/`
+3. **Manager directly under the platform folder** — named `<platform>_manager.py`; it orchestrates and is responsible for starting the specialist agents that complete specific tasks
+4. **Specialists live in `specialist_agents/`** — every task-specific agent for a platform goes in that platform's `specialist_agents/` subfolder
+5. **Shared helpers** — platform-wide utilities (e.g. API/CLI wrappers) stay directly under the platform folder, alongside the manager
+6. **Cross-platform agents live in the source folder** — if an agent reads from GitHub and writes to Notion, it belongs in `github/specialist_agents/`

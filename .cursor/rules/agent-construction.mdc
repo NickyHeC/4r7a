@@ -1,0 +1,111 @@
+---
+description: Guidelines for choosing and building agents with Anthropic Claude Agent SDK or OpenAI Agents SDK
+globs: src/company_brain/agents/**/*.py
+alwaysApply: true
+---
+
+# Agent Construction
+
+This project uses **two** agent SDKs. Pick the right one per agent based on the decision criteria below.
+
+## Architecture
+
+The company-brain is one or several orchestrator agents managing specialized sub-agents that each carry out one type of work.
+
+## SDK Selection
+
+### Use Anthropic Claude Agent SDK when the agent:
+
+- Derives its power from connecting to data via MCP servers (filesystem, databases, APIs)
+- Needs fine-grained prompt engineering and large context window utilisation (loading entire codebases or documents)
+- Acts as a single, highly-competent "do-it-all" assistant
+- Benefits from a hand-written orchestration loop for transparency and control
+
+**Package:** `claude-agent-sdk` (Python) / `@anthropic-ai/claude-agent-sdk` (TypeScript)
+**Docs:** https://code.claude.com/docs/en/agent-sdk/overview
+
+```python
+from claude_agent_sdk import query, ClaudeAgentOptions, AgentDefinition
+
+async for message in query(
+    prompt="...",
+    options=ClaudeAgentOptions(
+        allowed_tools=["Read", "Glob", "Grep", "Bash"],
+        mcp_servers={...},
+    ),
+):
+    ...
+```
+
+### Use OpenAI Agents SDK when the agent:
+
+- Implements a complex, multi-step workflow naturally modeled as a team of specialists (triage → execute → verify)
+- Benefits from platform-managed context, state, and conversation history
+- Requires built-in safety guardrails (input/output validation) as a production non-negotiable
+- Needs to go from zero to multi-agent prototype with minimal code
+
+**Package:** `openai-agents` (Python) / `@openai/agents` (TypeScript)
+**Docs:** https://developers.openai.com/api/docs/guides/agents
+
+```python
+from agents import Agent, Runner
+
+agent = Agent(
+    name="specialist",
+    instructions="...",
+    tools=[...],
+)
+result = Runner.run_sync(agent, "...")
+```
+
+## Integration SDKs
+
+### Notion
+
+Any agent that interacts with Notion must implement a **discover-or-create** pattern on first run:
+
+1. **Discover** — search the workspace for existing pages/databases that fit the agent's purpose (by title, structure, or content)
+2. **Reuse** — if a suitable page exists, bind to it and persist the page ID in config for future runs
+3. **Create** — if nothing suitable exists, create a new page in a logical location within the workspace, then persist that ID
+
+After first run the agent uses the stored page ID directly — no repeated discovery. Store bindings in `config/notion.yaml`.
+
+### GitHub
+
+For all GitHub-relevant agents, use the **GitHub CLI** (`gh`). Restrict to **read access ONLY** — no write operations unless explicitly instructed by the user.
+
+**Install:** https://cli.github.com/
+**Docs:** `gh --help` or https://cli.github.com/manual/
+
+```python
+import subprocess
+
+result = subprocess.run(
+    ["gh", "pr", "list", "--json", "number,title,url,author"],
+    capture_output=True, text=True
+)
+```
+
+### Slack
+
+For any agent that reads from or writes to Slack, use the **Slack SDK** to access the Slack API directly — do not wrap Slack through MCP or other intermediaries.
+
+**Package:** `slack-sdk` (Python) / `@slack/web-api` (TypeScript)
+**Docs:** https://docs.slack.dev/
+
+```python
+from slack_sdk import WebClient
+
+client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
+response = client.conversations_history(channel="C01234567")
+```
+
+## Implementation Conventions
+
+1. **One file per agent** — place in `src/company_brain/agents/` with a descriptive filename
+2. **Inherit from project base** — extend `src/company_brain/agents/base.py` for shared config/logging
+3. **Document SDK choice** — add a module docstring explaining why this SDK was chosen for this agent
+4. **Config over hardcode** — agent prompts and tool lists should be configurable via `config/`
+5. **Async-first** — prefer async patterns; both SDKs support streaming
+6. **Sub-agent isolation** — each sub-agent owns exactly one responsibility; orchestrators delegate, never execute domain logic themselves
+7. **Keep README in sync** — whenever an agent is added or removed, update `README.md` to reflect the change (project structure, commands, or any agent listing)

@@ -1,0 +1,163 @@
+# Wiki taxonomy and structure definition.
+# Sections define the top-level organization of the wiki in Notion.
+# Article types define what kinds of articles live in each section.
+# This file is extensible -- add new sections without code changes.
+
+wiki_name: "Company Wiki"
+
+sections:
+  teams:
+    label: "Teams"
+    description: "Team pages, charters, responsibilities"
+    article_type: team
+    icon: "👥"
+
+  people:
+    label: "People"
+    description: "Key personnel, roles, expertise areas"
+    article_type: person
+    icon: "👤"
+
+  projects:
+    label: "Projects"
+    description: "Active and archived project documentation"
+    article_type: project
+    icon: "🚀"
+
+  products:
+    label: "Products"
+    description: "Product specs, roadmaps, feature documentation"
+    article_type: product
+    icon: "📦"
+
+  architecture:
+    label: "Architecture"
+    description: "System designs, ADRs, tech stack documentation"
+    article_type: architecture
+    icon: "🏗️"
+
+  processes:
+    label: "Processes"
+    description: "Standard operating procedures, workflows, approval chains"
+    article_type: process
+    icon: "⚙️"
+
+  decisions:
+    label: "Decisions"
+    description: "Decision records with context and rationale"
+    article_type: decision
+    icon: "⚖️"
+
+  runbooks:
+    label: "Runbooks"
+    description: "Operational procedures, incident response playbooks"
+    article_type: runbook
+    icon: "📋"
+
+  onboarding:
+    label: "Onboarding"
+    description: "New hire guides, setup docs, orientation materials"
+    article_type: onboarding
+    icon: "🎓"
+
+  policies:
+    label: "Policies"
+    description: "Company policies, compliance requirements, security guidelines"
+    article_type: policy
+    icon: "📜"
+
+  vendors:
+    label: "Vendors"
+    description: "External tools, services, contracts, integrations"
+    article_type: vendor
+    icon: "🔗"
+
+  meetings:
+    label: "Meetings"
+    description: "Recurring meeting notes, outcomes, action items"
+    article_type: meeting
+    icon: "📅"
+
+  postmortems:
+    label: "Postmortems"
+    description: "Incident reviews, root cause analysis, lessons learned"
+    article_type: postmortem
+    icon: "🔍"
+
+  guides:
+    label: "Guides"
+    description: "How-to guides, tutorials, best practices"
+    article_type: guide
+    icon: "📖"
+
+  glossary:
+    label: "Glossary"
+    description: "Company-specific terminology and definitions"
+    article_type: term
+    icon: "📝"
+
+# Article type configurations: structure hints and length targets (in lines).
+article_types:
+  team:
+    structure: ["Overview", "Charter", "Members", "Responsibilities", "Communication"]
+    length_target: [40, 80]
+  person:
+    structure: ["Role", "Expertise", "Teams", "Contact"]
+    length_target: [20, 40]
+  project:
+    structure: ["Overview", "Goals", "Architecture", "Status", "Team"]
+    length_target: [40, 100]
+  product:
+    structure: ["Overview", "Features", "Roadmap", "Metrics"]
+    length_target: [40, 100]
+  architecture:
+    structure: ["Context", "Decision", "Consequences", "Alternatives"]
+    length_target: [80, 150]
+  process:
+    structure: ["Purpose", "Steps", "Roles", "Exceptions"]
+    length_target: [30, 80]
+  decision:
+    structure: ["Context", "Options", "Decision", "Rationale", "Consequences"]
+    length_target: [40, 70]
+  runbook:
+    structure: ["When to Use", "Prerequisites", "Steps", "Rollback", "Escalation"]
+    length_target: [60, 120]
+  onboarding:
+    structure: ["Overview", "Setup", "First Week", "Resources"]
+    length_target: [40, 80]
+  policy:
+    structure: ["Purpose", "Scope", "Policy", "Enforcement"]
+    length_target: [30, 60]
+  vendor:
+    structure: ["Overview", "Usage", "Integration", "Contact", "Contract"]
+    length_target: [25, 50]
+  meeting:
+    structure: ["Attendees", "Agenda", "Notes", "Action Items"]
+    length_target: [20, 50]
+  postmortem:
+    structure: ["Summary", "Timeline", "Root Cause", "Impact", "Lessons", "Action Items"]
+    length_target: [60, 120]
+  guide:
+    structure: ["Overview", "Prerequisites", "Steps", "Troubleshooting"]
+    length_target: [40, 100]
+  term:
+    structure: ["Definition", "Context", "Related Terms"]
+    length_target: [10, 20]
+
+# Writing conventions applied by the formatter and enforced during cleanup.
+writing_standards:
+  tone: "factual"
+  organize_by: "theme"
+  max_quotes_per_article: 3
+  banned_words:
+    - "legendary"
+    - "visionary"
+    - "groundbreaking"
+    - "deeply"
+    - "truly"
+    - "interestingly"
+    - "importantly"
+    - "it should be noted"
+    - "journey"
+    - "game-changing"
+    - "synergy"

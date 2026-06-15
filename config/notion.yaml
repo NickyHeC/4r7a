@@ -1,0 +1,19 @@
+# Notion workspace mapping.
+# This file is populated by `company-brain init` after connecting to a workspace.
+# Do not edit manually unless you know the Notion page/database IDs.
+
+workspace_id: null
+root_page_id: null
+
+# Maps section keys (from wiki.yaml) to their Notion page IDs.
+section_page_ids: {}
+
+# Tracking database ID for article metadata.
+tracking_database_id: null
+
+# Discovery state from the last `company-brain init` run.
+discovery:
+  strategy: null          # adopt | alongside | selective | null
+  scanned_at: null
+  existing_page_count: 0
+  adopted_page_ids: []

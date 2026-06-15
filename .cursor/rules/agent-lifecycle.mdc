@@ -1,0 +1,18 @@
+---
+description: Lifecycle rules for single-use and ad-hoc agents
+alwaysApply: true
+---
+
+# Agent Lifecycle
+
+## Single-Use Agents
+
+Agents created for one-off, unformulated tasks (not part of a recurring workflow):
+
+1. **Tag as single-use** — add `# single-use` in the module docstring so they are identifiable
+2. **Cleanup prompt** — 3 days after creation, on the first interaction with the AI coding agent, ask the user:
+
+> "The agent `<name>` was created 3 days ago for a one-off task. Would you like to remove it from the project?"
+
+3. **If yes** — delete the agent file, remove any config entries, and update `README.md`
+4. **If no** — remove the single-use tag; the agent becomes a permanent part of the project

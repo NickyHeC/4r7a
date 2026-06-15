@@ -1,0 +1,29 @@
+---
+description: Pattern for platform onboarding agents that run once on first connection
+globs: src/company_brain/agents/**/*onboarding*.py
+alwaysApply: true
+---
+
+# Platform Onboarding Agents
+
+## When to Create
+
+When adding agents for a **new platform**, ask the user:
+
+> "Would you like to create a platform onboarding agent for [platform]?"
+
+## Onboarding Agent Behaviour
+
+An onboarding agent runs **once** when the platform is first connected to the project. It:
+
+1. **Scans** — systematically reads and analyses all relevant data in the newly connected platform (repos, channels, boards, etc.)
+2. **Populates** — updates Notion pages and other connected platforms with the discovered information, following the rules of the other agents associated with this platform
+3. **Exits** — marks itself as complete; does not run again
+
+## Naming
+
+File: `<platform>_onboarding.py` inside the platform's `specialist_agents/` folder.
+
+## Example
+
+`github_onboarding.py` — on first GitHub connection, reads all repos under the company account, populates GitHub-relevant Notion pages (Open PRs, Feature Updates, Product Features).

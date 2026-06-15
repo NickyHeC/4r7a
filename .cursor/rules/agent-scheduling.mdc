@@ -1,0 +1,28 @@
+---
+description: Patterns for time-based recurring agents and persistent managers
+globs: src/company_brain/agents/**/*.py
+alwaysApply: true
+---
+
+# Agent Scheduling
+
+## Persistent Manager Pattern
+
+Every platform has one manager agent, named `<platform>_manager.py` (e.g. `github_manager.py`), located directly under the platform folder. The manager is responsible for starting the specialist agents (in `specialist_agents/`) that complete specific tasks.
+
+Management agents run persistently and idle when no action is needed. They do not exit after one job — they sleep and wake on schedule.
+
+```python
+async def run_loop(self):
+    while True:
+        if self.should_act():
+            await self.dispatch_specialists()
+        await asyncio.sleep(self.interval_seconds)
+```
+
+## Scheduling Rules
+
+1. **Wait times live in the agent** — each recurring agent defines its own check interval (do not rely on external cron)
+2. **Manager triggers specialists** — the manager checks for relevant changes, then starts the appropriate specialist agent(s) only when needed
+3. **Specialists run to completion** — once started, a specialist runs until its job finishes, then returns control to the manager
+4. **Configurable schedules** — intervals and trigger times should be settable in `config/` (e.g. "every morning at 8am", "every Monday")
