@@ -36,3 +36,25 @@ src/company_brain/agents/
 4. **Specialists live in `specialist_agents/`** — every task-specific agent for a platform goes in that platform's `specialist_agents/` subfolder
 5. **Shared helpers** — platform-wide utilities (e.g. API/CLI wrappers) stay directly under the platform folder, alongside the manager
 6. **Cross-platform agents live in the source folder** — if an agent reads from GitHub and writes to Notion, it belongs in `github/specialist_agents/`
+
+## Display Convention
+
+When listing agents (README, docs, summaries), present each platform's manager as the parent of its specialists:
+
+1. **Manager outside the table** — show `<platform>_manager.py` above the table with a one-line bio of what it manages/dispatches
+2. **Table is specialists only** — the table lists just the specialist agents (filename only, no `specialist_agents/` prefix), framed as sub-agents of the manager
+3. Use columns: `Agent | Schedule | Description`
+
+Example:
+
+```markdown
+### GitHub
+
+**`github_manager.py`** — Persistent manager that detects changes and dispatches the specialists below.
+
+Specialist agents (in `specialist_agents/`):
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `open_pr.py` | On demand (via manager) | Syncs open PRs to Notion |
+```

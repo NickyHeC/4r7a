@@ -8,13 +8,16 @@ The automated platform that covers any information circulation within a company.
 
 ### GitHub
 
+**`github_manager.py`** — Persistent manager (checks GitHub every morning at 8am, idles otherwise). Detects relevant changes and dispatches the specialist agents below to complete specific tasks.
+
+Specialist agents (in `specialist_agents/`):
+
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `github_manager.py` | Persistent (8am daily) | Checks GitHub for changes, dispatches specialist agents |
-| `specialist_agents/open_pr.py` | On demand (via manager) | Syncs open PRs to a Notion "Open PRs" page |
-| `specialist_agents/feature_update.py` | Mondays (via manager) | Compiles major commits into a weekly "Feature Updates" page |
-| `specialist_agents/product_features.py` | On demand (via manager) | Maintains a ranked "Product Features" page for end users |
-| `specialist_agents/github_onboarding.py` | Once (first connection) | Scans all repos, seeds all GitHub-related Notion pages |
+| `open_pr.py` | On demand (via manager) | Syncs open PRs to a Notion "Open PRs" page |
+| `feature_update.py` | Mondays (via manager) | Compiles major commits into a weekly "Feature Updates" page |
+| `product_features.py` | On demand (via manager) | Maintains a ranked "Product Features" page for end users |
+| `github_onboarding.py` | Once (first connection) | Scans all repos, seeds all GitHub-related Notion pages |
 
 ## Prerequisites
 
