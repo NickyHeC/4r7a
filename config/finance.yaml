@@ -10,7 +10,7 @@ schedules:
   quarterly_calculation:
     day_of_quarter: 5      # 5th of the quarter's first month (Jan/Apr/Jul/Oct)
     time: "09:00"
-  manual_request:
+  request_manual_accounting:
     check_time: "12:00"    # daily noon check of the Manual Accounting page
 
 # Slack target for finance notifications. Prefer channel_id (stable) over name.
@@ -45,6 +45,6 @@ budget_keywords:
   mercury: {}
   ramp_vendor: {}
 
-# Learned categorizations recorded by manual_request after manual accounting.
+# Learned categorizations recorded by request_manual_accounting after manual accounting.
 # Maps a counterparty substring -> budget subcategory. Starts empty.
 learned_categories: {}

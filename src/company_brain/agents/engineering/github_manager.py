@@ -37,10 +37,24 @@ class GitHubManager(BaseAgent):
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
         self.repo = repo
-        self._specialists: dict[str, BaseAgent] = {}
+        self._specialists: dict[str, type] = {}
 
-    def register_specialist(self, key: str, agent: BaseAgent) -> None:
-        self._specialists[key] = agent
+    def register_specialist(self, key: str, agent_cls: type) -> None:
+        """Register a specialist agent class for a dispatch key."""
+        self._specialists[key] = agent_cls
+
+    def _specialist_class(self, key: str) -> type | None:
+        if key in self._specialists:
+            return self._specialists[key]
+        from company_brain.agents.engineering.github.feature_update import FeatureUpdateAgent
+        from company_brain.agents.engineering.github.open_pr import OpenPRAgent
+        from company_brain.agents.engineering.github.product_features import ProductFeaturesAgent
+
+        return {
+            "open_pr": OpenPRAgent,
+            "feature_update": FeatureUpdateAgent,
+            "product_features": ProductFeaturesAgent,
+        }.get(key)
 
     def run(self, **kwargs: Any) -> Any:
         """Start the persistent event loop."""
@@ -74,13 +88,15 @@ class GitHubManager(BaseAgent):
             self._dispatch("product_features")
 
     def _dispatch(self, specialist_key: str) -> None:
-        agent = self._specialists.get(specialist_key)
-        if not agent:
+        agent_cls = self._specialist_class(specialist_key)
+        if not agent_cls:
             self.logger.warning("Specialist '%s' not registered", specialist_key)
             return
         self.logger.info("Dispatching specialist: %s", specialist_key)
         try:
-            agent.execute()
+            from company_brain.runtime import get_runtime
+
+            get_runtime().run(agent_cls, self.config, repo=self.repo)
         except Exception:
             self.logger.exception("Specialist '%s' failed", specialist_key)
 

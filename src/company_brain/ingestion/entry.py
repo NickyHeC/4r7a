@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from company_brain.wiki.store import MarkdownDoc
 
 
 class RawEntry(BaseModel):
@@ -38,3 +41,42 @@ class RawEntry(BaseModel):
     def mark_absorbed(self, article_ids: list[str]) -> None:
         self.absorbed = True
         self.absorbed_into = list(set(self.absorbed_into + article_ids))
+
+    # -- Markdown doc conversion ---------------------------------------------
+
+    def filename(self) -> str:
+        return f"{self.timestamp.strftime('%Y-%m-%d')}_{self.id}.md"
+
+    def to_doc(self) -> "MarkdownDoc":
+        from company_brain.wiki.store import MarkdownDoc
+
+        fm: dict[str, Any] = {
+            "id": self.id,
+            "date": self.timestamp.strftime("%Y-%m-%d"),
+            "timestamp": self.timestamp.isoformat(),
+            "source_type": self.source_type,
+            "source_id": self.source_id,
+            "title": self.title,
+            "tags": self.tags,
+            "absorbed": self.absorbed,
+            "absorbed_into": self.absorbed_into,
+        }
+        if self.metadata:
+            fm["metadata"] = self.metadata
+        return MarkdownDoc(frontmatter=fm, body=self.content)
+
+    @classmethod
+    def from_doc(cls, doc: "MarkdownDoc") -> "RawEntry":
+        fm = dict(doc.frontmatter or {})
+        return cls(
+            id=fm.get("id") or "",
+            source_type=fm.get("source_type") or "unknown",
+            source_id=fm.get("source_id") or "",
+            timestamp=fm.get("timestamp") or fm.get("date") or datetime.now(timezone.utc),
+            title=fm.get("title") or "",
+            content=doc.body,
+            metadata=fm.get("metadata") or {},
+            tags=fm.get("tags") or [],
+            absorbed=bool(fm.get("absorbed", False)),
+            absorbed_into=fm.get("absorbed_into") or [],
+        )

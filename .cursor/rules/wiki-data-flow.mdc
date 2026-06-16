@@ -1,0 +1,36 @@
+---
+description: Wiki data flow — Markdown files are the source of truth, Notion is a mirror
+alwaysApply: true
+---
+
+# Wiki Data Flow
+
+The wiki is a directory of Markdown files (the **source of truth**), synced to
+Notion as a **mirror**. Order is always **MD first, Notion second**.
+
+```
+information intake -> raw/entries/*.md -> absorb (LLM writer) -> wiki/**/*.md -> NotionSync -> Notion
+```
+
+## Rules
+
+1. **Write MD first** — every agent that produces a page calls `write_wiki_page(rel_path, title, body, ...)` from `company_brain.wiki.publish`, which writes the Markdown page then syncs to Notion. Never write Notion directly (no raw `ntn page update/prepend`).
+2. **Notion binding lives in frontmatter** — `notion_page_id` is written back by `NotionSync` and is the canonical binding; `registry.json` is a derived cache.
+3. **Two intake paths**:
+   - Knowledge: `ingest` writes `raw/entries/*.md`; `absorb` (LLM writer) synthesizes them into `wiki/**/*.md` articles.
+   - Operational: department agents write their pages (e.g. open-prs, expense reports) directly via `write_wiki_page` and skip absorb.
+4. **Reads come from the wiki store** — use `read_wiki_page(rel_path)`; never read raw entries during query/operations.
+
+## Absorb writing standards (from the wiki-gen skill)
+
+- Be a writer, not a filer: understand meaning, integrate a new dimension, don't append.
+- Organize by **theme, not chronology**. Use `[[wikilinks]]`; cite raw entry ids in `sources`.
+- Create concept/pattern articles when a theme recurs. Anti-cram (split bloated articles) and anti-thin (every touched page gets richer).
+- Tone: Wikipedia. No em dashes, no peacock words ("legendary", "groundbreaking"), no editorial voice. Max 2 direct quotes per article.
+
+## Concurrency (shared cloud volume safe)
+
+- Never overwrite a file without reading it first; re-read an article immediately before editing.
+- Never hand-edit `_absorb_log.json`.
+- Rebuild `_index.md` / `_backlinks.json` only at the end of a command (via `WikiIndex.rebuild_control_files()` / `indexer.rebuild`).
+- Writes are atomic (temp + rename) so the shared volume stays consistent across VMs.

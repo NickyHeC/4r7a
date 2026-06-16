@@ -1,156 +1,85 @@
-"""Notion page/database discovery and binding for finance agents.
+"""Finance page helper, backed by the Markdown wiki store.
 
-Implements the project-wide discover-or-create pattern (see the engineering
-GitHub ``notion_binding`` helper). On first use an agent searches the workspace
-for an existing page/database that fits its purpose; if found it binds and
-persists the ID, otherwise it creates one. Bindings are stored under the
-``finance_pages`` block of ``config/notion.yaml``.
-
-All Notion access goes through the Notion CLI (``ntn``).
+Historically this discovered-or-created Notion pages directly. Under the new
+data flow the Markdown wiki is the source of truth and Notion is a synced
+mirror, so these helpers now read/write wiki Markdown pages (via the shared
+``write_wiki_page``/``read_wiki_page`` helpers) and let ``NotionSync`` handle
+the Notion mirroring. Page "handles" are wiki rel_paths.
 """
 
 from __future__ import annotations
 
-import json
 import logging
-import subprocess
-from typing import Any
 
-import yaml
-
-from company_brain.config import CONFIG_DIR
+from company_brain.config import resolve_wiki_dir
+from company_brain.wiki.publish import read_wiki_page, write_wiki_page
+from company_brain.wiki.store import LocalWikiStore
 
 logger = logging.getLogger(__name__)
 
-FINANCE_PAGES_KEY = "finance_pages"
+# Stable finance key -> wiki rel_path.
+_KEY_PATHS = {
+    "monthly_expense_reports": "finance/expense-reports.md",
+    "quarterly_metric": "finance/quarterly-metric.md",
+    "budget_summary": "finance/budget-summary.md",
+    "company_timeline": "finance/company-timeline.md",
+    "company_subscriptions": "finance/company-subscriptions.md",
+    "manual_accounting": "finance/manual-accounting.md",
+}
 
 
-def _load_notion_yaml() -> dict[str, Any]:
-    path = CONFIG_DIR / "notion.yaml"
-    if not path.exists():
-        return {}
-    with open(path) as f:
-        return yaml.safe_load(f) or {}
-
-
-def _save_notion_yaml(data: dict[str, Any]) -> None:
-    path = CONFIG_DIR / "notion.yaml"
-    with open(path, "w") as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-
-
-def get_bound_id(key: str) -> str | None:
-    """Return the stored Notion page/database ID for a finance binding key."""
-    return _load_notion_yaml().get(FINANCE_PAGES_KEY, {}).get(key)
-
-
-def bind_id(key: str, page_id: str) -> None:
-    """Persist a Notion page/database ID under the finance bindings block."""
-    data = _load_notion_yaml()
-    data.setdefault(FINANCE_PAGES_KEY, {})
-    data[FINANCE_PAGES_KEY][key] = page_id
-    _save_notion_yaml(data)
-    logger.info("Bound finance key '%s' to Notion id %s", key, page_id)
-
-
-def search_page(title_query: str) -> str | None:
-    """Search Notion for a page/database matching a title query; return id or None."""
-    try:
-        result = subprocess.run(
-            ["ntn", "search", title_query, "--format", "json"],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            logger.warning("ntn search failed: %s", result.stderr.strip())
-            return None
-        items = json.loads(result.stdout) if result.stdout.strip() else []
-        if items:
-            return items[0].get("id")
-    except FileNotFoundError:
-        logger.error("Notion CLI (ntn) not found. Install: https://developers.notion.com/cli")
-    return None
-
-
-def create_page(title: str, parent_id: str | None = None) -> str | None:
-    """Create a Notion page with the given title; return its id."""
-    args = ["ntn", "page", "create", "--title", title, "--format", "json"]
-    if parent_id:
-        args.extend(["--parent", parent_id])
-    try:
-        result = subprocess.run(args, capture_output=True, text=True)
-        if result.returncode != 0:
-            logger.error("Failed to create Notion page '%s': %s", title, result.stderr.strip())
-            return None
-        page = json.loads(result.stdout) if result.stdout.strip() else {}
-        return page.get("id")
-    except FileNotFoundError:
-        logger.error("Notion CLI (ntn) not found.")
-    return None
+def wiki_path(key: str) -> str:
+    """Map a finance key (including dynamic ``monthly_expense_<YYYY-MM>``) to a path."""
+    if key.startswith("monthly_expense_") and key != "monthly_expense_reports":
+        month = key[len("monthly_expense_"):]
+        return f"finance/expense-reports/{month}.md"
+    return _KEY_PATHS.get(key, f"finance/{key.replace('_', '-')}.md")
 
 
 def ensure_page(key: str, search_terms: list[str], create_title: str,
-                parent_key: str | None = None) -> str | None:
-    """Discover-or-create: return a bound id, searching/creating if needed.
-
-    If ``parent_key`` is given, a newly created page is nested under the page
-    bound to that key (e.g. a monthly report under ``Monthly Expense Reports``).
-    """
-    page_id = get_bound_id(key)
-    if page_id:
-        return page_id
-
-    logger.info("First use of finance page '%s' — searching Notion...", key)
-    for term in search_terms:
-        page_id = search_page(term)
-        if page_id:
-            logger.info("Found existing Notion page '%s' for '%s'", term, key)
-            bind_id(key, page_id)
-            return page_id
-
-    parent_id = get_bound_id(parent_key) if parent_key else _load_notion_yaml().get("root_page_id")
-    logger.info("No existing page found for '%s'. Creating '%s'...", key, create_title)
-    page_id = create_page(create_title, parent_id=parent_id)
-    if page_id:
-        bind_id(key, page_id)
-    return page_id
+                parent_key: str | None = None) -> str:
+    """Return the wiki rel_path for a finance page (handle for read/write)."""
+    return wiki_path(key)
 
 
-def update_page_body(page_id: str, body: str) -> bool:
-    """Overwrite a Notion page body."""
-    return _run_ntn(["page", "update", page_id, "--body", body])
+def get_bound_id(key: str) -> str | None:
+    """Return the page handle (rel_path) if that wiki page exists, else None."""
+    path = wiki_path(key)
+    return path if LocalWikiStore().exists(path) else None
 
 
-def prepend_page_body(page_id: str, body: str) -> bool:
-    """Prepend content to a Notion page body (newest on top)."""
-    return _run_ntn(["page", "prepend", page_id, "--body", body])
+def update_page_body(rel_path: str, body: str) -> bool:
+    """Overwrite a wiki page body (MD source of truth), then sync to Notion."""
+    write_wiki_page(rel_path, _title_for(rel_path, body), body, section="finance", type_="report")
+    return True
 
 
-def read_page(page_id: str) -> str:
-    """Read a Notion page as markdown (empty string on failure)."""
-    try:
-        result = subprocess.run(
-            ["ntn", "page", "read", page_id, "--format", "markdown"],
-            capture_output=True, text=True,
-        )
-        if result.returncode == 0:
-            return result.stdout
-    except FileNotFoundError:
-        logger.error("Notion CLI (ntn) not found.")
-    return ""
+def prepend_page_body(rel_path: str, body: str) -> bool:
+    """Prepend content to a wiki page (newest on top), then sync to Notion."""
+    existing = read_wiki_page(rel_path)
+    combined = f"{body.rstrip()}\n\n{existing}" if existing else body
+    write_wiki_page(rel_path, _title_for(rel_path, combined), combined, section="finance", type_="report")
+    return True
 
 
-def page_url(page_id: str) -> str:
-    """Best-effort Notion URL for a page id."""
-    return f"https://www.notion.so/{page_id.replace('-', '')}"
+def read_page(rel_path: str) -> str:
+    """Read a wiki page body from the store ('' if missing)."""
+    return read_wiki_page(rel_path)
 
 
-def _run_ntn(args: list[str]) -> bool:
-    try:
-        result = subprocess.run(["ntn", *args], capture_output=True, text=True)
-        if result.returncode != 0:
-            logger.error("ntn %s failed: %s", args[0], result.stderr.strip())
-            return False
-        return True
-    except FileNotFoundError:
-        logger.error("Notion CLI (ntn) not found.")
-        return False
+def page_url(rel_path: str) -> str:
+    """Notion URL for a synced page (from frontmatter binding), else the wiki path."""
+    store = LocalWikiStore()
+    if store.exists(rel_path):
+        pid = (store.read(rel_path).frontmatter or {}).get("notion_page_id")
+        if pid:
+            return f"https://www.notion.so/{str(pid).replace('-', '')}"
+    return str(resolve_wiki_dir() / rel_path)
+
+
+def _title_for(rel_path: str, body: str) -> str:
+    for line in body.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    stem = rel_path.rsplit("/", 1)[-1].removesuffix(".md")
+    return stem.replace("-", " ").title()

@@ -60,15 +60,15 @@ result = Runner.run_sync(agent, "...")
 
 ## Integration SDKs
 
-### Notion
+### Notion (via the wiki store)
 
-Any agent that interacts with Notion must implement a **discover-or-create** pattern on first run:
+The Markdown wiki is the source of truth; Notion is a synced mirror. Agents must **not** write to Notion directly. Instead:
 
-1. **Discover** — search the workspace for existing pages/databases that fit the agent's purpose (by title, structure, or content)
-2. **Reuse** — if a suitable page exists, bind to it and persist the page ID in config for future runs
-3. **Create** — if nothing suitable exists, create a new page in a logical location within the workspace, then persist that ID
+1. **Write Markdown first** — call `write_wiki_page(rel_path, title, body, ...)` from `company_brain.wiki.publish`. It writes the wiki MD page (source of truth), then mirrors it to Notion via `NotionSync`.
+2. **Sync handles discover-or-create** — `NotionSync` discovers an existing Notion page by title or creates one, then writes the `notion_page_id` back into the page's frontmatter (the canonical binding). `registry.json` is a derived cache.
+3. **Read from the wiki store** — use `read_wiki_page(rel_path)`, not `ntn page read`.
 
-After first run the agent uses the stored page ID directly — no repeated discovery. Store bindings in `config/notion.yaml`.
+See the `wiki-data-flow` rule for the full flow and writing standards.
 
 ### GitHub
 

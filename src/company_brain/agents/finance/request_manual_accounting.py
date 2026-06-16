@@ -42,10 +42,10 @@ _CHECKBOX_RE = re.compile(r"^- \[( |x|X)\]\s*(.+)$")
 _CATEGORY_RE = re.compile(r"category:\s*([^|]+)", re.IGNORECASE)
 
 
-class ManualRequestAgent(BaseAgent):
+class RequestManualAccountingAgent(BaseAgent):
     """Solicit human categorization, then teach the source agent and rerun it."""
 
-    name = "finance_manual_request"
+    name = "finance_request_manual_accounting"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

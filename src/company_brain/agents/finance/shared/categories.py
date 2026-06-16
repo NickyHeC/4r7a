@@ -168,7 +168,7 @@ def load_company_keywords(finance_config: dict[str, Any] | None) -> dict[str, di
     """
     cfg = (finance_config or {}).get("budget_keywords", {}) or {}
     # learned_categories maps an UPPER-CASED counterparty substring -> subcategory,
-    # populated by manual_request after manual accounting is completed.
+    # populated by request_manual_accounting after manual accounting is completed.
     learned_raw = (finance_config or {}).get("learned_categories", {}) or {}
     learned = {str(k).upper(): v for k, v in learned_raw.items()}
     return {

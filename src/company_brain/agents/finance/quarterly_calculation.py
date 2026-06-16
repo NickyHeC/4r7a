@@ -8,8 +8,8 @@ Results are written to the Notion "Quarterly Metric" page under a "<Quarter>
 below the metrics. The expense section is cross-verified against the
 "Monthly Expense Reports" pages.
 
-If there are uncategorized transactions it invokes manual_request. Otherwise it
-starts budget_report and subscription_audit before returning to idle.
+If there are uncategorized transactions it invokes request_manual_accounting.
+Otherwise it starts budget_report and subscription_audit before returning to idle.
 
 SDK: Neither for the metric core (deterministic Python, ported from the
 reference quarterly calculation). Orchestration is plain asyncio; dispatched
@@ -74,7 +74,7 @@ class QuarterlyCalculationManager(BaseAgent):
         """Compute and publish metrics for ``quarter`` (e.g. 2026-Q1).
 
         ``escalate`` controls whether uncategorized transactions trigger
-        manual_request (set False when manual_request reruns us post-correction).
+        request_manual_accounting (set False when that agent reruns us post-correction).
         """
         self.logger.info("Computing quarterly metrics for %s", quarter)
         # Reload learned categories so reruns pick up manual corrections.
@@ -98,8 +98,8 @@ class QuarterlyCalculationManager(BaseAgent):
 
         uncategorized = transactions.find_uncategorized(all_txns, self.keyword_maps)
         if uncategorized and escalate:
-            self.logger.info("%d uncategorized txns — invoking manual_request", len(uncategorized))
-            self._dispatch_manual_request(quarter, uncategorized)
+            self.logger.info("%d uncategorized txns — invoking request_manual_accounting", len(uncategorized))
+            self._dispatch_manual_accounting(quarter, uncategorized)
         else:
             self.logger.info("No uncategorized txns (or escalation off) — starting budget_report + subscription_audit")
             self._dispatch_followups(quarter)
@@ -200,25 +200,31 @@ class QuarterlyCalculationManager(BaseAgent):
         notion_pages.prepend_page_body(page_id, report)
         return page_id
 
-    def _dispatch_manual_request(self, quarter: str, uncategorized: list[dict]) -> None:
-        from .manual_request import ManualRequestAgent
+    def _dispatch_manual_accounting(self, quarter: str, uncategorized: list[dict]) -> None:
+        from company_brain.runtime import get_runtime
 
-        ManualRequestAgent(self.config).execute(
+        from .request_manual_accounting import RequestManualAccountingAgent
+
+        get_runtime().run(
+            RequestManualAccountingAgent, self.config,
             source_agent=self.name,
             context={"period": quarter, "kind": "quarterly"},
             uncategorized=uncategorized,
         )
 
     def _dispatch_followups(self, quarter: str) -> None:
+        from company_brain.runtime import get_runtime
+
         from .budget_report import BudgetReportAgent
         from .subscription_audit import SubscriptionAuditAgent
 
+        runtime = get_runtime()
         try:
-            BudgetReportAgent(self.config).execute(quarter=quarter)
+            runtime.run(BudgetReportAgent, self.config, quarter=quarter)
         except Exception:
             self.logger.exception("budget_report failed")
         try:
-            SubscriptionAuditAgent(self.config).execute(quarter=quarter)
+            runtime.run(SubscriptionAuditAgent, self.config, quarter=quarter)
         except Exception:
             self.logger.exception("subscription_audit failed")
 

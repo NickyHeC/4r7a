@@ -50,7 +50,7 @@ agents/
     quarterly_calculation.py        # manager (spans Mercury + Ramp)
     budget_report.py                # cross-platform agent
     subscription_audit.py           # cross-platform agent
-    manual_request.py               # cross-platform agent
+    request_manual_accounting.py    # cross-platform agent
     finance_onboarding.py
     shared/                         # categories, notion_pages, slack, transactions
     mercury/

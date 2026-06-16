@@ -1,4 +1,9 @@
-"""Ingestion pipeline: orchestrates running ingestors and deduplicating entries."""
+"""Ingestion pipeline: orchestrates running ingestors and deduplicating entries.
+
+Raw entries are persisted as Markdown files (``raw/entries/{date}_{id}.md``)
+with YAML frontmatter, following the wiki-gen skill. The absorb log lives with
+the wiki control files (``<wiki>/_absorb_log.json``).
+"""
 
 from __future__ import annotations
 
@@ -8,22 +13,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from company_brain.config import resolve_raw_dir, resolve_wiki_dir
 from company_brain.ingestion.base import BaseIngestor
 from company_brain.ingestion.entry import RawEntry
+from company_brain.wiki.store import MarkdownDoc
 
 logger = logging.getLogger(__name__)
 
-ENTRIES_DIR = "raw/entries"
-ABSORB_LOG = "raw/absorb_log.json"
+ABSORB_LOG_FILE = "_absorb_log.json"
 
 
 class IngestionPipeline:
     """Orchestrates ingestors and manages the raw entry store."""
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path | None = None):
         self._root = project_root
-        self._entries_dir = project_root / ENTRIES_DIR
-        self._absorb_log_path = project_root / ABSORB_LOG
+        self._entries_dir = resolve_raw_dir() / "entries"
+        self._absorb_log_path = resolve_wiki_dir() / ABSORB_LOG_FILE
         self._ingestors: dict[str, BaseIngestor] = {}
 
     def register(self, ingestor: BaseIngestor) -> None:
@@ -77,12 +83,23 @@ class IngestionPipeline:
         return [e for e in entries if e.timestamp >= since]
 
     def mark_absorbed(self, entry_ids: list[str], article_ids: list[str]) -> None:
-        """Mark entries as absorbed into specific articles."""
+        """Mark entries as absorbed into specific articles (log + entry frontmatter)."""
         log = self._load_absorb_log()
         timestamp = datetime.now(timezone.utc).isoformat()
         for eid in entry_ids:
             log[eid] = {"absorbed_into": article_ids, "absorbed_at": timestamp}
+            self._flag_entry_absorbed(eid, article_ids)
         self._save_absorb_log(log)
+
+    def _flag_entry_absorbed(self, entry_id: str, article_ids: list[str]) -> None:
+        if not self._entries_dir.exists():
+            return
+        for path in self._entries_dir.glob(f"*_{entry_id}.md"):
+            entry = RawEntry.from_doc(MarkdownDoc.parse(path.read_text()))
+            entry.mark_absorbed(article_ids)
+            tmp = path.with_suffix(".md.tmp")
+            tmp.write_text(entry.to_doc().serialize())
+            tmp.replace(path)
 
     # -- Internal helpers -----------------------------------------------------
 
@@ -93,18 +110,17 @@ class IngestionPipeline:
     def _persist_entries(self, entries: list[RawEntry]) -> None:
         self._entries_dir.mkdir(parents=True, exist_ok=True)
         for entry in entries:
-            date_str = entry.timestamp.strftime("%Y-%m-%d")
-            path = self._entries_dir / f"{date_str}_{entry.id}.json"
-            with open(path, "w") as f:
-                json.dump(entry.model_dump(mode="json"), f, indent=2, default=str)
+            path = self._entries_dir / entry.filename()
+            tmp = path.with_suffix(".md.tmp")
+            tmp.write_text(entry.to_doc().serialize())
+            tmp.replace(path)
 
     def _load_all_entries(self) -> list[RawEntry]:
         if not self._entries_dir.exists():
             return []
         entries = []
-        for path in sorted(self._entries_dir.glob("*.json")):
-            with open(path) as f:
-                entries.append(RawEntry(**json.load(f)))
+        for path in sorted(self._entries_dir.glob("*.md")):
+            entries.append(RawEntry.from_doc(MarkdownDoc.parse(path.read_text())))
         return entries
 
     def _load_absorb_log(self) -> dict[str, Any]:

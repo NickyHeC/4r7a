@@ -9,9 +9,8 @@ from pathlib import Path
 
 import click
 
-from company_brain.config import load_config, load_notion_config
-from company_brain.notion.client import NotionClient
-from company_brain.wiki.index import INDEX_FILENAME, WikiIndex
+from company_brain.config import load_config, load_notion_config, resolve_wiki_dir
+from company_brain.wiki.index import WikiIndex
 from company_brain.wiki.registry import REGISTRY_FILENAME, PageRegistry
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -33,7 +32,7 @@ def _load_registry() -> PageRegistry:
 
 
 def _load_index() -> WikiIndex:
-    index = WikiIndex(PROJECT_ROOT / INDEX_FILENAME)
+    index = WikiIndex()
     index.load()
     return index
 
@@ -66,8 +65,7 @@ def ingest(source: str | None) -> None:
     """
     from company_brain.ingestion.pipeline import IngestionPipeline
 
-    config = load_config()
-    pipeline = IngestionPipeline(PROJECT_ROOT)
+    pipeline = IngestionPipeline()
 
     if not pipeline.registered_sources:
         click.secho("No ingestion sources registered yet.", fg="yellow")
@@ -75,34 +73,27 @@ def ingest(source: str | None) -> None:
         return
 
     entries = pipeline.run(source=source)
-    click.echo(f"Ingested {len(entries)} new entries.")
+    click.echo(f"Ingested {len(entries)} new entries to raw/entries/ (Markdown).")
 
 
 @main.command()
 @click.option("--since", type=click.DateTime(), default=None, help="Only absorb entries after this date.")
-def absorb(since: datetime | None) -> None:
-    """Compile raw entries into wiki articles and publish to Notion."""
-    config = load_config()
+@click.option("--model", default=None, help="Override the model for the absorb writer.")
+def absorb(since: datetime | None, model: str | None) -> None:
+    """Compile raw entries into wiki articles (MD source of truth) and sync to Notion."""
+    from company_brain.wiki.absorb import AbsorbWriter
 
-    if not config.notion.is_initialized:
-        click.secho("Wiki not initialized. Run 'company-brain init' first.", fg="red")
-        sys.exit(1)
-
-    from company_brain.ingestion.pipeline import IngestionPipeline
-
-    pipeline = IngestionPipeline(PROJECT_ROOT)
-
-    if since:
-        entries = pipeline.load_entries_since(since.replace(tzinfo=timezone.utc))
-    else:
-        entries = pipeline.load_unabsorbed()
-
-    if not entries:
+    since_dt = since.replace(tzinfo=timezone.utc) if since else None
+    writer = AbsorbWriter(model=model)
+    click.echo("Absorbing raw entries into the wiki (Markdown first, then Notion sync)...")
+    result = writer.run(since=since_dt)
+    if not result.get("absorbed"):
         click.echo("No unabsorbed entries found.")
         return
-
-    click.echo(f"Found {len(entries)} entries to absorb.")
-    click.echo("Absorption logic will be implemented with specific agents.")
+    click.echo(
+        f"Absorbed {result['absorbed']} entries across {result['batches']} batch(es); "
+        f"synced {result.get('synced', 0)} page(s) to Notion."
+    )
 
 
 @main.command()
@@ -130,32 +121,18 @@ def query(question: str) -> None:
 
 @main.command()
 def sync() -> None:
-    """Sync local registry with Notion workspace state."""
+    """Push changed wiki Markdown pages to Notion (MD is the source of truth)."""
     config = load_config()
 
     if not config.notion.is_initialized:
         click.secho("Wiki not initialized. Run 'company-brain init' first.", fg="red")
         sys.exit(1)
 
-    client = NotionClient()
-    registry = _load_registry()
-    index = _load_index()
+    from company_brain.notion.sync import NotionSync
 
-    click.echo("Syncing with Notion workspace...")
-
-    synced = 0
-    for article_id, article in index.articles.items():
-        page_id = registry.get_page_id(article_id)
-        if page_id:
-            try:
-                result = client.get_page(page_id, as_json=True)
-                if result.json_data:
-                    synced += 1
-            except Exception:
-                click.echo(f"  Warning: page {page_id} for '{article.title}' not accessible")
-
-    click.echo(f"Synced {synced} articles with Notion.")
-    registry.save()
+    click.echo("Syncing wiki Markdown -> Notion...")
+    synced = NotionSync(config=config).sync_all()
+    click.echo(f"Synced {len(synced)} page(s) to Notion.")
 
 
 @main.command()
@@ -167,11 +144,12 @@ def status() -> None:
 
     click.secho("Wiki Status", bold=True)
     click.echo(f"  Initialized: {'yes' if config.notion.is_initialized else 'no'}")
+    click.echo(f"  Wiki dir: {resolve_wiki_dir()}")
     click.echo()
 
     stats = index.stats()
-    click.echo(f"  Total articles: {stats['total']}")
-    click.echo(f"  Published: {stats['published']}")
+    click.echo(f"  Total articles (Markdown): {stats['total']}")
+    click.echo(f"  Synced to Notion: {stats['published']}")
     click.echo(f"  Stubs: {stats['stubs']}")
     click.echo(f"  Registry mappings: {registry.count}")
     click.echo()

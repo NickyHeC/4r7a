@@ -1,0 +1,151 @@
+"""NotionSync: mirror the Markdown wiki (source of truth) into Notion.
+
+The wiki MD files are authoritative; Notion is a synced mirror. For each page,
+sync compares the page's current ``content_hash`` against the ``synced_hash``
+recorded in frontmatter and skips unchanged pages (cheap gate). New pages are
+discovered-or-created in Notion and the resulting ``notion_page_id`` is written
+back into the frontmatter (the canonical binding), with the registry kept as a
+derived cache.
+
+Control files (``_index.md``, ``_backlinks.json``, ``_absorb_log.json``) are
+local-only and never mirrored.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+from typing import Any
+
+from company_brain.config import AppConfig, load_config
+from company_brain.notion.client import NotionClient
+from company_brain.wiki.registry import PageRegistry
+from company_brain.wiki.store import LocalWikiStore, WikiStore
+
+logger = logging.getLogger(__name__)
+
+
+class NotionSync:
+    """Push changed wiki Markdown pages to Notion."""
+
+    def __init__(
+        self,
+        store: WikiStore | None = None,
+        client: NotionClient | None = None,
+        config: AppConfig | None = None,
+        registry: PageRegistry | None = None,
+    ):
+        self.store = store or LocalWikiStore()
+        self.client = client or NotionClient()
+        self.config = config or load_config()
+        self.registry = registry or PageRegistry()
+        if registry is None:
+            self.registry.load()
+
+    def sync_all(self) -> dict[str, str]:
+        """Sync every content page in the store. Returns rel_path -> page_id."""
+        results: dict[str, str] = {}
+        for rel_path in self.store.list():
+            try:
+                page_id = self.sync_doc(rel_path)
+                if page_id:
+                    results[rel_path] = page_id
+            except Exception:
+                logger.exception("Failed to sync %s", rel_path)
+        return results
+
+    def sync_doc(
+        self,
+        rel_path: str,
+        *,
+        parent_id: str | None = None,
+        force: bool = False,
+    ) -> str | None:
+        """Sync one wiki page to Notion; returns its Notion page id."""
+        doc = self.store.read(rel_path)
+        fm = dict(doc.frontmatter or {})
+        title = fm.get("title") or rel_path.rsplit("/", 1)[-1].removesuffix(".md")
+        current_hash = doc.content_hash
+        page_id = fm.get("notion_page_id")
+
+        if page_id and not force and fm.get("synced_hash") == current_hash:
+            logger.debug("Notion sync skip (unchanged): %s", rel_path)
+            return page_id
+
+        if not page_id:
+            page_id = self._discover(title)
+
+        if page_id:
+            self.client.update_page(page_id, doc.body)
+        else:
+            page_id = self._create(doc, fm, title, parent_id)
+            if not page_id:
+                return None
+
+        fm["notion_page_id"] = page_id
+        fm["synced_hash"] = current_hash
+        fm["last_synced"] = datetime.now(timezone.utc).isoformat()
+        doc.frontmatter = fm
+        self.store.write(rel_path, doc)
+
+        article_id = fm.get("id") or title
+        try:
+            self.registry.register(article_id, page_id)
+            self.registry.save()
+        except Exception:
+            logger.debug("Registry update skipped for %s", rel_path)
+
+        logger.info("Synced %s -> Notion %s", rel_path, page_id)
+        return page_id
+
+    # -- internals ---------------------------------------------------------
+
+    def _create(self, doc: Any, fm: dict, title: str, parent_id: str | None) -> str | None:
+        parent = parent_id or self._resolve_parent(fm.get("section", ""))
+        if not parent:
+            logger.warning(
+                "No Notion parent for '%s' (section=%s); cannot create page. Run init or set a binding.",
+                title, fm.get("section"),
+            )
+            return None
+        result = self.client.create_page(parent, doc.body, title=title)
+        return _extract_page_id(result.stdout, result.json_data)
+
+    def _resolve_parent(self, section: str) -> str | None:
+        if section:
+            sid = self.config.notion.section_page_ids.get(section)
+            if sid:
+                return sid
+            sid = self.registry.get_section_page_id(section)
+            if sid:
+                return sid
+        return self.config.notion.root_page_id
+
+    def _discover(self, title: str) -> str | None:
+        """Best-effort: find an existing Notion page whose title matches."""
+        try:
+            pages = self.client.search_all_pages()
+        except Exception:
+            return None
+        for page in pages:
+            if _page_title(page).strip().lower() == title.strip().lower():
+                return page.get("id")
+        return None
+
+
+def _page_title(page: dict[str, Any]) -> str:
+    props = page.get("properties", {}) or {}
+    for prop in props.values():
+        if isinstance(prop, dict) and prop.get("type") == "title":
+            return "".join(t.get("plain_text", "") for t in prop.get("title", []))
+    return ""
+
+
+def _extract_page_id(stdout: str, json_data: Any) -> str | None:
+    if isinstance(json_data, dict) and json_data.get("id"):
+        return json_data["id"]
+    for line in (stdout or "").splitlines():
+        s = line.strip()
+        if len(s) == 36 and s.count("-") == 4:
+            return s
+    return None

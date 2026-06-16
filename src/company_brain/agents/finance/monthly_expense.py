@@ -10,8 +10,8 @@ SDK: Anthropic Claude Agent SDK (optional narrative polish of the report) layere
 on deterministic categorization. Orchestration (dispatch + schedule) is plain
 asyncio, mirroring the engineering github_manager.
 
-If any transactions are uncategorized, it starts manual_request to solicit human
-help before the report is considered final.
+If any transactions are uncategorized, it starts request_manual_accounting to
+solicit human help before the report is considered final.
 """
 
 from __future__ import annotations
@@ -73,8 +73,8 @@ class MonthlyExpenseManager(BaseAgent):
         """Compile and publish the expense report for ``month`` (YYYY-MM).
 
         ``escalate`` controls whether uncategorized transactions trigger
-        manual_request. It is set False when manual_request reruns us after a
-        manual accounting pass, to avoid a re-escalation loop.
+        request_manual_accounting. It is set False when that agent reruns us
+        after a manual accounting pass, to avoid a re-escalation loop.
         """
         self.logger.info("Compiling monthly expenses for %s", month)
         # Reload learned categories so reruns pick up manual corrections.
@@ -91,8 +91,8 @@ class MonthlyExpenseManager(BaseAgent):
 
         uncategorized = [t for t in txns if cat.classify_budget(t, self.keyword_maps) == cat.UNCATEGORIZED]
         if uncategorized and escalate:
-            self.logger.info("%d uncategorized txns — starting manual_request", len(uncategorized))
-            self._dispatch_manual_request(month, uncategorized)
+            self.logger.info("%d uncategorized txns — starting request_manual_accounting", len(uncategorized))
+            self._dispatch_manual_accounting(month, uncategorized)
 
         return {
             "month": month,
@@ -179,10 +179,13 @@ class MonthlyExpenseManager(BaseAgent):
         except Exception:
             self.logger.exception("Slack notification failed")
 
-    def _dispatch_manual_request(self, month: str, uncategorized: list[dict]) -> None:
-        from .manual_request import ManualRequestAgent
+    def _dispatch_manual_accounting(self, month: str, uncategorized: list[dict]) -> None:
+        from company_brain.runtime import get_runtime
 
-        ManualRequestAgent(self.config).execute(
+        from .request_manual_accounting import RequestManualAccountingAgent
+
+        get_runtime().run(
+            RequestManualAccountingAgent, self.config,
             source_agent=self.name,
             context={"period": month, "kind": "monthly"},
             uncategorized=uncategorized,

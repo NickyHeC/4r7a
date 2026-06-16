@@ -12,36 +12,28 @@ Triggered by the engineering manager every Monday.
 from __future__ import annotations
 
 import logging
-import subprocess
 from datetime import datetime, timedelta
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.github.gh import list_recent_commits
-from company_brain.agents.engineering.github.notion_binding import ensure_notion_page
 from company_brain.config import AppConfig
+from company_brain.wiki.publish import read_wiki_page, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
-AGENT_KEY = "feature_update"
-SEARCH_TERMS = ["Feature Updates", "Weekly Updates", "Feature Update"]
-CREATE_TITLE = "Feature Updates"
+WIKI_PATH = "engineering/github/feature-updates.md"
+TITLE = "Feature Updates"
 
 
 class FeatureUpdateAgent(BaseAgent):
-    """Compiles weekly feature updates from GitHub commits into a Notion page."""
+    """Compiles weekly feature updates from GitHub commits into the wiki."""
 
     name = "github_feature_update"
 
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
         self.repo = repo
-        self._page_id: str | None = None
-
-    def setup(self) -> None:
-        self._page_id = ensure_notion_page(AGENT_KEY, SEARCH_TERMS, CREATE_TITLE)
-        if not self._page_id:
-            raise RuntimeError("Could not bind to a Notion page for Feature Updates")
 
     def run(self, **kwargs: Any) -> Any:
         since = (datetime.now() - timedelta(days=7)).isoformat()
@@ -51,9 +43,24 @@ class FeatureUpdateAgent(BaseAgent):
         major_commits = self._filter_major(commits)
         self.logger.info("Filtered to %d major updates", len(major_commits))
 
-        content = self._format_update(major_commits)
-        self._append_to_notion_page(content)
-        return {"total_commits": len(commits), "major_updates": len(major_commits)}
+        section = self._format_update(major_commits)
+        body = self._prepend_section(section)
+        page_id = write_wiki_page(
+            WIKI_PATH, TITLE, body, section="engineering/github", type_="report"
+        )
+        return {
+            "total_commits": len(commits),
+            "major_updates": len(major_commits),
+            "notion_page_id": page_id,
+        }
+
+    def _prepend_section(self, section: str) -> str:
+        existing = read_wiki_page(WIKI_PATH)
+        if existing:
+            # Drop the old top-level heading; keep prior weekly sections below the new one.
+            body = existing.split("\n", 1)[1] if existing.startswith("# ") else existing
+            return f"# {TITLE}\n\n{section}\n{body.lstrip()}"
+        return f"# {TITLE}\n\n{section}"
 
     def _filter_major(self, commits: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter commits to only include major implementations and updates.
@@ -86,16 +93,3 @@ class FeatureUpdateAgent(BaseAgent):
             sha = commit.get("sha", "")[:7]
             lines.append(f"- `{sha}` {msg} (@{author})")
         return "\n".join(lines) + "\n"
-
-    def _append_to_notion_page(self, content: str) -> None:
-        """Prepend the weekly update to the Notion page (newest on top)."""
-        try:
-            subprocess.run(
-                ["ntn", "page", "prepend", self._page_id, "--body", content],
-                capture_output=True, text=True, check=True,
-            )
-            self.logger.info("Updated Notion page %s with weekly feature update", self._page_id)
-        except subprocess.CalledProcessError as e:
-            self.logger.error("Failed to update Notion page: %s", e.stderr)
-        except FileNotFoundError:
-            self.logger.error("Notion CLI (ntn) not found")

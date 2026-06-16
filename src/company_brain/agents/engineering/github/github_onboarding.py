@@ -15,9 +15,9 @@ import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.engineering.github.gh import list_repos, list_open_prs, list_recent_commits
-from company_brain.agents.engineering.github.notion_binding import ensure_notion_page
+from company_brain.agents.engineering.github.gh import list_open_prs, list_repos
 from company_brain.config import AppConfig
+from company_brain.wiki.publish import write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ AGENT_KEY = "github_onboarding"
 
 
 class GitHubOnboardingAgent(BaseAgent):
-    """One-time onboarding: scans all repos, populates GitHub Notion pages."""
+    """One-time onboarding: scans all repos, seeds GitHub wiki pages."""
 
     name = "github_onboarding"
 
@@ -40,10 +40,9 @@ class GitHubOnboardingAgent(BaseAgent):
         self.logger.info("Found %d repositories", len(repos))
 
         summary = self._analyse_repos(repos)
-
-        self._populate_open_prs(repos)
-        self._populate_feature_updates(repos)
-        self._populate_product_features(repos)
+        self._seed_open_prs(repos)
+        self._seed_page("engineering/github/feature-updates.md", "Feature Updates")
+        self._seed_page("engineering/github/product-features.md", "Product Features")
 
         self.logger.info("GitHub onboarding complete")
         return summary
@@ -57,37 +56,24 @@ class GitHubOnboardingAgent(BaseAgent):
             "repos": [r.get("name") for r in repos],
         }
 
-    def _populate_open_prs(self, repos: list[dict[str, Any]]) -> None:
-        """Gather all open PRs across repos and write to the Open PRs page."""
-        page_id = ensure_notion_page("open_pr", ["Open PRs", "Open Pull Requests"], "Open PRs")
-        if not page_id:
-            self.logger.warning("Could not bind Open PRs page during onboarding")
-            return
-
+    def _seed_open_prs(self, repos: list[dict[str, Any]]) -> None:
+        """Gather all open PRs across repos and seed the Open PRs wiki page."""
         all_prs = []
         for repo in repos:
             repo_name = repo.get("name", "")
             full_name = f"{self.org}/{repo_name}" if self.org else repo_name
             try:
-                prs = list_open_prs(full_name)
-                for pr in prs:
-                    pr["_repo"] = full_name
-                all_prs.extend(prs)
+                all_prs.extend(list_open_prs(full_name))
             except Exception:
                 self.logger.debug("Could not list PRs for %s", full_name)
-
         self.logger.info("Found %d total open PRs across all repos", len(all_prs))
-
-    def _populate_feature_updates(self, repos: list[dict[str, Any]]) -> None:
-        """Gather recent commits and write initial feature updates."""
-        ensure_notion_page("feature_update", ["Feature Updates", "Weekly Updates"], "Feature Updates")
-        self.logger.info("Feature Updates page ready for future weekly runs")
-
-    def _populate_product_features(self, repos: list[dict[str, Any]]) -> None:
-        """Seed the Product Features page with initial user-facing features."""
-        ensure_notion_page(
-            "product_features",
-            ["Product Features", "Features"],
-            "Product Features",
+        body = f"# Open PRs\n\n{len(all_prs)} open pull request(s) across {len(repos)} repos.\n"
+        write_wiki_page(
+            "engineering/github/open-prs.md", "Open PRs", body,
+            section="engineering/github", type_="report",
         )
-        self.logger.info("Product Features page ready for future runs")
+
+    def _seed_page(self, rel_path: str, title: str) -> None:
+        body = f"# {title}\n\n_Seeded during GitHub onboarding; populated on the next scheduled run._\n"
+        write_wiki_page(rel_path, title, body, section="engineering/github", type_="report")
+        self.logger.info("Seeded wiki page %s", rel_path)

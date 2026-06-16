@@ -1,27 +1,34 @@
-"""Wiki index: lookup articles by title, alias, or type."""
+"""Wiki index: lookup articles by title, alias, or type.
+
+The index is a derived, in-memory view over the Markdown wiki store (the source
+of truth). ``load()`` scans the store's ``.md`` files into ``Article`` objects;
+``save()`` writes each article back as Markdown and rebuilds the ``_index.md`` /
+``_backlinks.json`` control files.
+"""
 
 from __future__ import annotations
 
-import json
 import logging
-from pathlib import Path
 from typing import Any
 
+from company_brain.wiki import indexer
 from company_brain.wiki.article import Article
+from company_brain.wiki.store import LocalWikiStore, WikiStore
 
 logger = logging.getLogger(__name__)
 
+# Legacy filename kept for backward references; the store now owns persistence.
 INDEX_FILENAME = "wiki_index.json"
 
 
 class WikiIndex:
-    """In-memory index of all wiki articles, backed by a JSON file.
+    """In-memory index of all wiki articles, backed by the Markdown WikiStore.
 
     Supports lookup by exact title, alias, article type, and fuzzy matching.
     """
 
-    def __init__(self, index_path: Path | None = None):
-        self._index_path = index_path
+    def __init__(self, store: WikiStore | None = None):
+        self._store: WikiStore = store or LocalWikiStore()
         self._articles: dict[str, Article] = {}
         self._aliases: dict[str, str] = {}  # alias -> article id
 
@@ -108,34 +115,40 @@ class WikiIndex:
             "by_type": by_type,
         }
 
+    @property
+    def store(self) -> WikiStore:
+        return self._store
+
+    def write_article(self, article: Article) -> None:
+        """Persist a single article to the Markdown store (no index rebuild)."""
+        self._store.write(article.rel_path(), article.to_doc())
+        self.add(article)
+
+    def rebuild_control_files(self) -> None:
+        """Regenerate _index.md and _backlinks.json without rewriting articles."""
+        indexer.rebuild(self._store, list(self._articles.values()), self._aliases)
+
     # -- Persistence ----------------------------------------------------------
 
-    def save(self, path: Path | None = None) -> None:
-        target = path or self._index_path
-        if not target:
-            raise ValueError("No index path configured")
+    def save(self) -> None:
+        """Write every article to Markdown and rebuild the control files."""
+        for article in self._articles.values():
+            self._store.write(article.rel_path(), article.to_doc())
+        indexer.rebuild(self._store, list(self._articles.values()), self._aliases)
+        logger.debug("Saved %d articles to wiki store", self.count)
 
-        data = {
-            "articles": {
-                aid: a.model_dump(mode="json") for aid, a in self._articles.items()
-            },
-            "aliases": self._aliases,
-        }
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with open(target, "w") as f:
-            json.dump(data, f, indent=2, default=str)
-        logger.debug("Saved index with %d articles to %s", self.count, target)
-
-    def load(self, path: Path | None = None) -> None:
-        target = path or self._index_path
-        if not target or not target.exists():
-            return
-
-        with open(target) as f:
-            data = json.load(f)
-
+    def load(self) -> None:
+        """Scan the Markdown store into memory as Article objects."""
         self._articles = {}
-        for aid, adict in data.get("articles", {}).items():
-            self._articles[aid] = Article(**adict)
-        self._aliases = data.get("aliases", {})
-        logger.debug("Loaded index with %d articles from %s", self.count, target)
+        self._aliases = {}
+        for rel_path in self._store.list():
+            try:
+                doc = self._store.read(rel_path)
+            except Exception:
+                logger.warning("Skipping unreadable wiki file: %s", rel_path)
+                continue
+            article = Article.from_doc(doc, rel_path)
+            self._articles[article.id] = article
+            for alias in (doc.frontmatter or {}).get("also", []) or []:
+                self._aliases[str(alias).lower()] = article.id
+        logger.debug("Loaded %d articles from wiki store", self.count)

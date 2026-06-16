@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,28 @@ from pydantic import BaseModel, Field
 
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
+PROJECT_ROOT = CONFIG_DIR.parent
+
+
+def resolve_wiki_dir() -> Path:
+    """Directory holding the Markdown wiki (the source of truth).
+
+    Override with ``COMPANY_BRAIN_WIKI_DIR`` (e.g. ``/workspace/wiki`` on a smol
+    cloud VM, pointing at the mounted shared volume). Defaults to ``<root>/wiki``.
+    """
+    env = os.getenv("COMPANY_BRAIN_WIKI_DIR")
+    return Path(env) if env else PROJECT_ROOT / "wiki"
+
+
+def resolve_raw_dir() -> Path:
+    """Directory holding raw ingested Markdown entries."""
+    env = os.getenv("COMPANY_BRAIN_RAW_DIR")
+    return Path(env) if env else PROJECT_ROOT / "raw"
+
+
+def resolve_runtime() -> str:
+    """Agent runtime selector: ``local`` (in-process) or ``smolcloud`` (VM)."""
+    return os.getenv("COMPANY_BRAIN_RUNTIME", "local").strip().lower()
 
 
 class ArticleTypeConfig(BaseModel):
