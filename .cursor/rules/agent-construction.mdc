@@ -100,6 +100,20 @@ client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 response = client.conversations_history(channel="C01234567")
 ```
 
+### Mercury
+
+For Mercury (banking) agents, use the **Mercury CLI** wrapper with an HTTP fallback to the Mercury REST API. Token via `MERCURY_TOKEN`, environment via `MERCURY_ENV`.
+
+**Install:** https://mercury.com/api
+**Pattern:** `src/company_brain/agents/finance/mercury/mercury_client.py` (CLI subprocess `mercury --format jsonl`, falls back to `https://api.mercury.com/api/v1`).
+
+### Ramp
+
+For Ramp agents, access Ramp through the **Ramp MCP server** (not direct REST). Wire it via the Claude Agent SDK's `mcp_servers` option; token via `RAMP_TOKEN`.
+
+**Docs:** https://docs.ramp.com/developer-api/v1/ramp-mcp
+**Pattern:** `src/company_brain/agents/finance/ramp/ramp_client.py` builds the `mcp_servers` mapping; agents use the Claude Agent SDK to query it.
+
 ## Implementation Conventions
 
 1. **One file per agent** — place in `src/company_brain/agents/` with a descriptive filename

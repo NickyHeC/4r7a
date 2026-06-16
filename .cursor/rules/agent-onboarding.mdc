@@ -22,7 +22,7 @@ An onboarding agent runs **once** when the platform is first connected to the pr
 
 ## Naming
 
-File: `<platform>_onboarding.py` inside the platform's `specialist_agents/` folder.
+File: `<platform>_onboarding.py` directly inside the platform's folder.
 
 ## Example
 

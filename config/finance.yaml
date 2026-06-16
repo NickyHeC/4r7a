@@ -1,0 +1,50 @@
+# Finance department configuration.
+# Contains NO secrets — API tokens come from the environment (see .env.example).
+# Safe to commit: keep all values generic / non-company-specific.
+
+# Schedules for the persistent managers.
+schedules:
+  monthly_expense:
+    day_of_month: 1
+    time: "08:00"
+  quarterly_calculation:
+    day_of_quarter: 5      # 5th of the quarter's first month (Jan/Apr/Jul/Oct)
+    time: "09:00"
+  manual_request:
+    check_time: "12:00"    # daily noon check of the Manual Accounting page
+
+# Slack target for finance notifications. Prefer channel_id (stable) over name.
+slack:
+  channel: "#finance"
+  channel_id: ""           # set to the channel ID, e.g. C0123456789
+
+# Notion page/database titles the agents discover-or-create on first run.
+# Resolved IDs are persisted in config/notion.yaml under `finance_pages`.
+notion_titles:
+  monthly_expense_reports: "Monthly Expense Reports"
+  quarterly_metric: "Quarterly Metric"
+  budget_summary: "Budget Summary"
+  company_timeline: "Company Timeline"
+  company_subscriptions: "Company Subscriptions"
+  manual_accounting: "Manual Accounting"
+
+# One-time onboarding backfill. Leave start_month empty to auto-detect the
+# earliest Mercury transaction month.
+onboarding:
+  start_month: ""          # e.g. "2025-01"
+
+# Manual accounting feedback loop.
+manual:
+  wait_for_completion: true
+  max_checks: 14           # stop bumping after N daily noon checks
+
+# Company-specific budget keyword overrides. Populate at deploy time; keep this
+# file's committed copy EMPTY so no company data is committed.
+# Keys are budget subcategories; values are vendor/counterparty substrings.
+budget_keywords:
+  mercury: {}
+  ramp_vendor: {}
+
+# Learned categorizations recorded by manual_request after manual accounting.
+# Maps a counterparty substring -> budget subcategory. Starts empty.
+learned_categories: {}

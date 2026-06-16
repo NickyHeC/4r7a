@@ -6,53 +6,95 @@ alwaysApply: true
 
 # Agent Organization
 
-Keep the agent tree organized by platform and hierarchy level. Use `_` (underscore) in all file and identifier names — never `-` (hyphen).
+Keep the agent tree organized as **department → platform → agents**. Use `_` (underscore) in all file and identifier names — never `-` (hyphen).
+
+## Managers vs Specialists
+
+- A **manager** is any agent whose duty is to **dispatch other agents based on the information it gathers**. Manager status is about this role, not the filename — a manager does not need `manager` in its name (keep names concise).
+- A department can have **multiple managers**. Each manager may be scoped to **a single platform** or **span multiple platforms**.
+- Managers live **directly under the department folder**, alongside one another.
+- **Cross-platform agents** (that draw from more than one platform and aren't tied to a single one) also live **directly under the department folder**, next to the managers.
+- A platform-specific **specialist** completes one type of task and lives directly under its platform folder.
+- Shared helpers used across a department's agents may live in a `shared/` subpackage under the department folder.
 
 ## Folder Structure
 
 ```
 src/company_brain/agents/
-  base.py                       # Shared base class
-  github/
-    github_manager.py           # GitHub manager — dispatches specialists
-    gh.py                       # Shared platform helpers (optional)
-    specialist_agents/          # All task-specific specialist agents
+  base.py                           # Shared base class
+  <department>/                     # e.g. engineering, finance
+    <manager>.py                    # One or more managers, directly under the department folder
+    <cross_platform_agent>.py       # Agents spanning multiple platforms, also at department level
+    shared/                         # Department-wide helpers (optional)
+    <platform>/                     # e.g. github, mercury, ramp
+      <specific_agent>.py           # Specialist agents live directly under the platform folder
+      <platform>_onboarding.py
+      <platform>_client.py          # Shared platform helpers (optional)
+```
+
+Concrete examples:
+
+```
+agents/
+  engineering/
+    github_manager.py               # manager scoped to GitHub
+    github/
+      gh.py
+      notion_binding.py
       open_pr.py
       feature_update.py
       product_features.py
       github_onboarding.py
-  <platform>/
-    <platform>_manager.py       # Platform manager agent (directly under platform folder)
-    specialist_agents/          # Specialist agents for this platform
-      <specific_agent>.py
-      <platform>_onboarding.py
+  finance/
+    monthly_expense.py              # manager (spans Mercury + Ramp)
+    quarterly_calculation.py        # manager (spans Mercury + Ramp)
+    budget_report.py                # cross-platform agent
+    subscription_audit.py           # cross-platform agent
+    manual_request.py               # cross-platform agent
+    finance_onboarding.py
+    shared/                         # categories, notion_pages, slack, transactions
+    mercury/
+      mercury_client.py
+      asset_compile.py
+      bank_transaction.py
+      mercury_card_spend.py
+    ramp/
+      ramp_client.py
+      ramp_card_spend.py
 ```
 
 ## Placement Rules
 
 1. **Underscore naming** — all agent files and identifiers use `_`, never `-`
-2. **Group by platform** — each connected platform gets its own subfolder under `agents/`
-3. **Manager directly under the platform folder** — named `<platform>_manager.py`; it orchestrates and is responsible for starting the specialist agents that complete specific tasks
-4. **Specialists live in `specialist_agents/`** — every task-specific agent for a platform goes in that platform's `specialist_agents/` subfolder
-5. **Shared helpers** — platform-wide utilities (e.g. API/CLI wrappers) stay directly under the platform folder, alongside the manager
-6. **Cross-platform agents live in the source folder** — if an agent reads from GitHub and writes to Notion, it belongs in `github/specialist_agents/`
+2. **Department → platform → agents** — every platform lives under a department folder; each connected platform gets its own subfolder
+3. **Assign platforms to departments** — when adding a platform, place it under the department the user specifies. If unspecified, choose the department that makes the most sense (e.g. `github` → `engineering`)
+4. **Managers directly under the department folder** — a department may hold multiple managers, each scoped to one platform or spanning several. A manager's duty is dispatching other agents based on gathered information; `manager` in the filename is optional (prefer concise, scope-descriptive names, e.g. `github_manager.py` for a GitHub-scoped manager)
+5. **Specialists live directly under their platform folder** — every task-specific agent goes directly in its platform folder (no `specialist_agents/` subfolder)
+6. **Shared helpers** — platform-wide utilities (e.g. API/CLI wrappers) stay directly under the platform folder; department-wide helpers go in a `shared/` subpackage under the department folder
+7. **Single-source cross-platform agents live in the source folder** — if an agent reads from one platform and writes to another, it belongs in the source platform folder (e.g. reads GitHub, writes Notion → `engineering/github/`)
+8. **Multi-platform agents live at the department level** — if an agent draws from several platforms (e.g. Mercury + Ramp), place it directly under the department folder alongside the managers
 
 ## Display Convention
 
-When listing agents (README, docs, summaries), present each platform's manager as the parent of its specialists:
+When listing agents (README, docs, summaries), present each department's managers as the parents of their specialists:
 
-1. **Manager outside the table** — show `<platform>_manager.py` above the table with a one-line bio of what it manages/dispatches
-2. **Table is specialists only** — the table lists just the specialist agents (filename only, no `specialist_agents/` prefix), framed as sub-agents of the manager
-3. Use columns: `Agent | Schedule | Description`
+1. **Managers outside the table** — list the department's manager(s) above the table(s). Each manager bio opens with a one-line summary of its persistent/idle behaviour and scope, followed by **one bullet per platform it covers** describing what those specialist sub-agents do. Add a new bullet/manager as platforms and managers are added.
+2. **Schedules are per-platform/per-action** — do not describe a manager as running on a single fixed cadence (e.g. "8am daily"); say it checks platforms "according to each platform's specified action schedule"
+3. **Group specialists by platform** — one table per platform under the department, framed as sub-agents of the relevant manager
+4. **Table is specialists only** — the table lists just the specialist agents (filename only), never a manager
+5. Use columns: `Agent | Schedule | Description`
 
 Example:
 
 ```markdown
-### GitHub
+### Engineering
 
-**`github_manager.py`** — Persistent manager that detects changes and dispatches the specialists below.
+Managers (dispatch specialists based on gathered information; a department may have several):
 
-Specialist agents (in `specialist_agents/`):
+**`github_manager.py`** — Persistent manager scoped to GitHub (checks GitHub according to its specified action schedule, idles otherwise).
+- Detects relevant changes in GitHub and dispatches the specialist GitHub agents below.
+
+#### GitHub (`engineering/github/`)
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|

@@ -1,11 +1,17 @@
 """GitHub Manager Agent.
 
-SDK: Neither (pure orchestration) — this is the persistent manager that idles
-and dispatches specialist agents on schedule. It uses asyncio for the sleep
-loop and invokes sub-agents directly.
+A manager agent: its duty is to dispatch other (specialist) agents based on the
+information it gathers — it is not defined by its filename but by this role.
+This manager is scoped to the GitHub platform within the engineering department.
+A department may have several managers; each can cover one platform or span
+multiple platforms.
 
-Runs persistently. Checks GitHub every morning at 8am for changes relevant to
-the specialist agents, dispatches them when needed.
+SDK: Neither (pure orchestration) — persistent agent that idles and dispatches
+specialist agents on schedule. Uses asyncio for the sleep loop and invokes
+sub-agents directly.
+
+Runs persistently. Checks GitHub on its configured schedule for relevant changes,
+dispatching the appropriate specialist agents when needed.
 """
 
 from __future__ import annotations
@@ -79,7 +85,7 @@ class GitHubManager(BaseAgent):
             self.logger.exception("Specialist '%s' failed", specialist_key)
 
     def _has_open_pr_changes(self) -> bool:
-        from company_brain.agents.github.gh import list_open_prs
+        from company_brain.agents.engineering.github.gh import list_open_prs
         try:
             prs = list_open_prs(self.repo)
             return len(prs) > 0
@@ -88,7 +94,7 @@ class GitHubManager(BaseAgent):
             return False
 
     def _has_commit_activity_this_week(self) -> bool:
-        from company_brain.agents.github.gh import list_recent_commits
+        from company_brain.agents.engineering.github.gh import list_recent_commits
         since = (datetime.now() - timedelta(days=7)).isoformat()
         try:
             commits = list_recent_commits(self.repo, since=since)
@@ -98,7 +104,7 @@ class GitHubManager(BaseAgent):
             return False
 
     def _has_commit_activity_since_last_run(self) -> bool:
-        from company_brain.agents.github.gh import list_recent_commits
+        from company_brain.agents.engineering.github.gh import list_recent_commits
         since = (datetime.now() - timedelta(days=1)).isoformat()
         try:
             commits = list_recent_commits(self.repo, since=since)

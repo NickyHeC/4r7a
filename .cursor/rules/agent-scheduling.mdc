@@ -8,7 +8,7 @@ alwaysApply: true
 
 ## Persistent Manager Pattern
 
-Every platform has one manager agent, named `<platform>_manager.py` (e.g. `github_manager.py`), located directly under the platform folder. The manager is responsible for starting the specialist agents (in `specialist_agents/`) that complete specific tasks.
+A department has one or more manager agents, located directly under the department folder. A manager is any agent whose duty is to dispatch other agents based on the information it gathers (the filename need not contain `manager`; e.g. `github_manager.py`). Each manager may be scoped to a single platform or span multiple platforms, starting the specialist agents (which live directly under their platform folders) that complete specific tasks.
 
 Management agents run persistently and idle when no action is needed. They do not exit after one job — they sleep and wake on schedule.
 
@@ -22,7 +22,8 @@ async def run_loop(self):
 
 ## Scheduling Rules
 
-1. **Wait times live in the agent** — each recurring agent defines its own check interval (do not rely on external cron)
-2. **Manager triggers specialists** — the manager checks for relevant changes, then starts the appropriate specialist agent(s) only when needed
-3. **Specialists run to completion** — once started, a specialist runs until its job finishes, then returns control to the manager
-4. **Configurable schedules** — intervals and trigger times should be settable in `config/` (e.g. "every morning at 8am", "every Monday")
+1. **Per-platform, per-action schedules** — do not assume a single global cadence (e.g. 8am daily). Each platform/action defines its own schedule: some run daily, some weekly, some on demand, some event-driven. The manager checks each connected platform according to its specified schedule.
+2. **Wait times live in the agent** — each recurring agent defines its own check interval (do not rely on external cron)
+3. **Manager triggers specialists** — the manager checks for relevant changes, then starts the appropriate specialist agent(s) only when needed
+4. **Specialists run to completion** — once started, a specialist runs until its job finishes, then returns control to the manager
+5. **Configurable schedules** — intervals and trigger times should be settable in `config/` (e.g. "every morning at 8am", "every Monday", "on demand")

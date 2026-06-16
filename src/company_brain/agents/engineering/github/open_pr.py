@@ -16,8 +16,8 @@ import subprocess
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.github.gh import list_open_prs
-from company_brain.agents.github.notion_binding import ensure_notion_page
+from company_brain.agents.engineering.github.gh import list_open_prs
+from company_brain.agents.engineering.github.notion_binding import ensure_notion_page
 from company_brain.config import AppConfig
 
 logger = logging.getLogger(__name__)

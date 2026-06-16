@@ -6,7 +6,7 @@ assistant that reads GitHub and writes to Notion.
 
 Reads recent commits from GitHub, filters for major implementations and updates,
 and compiles a weekly feature update on the Notion "Feature Updates" page.
-Triggered by the GitHub manager every Monday.
+Triggered by the engineering manager every Monday.
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.github.gh import list_recent_commits
-from company_brain.agents.github.notion_binding import ensure_notion_page
+from company_brain.agents.engineering.github.gh import list_recent_commits
+from company_brain.agents.engineering.github.notion_binding import ensure_notion_page
 from company_brain.config import AppConfig
 
 logger = logging.getLogger(__name__)
