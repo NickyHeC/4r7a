@@ -35,6 +35,28 @@ def resolve_runtime() -> str:
     return os.getenv("COMPANY_BRAIN_RUNTIME", "local").strip().lower()
 
 
+def resolve_mode() -> str:
+    """Deployment mode: ``local`` or ``cloud``.
+
+    Explicit ``COMPANY_BRAIN_MODE`` wins. Otherwise inferred as ``cloud`` when the
+    wiki dir lives under ``/workspace`` (the mounted smol cloud volume), else
+    ``local`` (wiki Markdown stored inside the project folder, gitignored).
+    """
+    explicit = os.getenv("COMPANY_BRAIN_MODE", "").strip().lower()
+    if explicit in ("local", "cloud"):
+        return explicit
+    return "cloud" if str(resolve_wiki_dir()).startswith("/workspace") else "local"
+
+
+def resolve_sandbox() -> str:
+    """Sandbox backend for verification: ``off`` (in-process) or ``smolvm``.
+
+    When ``smolvm`` is selected, state-changing agents can verify/reproduce a
+    change inside an ephemeral smol VM before committing it.
+    """
+    return os.getenv("COMPANY_BRAIN_SANDBOX", "off").strip().lower()
+
+
 class ArticleTypeConfig(BaseModel):
     structure: list[str] = Field(default_factory=list)
     length_target: list[int] = Field(default_factory=lambda: [20, 80])

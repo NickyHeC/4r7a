@@ -1,4 +1,11 @@
-"""Mercury data client.
+"""Mercury data client — READ ONLY.
+
+This client only ever *reads* from Mercury (accounts, transactions, statements,
+treasury, categories). It deliberately exposes no money-movement operations
+(no payments, transfers, recipients, or account changes): agent-driven writes
+to a bank are high-risk and the tooling is immature, while read-only access
+already unlocks the accounting/finance analysis value. Keep it that way — use a
+read-only ``MERCURY_TOKEN`` and do not add write methods here.
 
 Prefers the ``mercury`` CLI subprocess (faster, no extra auth dance) but falls
 back to direct HTTP against the Mercury REST API if the CLI binary is missing
@@ -6,7 +13,7 @@ or errors. The CLI is invoked with ``--format jsonl`` so list endpoints stream
 cleanly even across many pages.
 
 Configuration (environment only — never hardcode company data):
-  - ``MERCURY_TOKEN``   API token
+  - ``MERCURY_TOKEN``   API token (read-only scope)
   - ``MERCURY_ENV``     ``production`` | ``sandbox`` (default ``production``)
 
 CLI install: https://mercury.com/api

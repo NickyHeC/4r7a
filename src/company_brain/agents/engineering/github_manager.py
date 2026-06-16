@@ -120,11 +120,16 @@ class GitHubManager(BaseAgent):
             return False
 
     def _has_commit_activity_since_last_run(self) -> bool:
+        """Cost gate: only true when the latest commit advanced since last dispatch."""
         from company_brain.agents.engineering.github.gh import list_recent_commits
+        from company_brain.agents.gates import changed_since
         since = (datetime.now() - timedelta(days=1)).isoformat()
         try:
             commits = list_recent_commits(self.repo, since=since)
-            return len(commits) > 0
+            if not commits:
+                return False
+            latest = commits[0].get("sha", "") if commits else ""
+            return changed_since(f"github:{self.repo}:last_commit", latest)
         except Exception:
             self.logger.exception("Failed to check recent commits")
             return False

@@ -1,4 +1,10 @@
-"""Ramp MCP connection configuration for finance agents.
+"""Ramp MCP connection configuration for finance agents — READ ONLY.
+
+Ramp agents only read (transactions, bills, merchants, accounting categories);
+they never issue cards, approve/pay bills, or change limits. Agent-driven writes
+to a card platform are high-risk and immature, while read-only data already
+unlocks the analysis value. Use a read-scoped ``RAMP_TOKEN`` and only allow read
+tools from the MCP server.
 
 Per project convention, Ramp is accessed through the Ramp MCP server rather
 than direct REST. This module builds the ``mcp_servers`` mapping passed to the

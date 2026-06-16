@@ -27,7 +27,6 @@ from company_brain.config import AppConfig
 from .shared import categories as cat
 from .shared import notion_pages, transactions
 from .shared.config import load_finance_config
-from .shared.slack import from_config as slack_from_config
 
 RUN_DAY = 1
 RUN_TIME = time(8, 0)
@@ -168,14 +167,18 @@ class MonthlyExpenseManager(BaseAgent):
         return page_id
 
     def _publish_slack(self, month: str, grand_total: float, page_id: str | None) -> None:
-        slack = slack_from_config(self.finance_config)
+        from company_brain.notify import ACTIONABLE, INFO, Signal, from_finance_config
+
         label = transactions.month_label(month)
-        text = f"{label} expense report ready — total outbound {transactions.fmt_money(grand_total)}."
+        # Detect everything, notify selectively: ping only when there was spend.
+        severity = ACTIONABLE if grand_total > 0 else INFO
         try:
-            if page_id:
-                slack.post_with_link(text, f"{label} Expense Report", notion_pages.page_url(page_id))
-            else:
-                slack.post(text)
+            from_finance_config(self.finance_config).emit(Signal(
+                text=f"{label} expense report ready — total outbound {transactions.fmt_money(grand_total)}.",
+                severity=severity,
+                link_label=f"{label} Expense Report",
+                link_url=notion_pages.page_url(page_id) if page_id else None,
+            ))
         except Exception:
             self.logger.exception("Slack notification failed")
 

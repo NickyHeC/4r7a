@@ -1,0 +1,30 @@
+---
+description: Agent eval loop, cost gates, and selective notification (self-maintaining foundation)
+globs: src/company_brain/agents/**/*.py
+alwaysApply: true
+---
+
+# Agent Eval, Cost Gates, and Notification
+
+Every agent runs the loop in `BaseAgent.execute()`:
+`should_run` (cost gate) -> `setup` -> [ `run` -> `verify` ] (up to `max_iterations`) -> `teardown`.
+
+## Eval gate (be honest)
+
+- State-changing or quality-sensitive agents should override `verify(output) -> AgentResult` to triage the result as `ok` | `rework` | `noise`.
+- To iterate on weak output, raise `max_iterations` (the loop re-runs until `verify` passes or the cap is hit). Deterministic agents keep `max_iterations = 1`.
+- For consequential changes, verify in a sandbox: `runtime.verify_in_sandbox(cmd, mount=..., allow_hosts=...)` runs the check in an ephemeral smol VM when `COMPANY_BRAIN_SANDBOX=smolvm`; it returns `None` (fall back to in-process) when no sandbox is available. Reproduce, then commit only if it passes.
+
+## Cost gates (be cheap)
+
+- Expensive (LLM) agents override `should_run() -> bool` with a `$0` check; return False to skip the run entirely (no tokens). Use `agents.gates.changed_since(key, signature)` with a cheap signature (last commit SHA, max txn id/timestamp, content hash).
+- Dedup re-fires with `mark_handled`/`is_handled` (Ramp's "store state on the monitor") so an already-handled item stands down. Never compute the signature with an LLM call.
+
+## Notify selectively (don't be noise)
+
+- Route human-facing messages through `company_brain.notify.Notifier` / `Signal`, not direct Slack calls.
+- Severity: `info` is suppressed by default (logged only); `actionable` and `alert` are delivered. Use `verify()`'s `noise` verdict to suppress routine pings. Detect everything, notify selectively.
+
+## Default posture
+
+- Agents are **closed** by default: bounded iteration, eval-gated, cost-gated. Open/exploratory loops require explicit opt-in and a budget cap.

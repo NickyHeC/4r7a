@@ -227,3 +227,5 @@ notepad.md
 # Local wiki manifests (derived/local-only)
 /wiki_index.json
 /registry.json
+# Agent gate/runtime state (local markers)
+/config/state.json

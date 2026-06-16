@@ -104,6 +104,8 @@ response = client.conversations_history(channel="C01234567")
 
 For Mercury (banking) agents, use the **Mercury CLI** wrapper with an HTTP fallback to the Mercury REST API. Token via `MERCURY_TOKEN`, environment via `MERCURY_ENV`.
 
+**Read access ONLY.** Mercury agents may only fetch data (accounts, transactions, statements, treasury, categories). They must never move money or mutate state — no payments, transfers, recipients, or account changes. Agent-driven writes to a bank are high-risk and the tooling is immature; the value is in analysis, not actuation. Enforce read-only at three layers: the client surface exposes only `list_*`/`get_*` calls, the `MERCURY_TOKEN` should be a read-only token, and money-movement hosts/endpoints stay off the allow-list.
+
 **Install:** https://mercury.com/api
 **Pattern:** `src/company_brain/agents/finance/mercury/mercury_client.py` (CLI subprocess `mercury --format jsonl`, falls back to `https://api.mercury.com/api/v1`).
 
@@ -111,8 +113,12 @@ For Mercury (banking) agents, use the **Mercury CLI** wrapper with an HTTP fallb
 
 For Ramp agents, access Ramp through the **Ramp MCP server** (not direct REST). Wire it via the Claude Agent SDK's `mcp_servers` option; token via `RAMP_TOKEN`.
 
+**Read access ONLY.** Same rationale as Mercury: Ramp agents read transactions, bills, merchants, and accounting categories — they never issue cards, approve/pay bills, or change limits. Use a read-scoped `RAMP_TOKEN` and only expose read tools from the MCP server.
+
 **Docs:** https://docs.ramp.com/developer-api/v1/ramp-mcp
 **Pattern:** `src/company_brain/agents/finance/ramp/ramp_client.py` builds the `mcp_servers` mapping; agents use the Claude Agent SDK to query it.
+
+**Where finance "writes" are allowed:** never to the bank/card platform. Agents write only to the **system of record** (the wiki Markdown -> Notion mirror, or a ledger doc) as proposals a human reviews — e.g. the `request_manual_accounting` loop. The agent proposes; a human decides.
 
 ## Implementation Conventions
 
@@ -122,4 +128,4 @@ For Ramp agents, access Ramp through the **Ramp MCP server** (not direct REST). 
 4. **Config over hardcode** — agent prompts and tool lists should be configurable via `config/`
 5. **Async-first** — prefer async patterns; both SDKs support streaming
 6. **Sub-agent isolation** — each sub-agent owns exactly one responsibility; orchestrators delegate, never execute domain logic themselves
-7. **Keep README in sync** — whenever an agent is added or removed, update `README.md` to reflect the change (project structure, commands, or any agent listing)
+7. **Keep the docs in sync** — `README.md` is human-facing (pitch, architecture, agents overview); `AGENTS.md` is the agent-facing onboarding/connection runbook. Whenever an agent or platform is added or removed, update both: README's structure/agent listing, and AGENTS.md's connect/onboard steps. New external API hosts also go in the `Smolfile` allow-list.

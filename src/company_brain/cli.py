@@ -9,7 +9,13 @@ from pathlib import Path
 
 import click
 
-from company_brain.config import load_config, load_notion_config, resolve_wiki_dir
+from company_brain.config import (
+    load_config,
+    load_notion_config,
+    resolve_mode,
+    resolve_runtime,
+    resolve_wiki_dir,
+)
 from company_brain.wiki.index import WikiIndex
 from company_brain.wiki.registry import REGISTRY_FILENAME, PageRegistry
 
@@ -183,3 +189,45 @@ def cleanup() -> None:
     click.echo(f"Auditing {stats['total']} articles...")
     click.echo(f"  Stubs needing enrichment: {stats['stubs']}")
     click.echo("Cleanup agents will be implemented in subsequent phases.")
+
+
+@main.command()
+def doctor() -> None:
+    """Diagnose setup: deployment mode, wiki location, and platform connections.
+
+    Used during agent-assisted onboarding to verify each platform after it is
+    connected. Reads only — never mutates anything.
+    """
+    import os
+    import shutil
+
+    click.secho("company-brain doctor", bold=True)
+    click.echo(f"  Mode:        {resolve_mode()}")
+    click.echo(f"  Runtime:     {resolve_runtime()}")
+    click.echo(f"  Wiki dir:    {resolve_wiki_dir()}")
+    click.echo(f"  Sandbox:     {os.getenv('COMPANY_BRAIN_SANDBOX', 'off')}")
+    click.echo()
+
+    def check(label: str, ok: bool, hint: str) -> None:
+        mark = click.style("OK ", fg="green") if ok else click.style("-- ", fg="yellow")
+        click.echo(f"  [{mark}] {label}" + ("" if ok else f"  ({hint})"))
+
+    notion_ok = False
+    if shutil.which("ntn"):
+        try:
+            from company_brain.notion.client import NotionClient
+            notion_ok = NotionClient().check_auth()
+        except Exception:
+            notion_ok = False
+    check("Notion CLI (ntn) authenticated", notion_ok, "install ntn + run 'ntn login', then 'company-brain init'")
+
+    check("GitHub CLI (gh) installed", shutil.which("gh") is not None, "install gh (read-only)")
+    check("Mercury token (read-only)", bool(os.getenv("MERCURY_TOKEN")), "set MERCURY_TOKEN")
+    check("Ramp token (read-only)", bool(os.getenv("RAMP_TOKEN")), "set RAMP_TOKEN + Ramp MCP")
+    check("Slack bot token", bool(os.getenv("SLACK_BOT_TOKEN")), "set SLACK_BOT_TOKEN")
+    check("Anthropic API key", bool(os.getenv("ANTHROPIC_API_KEY")), "set ANTHROPIC_API_KEY")
+
+    config = load_config()
+    check("Wiki initialized in Notion", config.notion.is_initialized, "run 'company-brain init'")
+    click.echo()
+    click.echo("Connect platforms with the help of an AI coding agent — see AGENTS.md.")

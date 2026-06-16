@@ -37,6 +37,16 @@ class BudgetReportAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.model = model
 
+    def should_run(self, *, quarter: str, **kwargs: Any) -> bool:
+        """Cost gate: rebuild only when this quarter's metric content changed."""
+        import hashlib
+
+        from company_brain.agents.gates import changed_since
+
+        metric = notion_pages.read_page("finance/quarterly-metric.md")
+        sig = hashlib.sha256(f"{quarter}:{metric}".encode()).hexdigest()[:16]
+        return changed_since(f"budget_report:{quarter}", sig)
+
     def run(self, *, quarter: str, **kwargs: Any) -> dict[str, Any]:
         heading = f"{quarter[-2:]} {quarter[:4]}"
         self.logger.info("Building budget report for %s", heading)

@@ -17,10 +17,6 @@ intake -> raw/entries/*.md -> absorb (LLM writer) -> wiki/**/*.md (source of tru
 
 The wiki Markdown lives on a shared volume (`COMPANY_BRAIN_WIKI_DIR`, e.g. `/workspace/wiki` on a smol cloud VM). The binding to each Notion page is stored in the file's frontmatter (`notion_page_id`).
 
-## Cloud direction (smol VMs)
-
-The target state runs every agent in an isolated [smol](https://github.com/smol-machines/smolvm) cloud VM: company-brain spans a multi-VM fleet, managers spin up specialist VMs on demand (via the forthcoming `smol machine` CLI), and all VMs share the wiki volume. Agents dispatch through an `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|smolcloud`) so the same code runs in-process today and on a VM later. VM config lives in the `Smolfile`.
-
 ## Agents
 
 ### Engineering
@@ -70,44 +66,50 @@ Cross-platform agents (department level):
 | ------------------- | ----------------------- | ---------------------------------------------------------------- |
 | `ramp_card_spend.py`| On demand (via manager) | Ramp card spend categorized by QuickBooks categories (via MCP)   |
 
-## Prerequisites
+## Self-maintaining foundation
 
-- Python 3.11+
-- [Notion CLI (`ntn`)](https://developers.notion.com/cli/get-started/installation) installed and authenticated
-- [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated (read-only access)
-- [Mercury CLI](https://mercury.com/api) installed; `MERCURY_TOKEN` set (finance agents)
-- Ramp [MCP server](https://docs.ramp.com/developer-api/v1/ramp-mcp) configured; `RAMP_TOKEN` set (finance agents)
-- Slack bot token (`SLACK_BOT_TOKEN`) for finance notifications to #finance
-- `ANTHROPIC_API_KEY` for Claude Agent SDK agents (the absorb writer and LLM-backed agents)
-- `COMPANY_BRAIN_WIKI_DIR` — wiki Markdown location (defaults to `./wiki`; `/workspace/wiki` on a smol VM)
-- `COMPANY_BRAIN_RUNTIME` — `local` (default) or `smolcloud`
+Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (cheap cost gate) -> `run` -> `verify` (triage: ok / rework / noise), up to `max_iterations`.
 
-See `.env.example` for all environment variables.
+- **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral [smol](https://github.com/smol-machines/smolvm) sandbox (`COMPANY_BRAIN_SANDBOX=smolvm`) before committing — reproduce, then commit only if it passes.
+- **Cost gates**: expensive agents implement `should_run()` using cheap change-detection (`agents/gates.py`) so no LLM is invoked when nothing changed; re-fires dedup via stored "handled" state.
+- **Notify selectively**: human-facing messages go through `notify.Notifier` — detect everything, deliver only what's `actionable`/`alert`; routine ticks are silent.
 
-## Install
+## Cloud direction (smol VMs)
+
+The target state runs every agent in an isolated [smol](https://github.com/smol-machines/smolvm) cloud VM: company-brain spans a multi-VM fleet, managers spin up specialist VMs on demand (via the forthcoming `smol machine` CLI), and all VMs share the wiki volume. Agents dispatch through an `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|smolcloud`) so the same code runs in-process today and on a VM later. VM config lives in the `Smolfile`.
+
+## Setup (agent-assisted)
+
+company-brain is designed to be installed with the help of an AI coding agent.
+Open this repo in your AI coding agent and ask it to **"set up company-brain"** —
+it follows [`AGENTS.md`](AGENTS.md), a step-by-step runbook that picks the mode,
+installs the CLIs, connects your platforms (with read-only finance tokens), runs
+the onboarding agents, and verifies everything with `company-brain doctor`.
+
+Manual fallback:
 
 ```bash
 pip install -e .
+cp .env.example .env      # fill in tokens
+company-brain doctor      # shows mode, wiki location, and what's connected
+ntn login && company-brain init
 ```
 
-## Quick Start
+### Local vs cloud
 
-```bash
-# Authenticate the Notion CLI with your workspace
-ntn login
+- **Local** (default): the wiki Markdown lives in `./wiki` inside the project
+  folder (gitignored). Run everything on one machine.
+- **Cloud**: the wiki Markdown lives on the smol cloud VM's persistent storage at
+  `/workspace/wiki`. Set `COMPANY_BRAIN_MODE=cloud`.
 
-# Initialize the wiki structure in your Notion workspace
-company-brain init
-
-# Check wiki status
-company-brain status
-```
+`company-brain doctor` reports the active mode and connection status. See
+`.env.example` for all environment variables.
 
 ## Commands
 
-
 | Command                          | Description                                                          |
 | -------------------------------- | -------------------------------------------------------------------- |
+| `company-brain doctor`           | Show mode, wiki location, runtime, and platform connection status    |
 | `company-brain init`             | Discover existing workspace content, set up Notion wiki structure    |
 | `company-brain ingest <source>`  | Run an ingestion agent; writes raw Markdown entries to `raw/entries/`|
 | `company-brain absorb`           | LLM writer compiles raw entries into wiki Markdown articles, then syncs to Notion |
@@ -121,6 +123,7 @@ company-brain status
 
 ```
 company-brain/
+  AGENTS.md            # Agent-assisted setup runbook (read by your AI coding agent)
   Smolfile             # smol VM definition (image, net allow-list, shared wiki volume)
   wiki/                # Markdown wiki — source of truth (gitignored; shared volume in cloud)
   raw/entries/         # Raw ingested Markdown entries (gitignored)
@@ -161,8 +164,6 @@ company-brain/
         ramp/                    # Ramp MCP client + specialist
           ramp_client.py
           ramp_card_spend.py
-  scripts/
-    setup_wiki.py      # Wiki initialization script
 ```
 
 ## Configuration

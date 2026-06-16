@@ -23,7 +23,6 @@ from company_brain.config import AppConfig
 
 from .shared import notion_pages, transactions
 from .shared.config import load_finance_config
-from .shared.slack import from_config as slack_from_config
 
 SUBSCRIPTIONS_KEY = "company_subscriptions"
 SUBSCRIPTIONS_TERMS = ["Company Subscriptions", "Subscriptions"]
@@ -41,6 +40,19 @@ class SubscriptionAuditAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.model = model
         self.finance_config = load_finance_config()
+
+    def should_run(self, *, quarter: str | None = None, **kwargs: Any) -> bool:
+        """Cost gate: audit a given quarter at most once (dedup re-fires)."""
+        if not quarter:
+            return True  # ad-hoc runs always proceed
+        from company_brain.agents.gates import changed_since
+        return changed_since(f"subscription_audit:{quarter}", quarter)
+
+    def verify(self, output: Any, **kwargs: Any):
+        """Triage: no recurring vendors is 'noise' (suppress the ping)."""
+        from company_brain.agents.result import AgentResult
+        n = (output or {}).get("recurring_count", 0)
+        return AgentResult(output=output, status="ok" if n else "noise")
 
     def run(self, *, quarter: str | None = None, months_back: int = 3, **kwargs: Any) -> dict[str, Any]:
         self.logger.info("Auditing subscriptions over the past %d months", months_back)
@@ -181,14 +193,18 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
         return "\n".join(lines)
 
     def _post_slack(self, recurring: list[dict], page_id: str | None) -> None:
-        slack = slack_from_config(self.finance_config)
+        from company_brain.notify import ACTIONABLE, INFO, Signal, from_finance_config
+
         total = sum(v["total"] for v in recurring)
-        text = (f"Subscription audit complete: {len(recurring)} recurring vendors, "
-                f"~{transactions.fmt_money(total)} over the review window.")
+        # Notify selectively: only ping when there are recurring vendors to review.
+        severity = ACTIONABLE if recurring else INFO
         try:
-            if page_id:
-                slack.post_with_link(text, "Company Subscriptions", notion_pages.page_url(page_id))
-            else:
-                slack.post(text)
+            from_finance_config(self.finance_config).emit(Signal(
+                text=(f"Subscription audit complete: {len(recurring)} recurring vendors, "
+                      f"~{transactions.fmt_money(total)} over the review window."),
+                severity=severity,
+                link_label="Company Subscriptions",
+                link_url=notion_pages.page_url(page_id) if page_id else None,
+            ))
         except Exception:
             self.logger.exception("Slack notification failed")
