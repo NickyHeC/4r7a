@@ -21,9 +21,17 @@ An onboarding agent runs **once** when the platform is first connected to the pr
    - `finance_onboarding` runs the `monthly_expense` / `quarterly_calculation` managers across every historical month/quarter.
    - `github_onboarding` runs `open_pr`, `branch_monitor`, `feature_update`, `product_features` once to populate their pages.
    - Backfill may pass flags to avoid noise (e.g. finance uses `escalate=False` so historical periods don't spam manual-accounting requests).
-3. **Exits** — marks itself as complete; does not run again.
+3. **Hands off to the persistent manager(s)** — once the backfill is done, it **starts the persistent manager(s) that work on the same platform** so steady-state runs continue automatically, then exits. Start them via `get_runtime().start(ManagerCls, self.config, ...)` (the non-blocking handoff — a background thread locally, a dedicated VM under the cloud runtime), never by blocking on `run`. The managers' own loops idle until their next correct scheduled time (they do **not** re-run the just-backfilled work immediately).
+   - `github_onboarding` starts `github_manager` (next morning check).
+   - `finance_onboarding` starts both `monthly_expense` (next 1st of the month) and `quarterly_calculation` (next 5th of the quarter).
+   - Gate the handoff behind a `start_manager(s)=True` kwarg so tests/backfills can disable it.
+4. **Exits** — marks itself as complete; does not run again.
 
-Future onboarding agents follow the same shape: scan, then call the platform's specialists to fill pages.
+Future onboarding agents follow the same shape: scan, backfill via the platform's specialists, then start that platform's persistent manager(s) at their next scheduled time.
+
+## Display in `agent_list.md`
+
+The onboarding agent **always appears at the end** of its platform's / department's list in [`agent_list.md`](../../agent_list.md) (after every specialist and cross-platform agent for that scope).
 
 ## Naming
 

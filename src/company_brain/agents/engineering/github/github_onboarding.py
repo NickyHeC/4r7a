@@ -5,6 +5,10 @@ the finance managers to backfill historical periods), this scans the account
 and then **runs the GitHub specialist agents to fill their wiki pages** with
 real data, rather than writing placeholders.
 
+When the backfill is done it hands off to the platform's persistent manager:
+it starts `github_manager`, whose loop idles until its next scheduled time
+(the next morning check) so steady-state runs continue automatically.
+
 SDK: Neither (orchestration only) — it sequences the existing specialists.
 """
 
@@ -32,7 +36,7 @@ class GitHubOnboardingAgent(BaseAgent):
         self.org = org
         self.repo = repo
 
-    def run(self, **kwargs: Any) -> Any:
+    def run(self, *, start_manager: bool = True, **kwargs: Any) -> Any:
         self.logger.info("Starting GitHub onboarding — scanning all repos")
 
         repos = list_repos(self.org)
@@ -40,6 +44,9 @@ class GitHubOnboardingAgent(BaseAgent):
 
         summary = self._analyse_repos(repos)
         self._backfill()
+
+        if start_manager:
+            self._start_manager()
 
         self.logger.info("GitHub onboarding complete")
         return summary
@@ -71,3 +78,14 @@ class GitHubOnboardingAgent(BaseAgent):
                 agent.execute()
             except Exception:
                 self.logger.exception("Onboarding backfill failed for %s", agent.name)
+
+    def _start_manager(self) -> None:
+        """Hand off to the persistent GitHub manager (runs at its next schedule)."""
+        from company_brain.agents.engineering.github_manager import GitHubManager
+        from company_brain.runtime import get_runtime
+
+        self.logger.info("Backfill complete — starting github_manager (idles until next morning check)")
+        try:
+            get_runtime().start(GitHubManager, self.config, repo=self.repo)
+        except Exception:
+            self.logger.exception("Failed to start github_manager")

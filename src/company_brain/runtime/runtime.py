@@ -42,6 +42,32 @@ class AgentRuntime(ABC):
     @abstractmethod
     def run(self, agent_cls: type, config: AppConfig, /, **kwargs: Any) -> Any: ...
 
+    def start(self, agent_cls: type, config: AppConfig, /, **kwargs: Any) -> Any:
+        """Start a persistent/background agent without blocking (handoff).
+
+        Unlike ``run`` (run-to-completion, returns the result), ``start`` launches
+        a long-lived agent — typically a persistent manager whose loop idles until
+        its next scheduled time — and returns immediately so the caller can start
+        others and finish (e.g. an onboarding agent handing off to its managers).
+
+        Default: run it in a daemon thread in-process. ``SmolCloudRuntime`` will
+        override this to spin up a dedicated VM per persistent agent.
+        """
+        import threading
+
+        name = getattr(agent_cls, "name", agent_cls.__name__)
+
+        def _target() -> None:
+            try:
+                agent_cls(config).execute(**kwargs)
+            except Exception:  # pragma: no cover - background thread guard
+                logger.exception("Persistent agent '%s' exited with error", name)
+
+        thread = threading.Thread(target=_target, name=f"agent:{name}", daemon=True)
+        thread.start()
+        logger.info("Started persistent agent '%s' in the background", name)
+        return thread
+
 
 class AgentDeployer(ABC):
     """Manages VM lifecycle for running agents (no-op locally)."""
@@ -121,6 +147,14 @@ class SmolCloudRuntime(AgentRuntime):
             "running '%s' locally instead.", getattr(agent_cls, "name", agent_cls.__name__)
         )
         return LocalRuntime().run(agent_cls, config, **kwargs)
+
+    def start(self, agent_cls: type, config: AppConfig, /, **kwargs: Any) -> Any:
+        logger.warning(
+            "SmolCloudRuntime not available yet (smol machine CLI pending); "
+            "starting '%s' in a local background thread instead of a dedicated VM.",
+            getattr(agent_cls, "name", agent_cls.__name__),
+        )
+        return super().start(agent_cls, config, **kwargs)
 
 
 _SMOL_PENDING = (

@@ -1,8 +1,10 @@
-# 四库七阁
+# FourSeven 四库七阁
 
 The automated platform that covers any information circulation within a company.
 
-四库七阁 is the maintenance layer for an internal company wiki. The wiki is a directory of **Markdown files (the source of truth)** that is mirrored to [Notion](https://www.notion.so). Agents ingest information from various sources, compile it into structured wiki articles, and sync those Markdown pages to your Notion workspace via the [Notion CLI](https://developers.notion.com/cli/get-started/overview).
+FourSeven (seven archives of four repositories) is the maintenance layer for an internal company wiki. The wiki is a directory of **Markdown files (the source of truth)** that is mirrored to [Notion](https://www.notion.so). Agents ingest information from various sources, compile it into structured wiki articles, and sync those Markdown pages to your Notion workspace via the [Notion CLI](https://developers.notion.com/cli/get-started/overview).
+
+The *seven archives of the four repositories* (四库七阁) was the largest library in Chinese history. It refers to the *Siku Quanshu* (四库全书, "Complete Library of the Four Treasuries"), commissioned by the Qianlong Emperor and compiled between 1772 and 1782, which organized its contents into four repositories. Seven hand-copied sets of the collection were produced, each housed in its own imperial archive (阁) — the seven archives that give FourSeven its name.
 
 ## Data flow
 
@@ -19,53 +21,24 @@ The wiki Markdown lives on a shared volume (`COMPANY_BRAIN_WIKI_DIR`, e.g. `/wor
 
 ## Agents
 
+Agents are organized **department → platform → agents**. Each department has one or
+more persistent **managers** that dispatch specialist agents based on what they find.
+This section is a high-level map of the departments and the platforms they cover —
+for the detailed work, scope, sources, and destinations of every agent, see
+[`agent_list.md`](agent_list.md).
+
 ### Engineering
 
-Managers (dispatch specialist agents based on the information they gather; a department can have several, each scoped to one or more platforms):
-
-`github_manager.py` — Persistent manager scoped to GitHub (periodically checks GitHub according to its specified action schedule, idles otherwise). Detects relevant changes in GitHub and dispatches the specialist GitHub agents below to complete specific tasks.
-
-#### GitHub (`engineering/github/`)
-
-
-| Agent                  | Schedule                | Description                                                 |
-| ---------------------- | ----------------------- | ----------------------------------------------------------- |
-| `open_pr.py`           | On demand (via manager) | Syncs open PRs to a Notion "Open PRs" page                  |
-| `branch_monitor.py`    | Every morning (via manager) | Maintains per-repo environment + branch/PR status tables on a "Branch Status" page |
-| `feature_update.py`    | Mondays (via manager)   | Compiles major commits into a weekly "Feature Updates" page |
-| `product_features.py`  | On demand (via manager) | Maintains a ranked "Product Features" page for end users    |
-| `github_onboarding.py` | Once (first connection) | Scans all repos, seeds all GitHub-related Notion pages      |
+- **GitHub** — open PR tracking, branch/environment status, weekly feature updates, and a user-facing product features list. Dispatched by `github_manager.py`.
 
 ### Finance
 
-Managers (dispatch specialist agents based on the information they gather; each spans the department's platforms):
+- **Mercury** — bank transactions, IO card spend, and total-asset snapshots (bank + treasury).
+- **Ramp** — card spend categorized by QuickBooks category (via the Ramp MCP server).
 
-`monthly_expense.py` — Persistent manager (1st of each month at 08:00, idles otherwise). Dispatches the transaction specialists for the previous month, sorts outbound spend into budget categories, posts the report to Slack #finance, and writes a per-month "<Month> Expense Report" page under "Monthly Expense Reports".
-
-`quarterly_calculation.py` — Persistent manager (5th of each quarter at 09:00, idles otherwise). Computes Revenue, Expenses, Net Income, EBITDA, and Net Burn with a monthly breakdown into the Notion "Quarterly Metric" page; then starts `budget_report` and `subscription_audit` (or `request_manual_accounting` if anything is uncategorized).
-
-Cross-platform agents (department level):
-
-| Agent                  | Trigger                          | Description                                                                                  |
-| ---------------------- | -------------------------------- | -------------------------------------------------------------------------------------------- |
-| `budget_report.py`     | Started by quarterly_calculation | Matches spend to events in Notion "Company Timeline"; updates "Budget Summary" per quarter   |
-| `subscription_audit.py`| Started by quarterly_calculation | Detects recurring spend, verifies pricing online, flags overlaps, updates "Company Subscriptions" |
-| `request_manual_accounting.py` | Started on uncategorized spend   | Requests manual categorization in Notion + Slack; learns the result and reruns the source agent |
-| `finance_onboarding.py`| Once (first connection)          | Backfills monthly + quarterly reports for all historical periods                             |
-
-#### Mercury (`finance/mercury/`)
-
-| Agent                   | Schedule                | Description                                                            |
-| ----------------------- | ----------------------- | --------------------------------------------------------------------- |
-| `asset_compile.py`      | On demand (via manager) | Total assets from Mercury bank + treasury for a date (excludes credit)|
-| `bank_transaction.py`   | On demand (via manager) | Inbound + outbound Mercury bank transactions for a time frame         |
-| `mercury_card_spend.py` | On demand (via manager) | Mercury IO card spend categorized by Mercury's own categories         |
-
-#### Ramp (`finance/ramp/`)
-
-| Agent               | Schedule                | Description                                                      |
-| ------------------- | ----------------------- | ---------------------------------------------------------------- |
-| `ramp_card_spend.py`| On demand (via manager) | Ramp card spend categorized by QuickBooks categories (via MCP)   |
+Finance has two managers — `monthly_expense.py` and `quarterly_calculation.py` — that
+span both platforms, plus department-level cross-platform agents (budget summary,
+subscription audit, manual-accounting requests). All read-only at the source.
 
 ## Self-maintaining foundation
 

@@ -9,6 +9,11 @@ To avoid flooding Slack/Notion with manual-accounting requests across many
 historical periods, the backfill runs with escalation disabled (escalate=False);
 ongoing live runs still escalate normally.
 
+When the backfill is done it hands off to the department's persistent managers:
+it starts both `monthly_expense` and `quarterly_calculation`, whose loops idle
+until their next scheduled times (the 1st of the month / the 5th of the quarter)
+so steady-state runs continue automatically.
+
 SDK: Neither (orchestration only) — it sequences the existing managers.
 """
 
@@ -34,7 +39,8 @@ class FinanceOnboardingAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.finance_config = load_finance_config()
 
-    def run(self, *, start_month: str | None = None, **kwargs: Any) -> dict[str, Any]:
+    def run(self, *, start_month: str | None = None, start_managers: bool = True,
+            **kwargs: Any) -> dict[str, Any]:
         start_month = start_month or self._detect_start_month()
         if not start_month:
             self.logger.warning("Could not determine a start month; nothing to backfill")
@@ -63,7 +69,30 @@ class FinanceOnboardingAgent(BaseAgent):
             except Exception:
                 self.logger.exception("Backfill quarterly run failed for %s", q)
 
+        if start_managers:
+            self._start_managers()
+
         return {"status": "done", "months": months, "quarters": quarters}
+
+    def _start_managers(self) -> None:
+        """Hand off to the persistent finance managers (run at their next schedules)."""
+        from company_brain.runtime import get_runtime
+
+        from .monthly_expense import MonthlyExpenseManager
+        from .quarterly_calculation import QuarterlyCalculationManager
+
+        self.logger.info(
+            "Backfill complete — starting monthly_expense + quarterly_calculation "
+            "(idle until the 1st of the month / 5th of the quarter)"
+        )
+        runtime = get_runtime()
+        for manager_cls in (MonthlyExpenseManager, QuarterlyCalculationManager):
+            try:
+                runtime.start(manager_cls, self.config)
+            except Exception:
+                self.logger.exception(
+                    "Failed to start %s", getattr(manager_cls, "name", manager_cls.__name__)
+                )
 
     # -- period enumeration -----------------------------------------------
 

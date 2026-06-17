@@ -11,6 +11,45 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-17 — Onboarding hands off to managers; FourSeven rename (working tree)
+
+- **Onboarding -> manager handoff**: onboarding agents now start their platform's
+  persistent manager(s) after backfill, then exit. `github_onboarding` starts
+  `github_manager`; `finance_onboarding` starts both `monthly_expense` and
+  `quarterly_calculation`. The managers' loops idle until their next correct
+  scheduled time (they do not re-run the just-backfilled work). Gated by a
+  `start_manager(s)=True` kwarg so tests can disable.
+- Added `AgentRuntime.start(agent_cls, config, **kwargs)` — a non-blocking
+  handoff for persistent agents (daemon thread locally; dedicated VM under the
+  cloud runtime later), distinct from `run` (run-to-completion). Onboarding uses
+  `get_runtime().start(...)`.
+- Updated the `agent-onboarding` rule with the handoff step and the convention
+  that the onboarding agent is listed **last** for its platform/department in
+  `agent_list.md`. Moved `finance_onboarding` to the end of Finance and gave both
+  onboarding agents their own "Onboarding" label row at the end.
+- **Rename**: product English name is now **FourSeven** (seven archives of four
+  repositories); README title is "FourSeven 四库七阁" with a history paragraph on
+  the Siku Quanshu. The **repo/CLI name stays `company-brain`** (unchanged).
+
+## 2026-06-17 — Split detailed agent docs into agent_list.md (working tree)
+
+- Anticipating many more agents, moved the per-agent detail out of `README.md`
+  into a new root file `agent_list.md`. README now only maps departments to the
+  platforms they cover (high level) and links to `agent_list.md`.
+- `agent_list.md` is **one HTML table per department** (header shown once).
+  Within each, agents are grouped via full-width label rows: **managers** first,
+  then **cross-platform agents**, then **platform specialists**. Each agent spans
+  three stacked rows: a full-width name row, then the property row (State
+  persistent/ephemeral, Trigger/Schedule, Info Source, Destination wiki MD path,
+  Notion Page), then a full-width `colspan` description box. A `&nbsp;` spacer row
+  follows each agent; an extra spacer precedes each group label for more
+  separation. HTML is used because pure-markdown tables can't interleave the
+  description box under one shared header; `<code>` wraps inline filenames/paths.
+  Blank fields (not "N/A") where one doesn't apply (e.g. Mercury/Ramp specialists
+  return data to managers and write no page).
+- When adding/removing an agent, update `agent_list.md` (detail) and keep
+  README's platform map in sync.
+
 ## 2026-06-16 — Access control via Notion teamspaces (working tree)
 
 - Member read access is **delegated to Notion teamspaces** (Notion enforces who
