@@ -68,6 +68,11 @@ class NotionSync:
         current_hash = doc.content_hash
         page_id = fm.get("notion_page_id")
 
+        # Admin-only sections stay MD-only (never mirrored to Notion).
+        if self.config.notion.teamspace_for_section(fm.get("section", "")) == "admin_only":
+            logger.info("MD-only (admin-only section), not mirrored: %s", rel_path)
+            return None
+
         if page_id and not force and fm.get("synced_hash") == current_hash:
             logger.debug("Notion sync skip (unchanged): %s", rel_path)
             return page_id
@@ -112,6 +117,13 @@ class NotionSync:
         return _extract_page_id(result.stdout, result.json_data)
 
     def _resolve_parent(self, section: str) -> str | None:
+        # Route to the section's teamspace parent if configured (member reads are
+        # enforced by Notion's teamspace permissions).
+        ts_key = self.config.notion.teamspace_for_section(section)
+        if ts_key and ts_key != "admin_only":
+            ts_parent = self.config.notion.teamspaces.get(ts_key)
+            if ts_parent:
+                return ts_parent
         if section:
             sid = self.config.notion.section_page_ids.get(section)
             if sid:

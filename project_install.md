@@ -11,6 +11,15 @@ of specialist agents across their platforms. Follow this runbook step by step.
 
 ## Operating principles (read first)
 
+- **The installer is the company admin.** They have access to all company
+  accounts/providers and own access scoping. The full Markdown wiki is
+  admin-only; **members read through Notion teamspaces** (the admin sets each
+  teamspace's access level in Notion). The admin maps each wiki section to a
+  teamspace in `config/notion.yaml` (`teamspaces` + `section_teamspace`), using
+  `admin_only` to keep sensitive sections MD-only (never mirrored). The admin
+  also sets each member's **ingest scope** (which of their accounts feed the
+  wiki). Validated writes/ingests are generally allowed; reads are enforced by
+  Notion. See the `access-control` rule.
 - **Confirm before connecting each platform.** Tell the user what a step does and
   what token/scope it needs; wait for their go-ahead.
 - **Finance is read-only.** Mercury and Ramp use read-only tokens. Never set up

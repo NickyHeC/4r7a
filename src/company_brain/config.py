@@ -106,10 +106,28 @@ class NotionConfig(BaseModel):
     section_page_ids: dict[str, str] = Field(default_factory=dict)
     tracking_database_id: str | None = None
     discovery: DiscoveryState = Field(default_factory=DiscoveryState)
+    # Member read access is delegated to Notion teamspaces (access levels are set
+    # in Notion by the admin). ``teamspaces`` maps a teamspace key -> the parent
+    # page id pages sync under; ``section_teamspace`` maps a wiki section (exact or
+    # path prefix) -> a teamspace key, or the literal "admin_only" to keep that
+    # section MD-only (never mirrored to Notion).
+    teamspaces: dict[str, str] = Field(default_factory=dict)
+    section_teamspace: dict[str, str] = Field(default_factory=dict)
 
     @property
     def is_initialized(self) -> bool:
         return self.root_page_id is not None
+
+    def teamspace_for_section(self, section: str) -> str | None:
+        """Return the teamspace key (or 'admin_only') for a section, by longest path prefix."""
+        if not self.section_teamspace:
+            return None
+        section = (section or "").strip("/")
+        candidates = [k for k in self.section_teamspace if section == k or section.startswith(k + "/") or k == ""]
+        if not candidates:
+            return None
+        best = max(candidates, key=len)
+        return self.section_teamspace[best]
 
 
 class AppConfig(BaseModel):

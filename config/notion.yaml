@@ -8,6 +8,13 @@ root_page_id: null
 # Maps section keys (from wiki.yaml) to their Notion page IDs.
 section_page_ids: {}
 
+# Member read access is delegated to Notion teamspaces (set access levels in
+# Notion). teamspaces: teamspace key -> the parent page ID that pages sync under.
+# section_teamspace: wiki section (exact or path prefix) -> teamspace key, or
+# "admin_only" to keep that section MD-only (never mirrored to Notion).
+teamspaces: {}
+section_teamspace: {}
+
 # Tracking database ID for article metadata.
 tracking_database_id: null
 

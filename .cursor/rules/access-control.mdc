@@ -1,0 +1,61 @@
+---
+description: Access control / authorization model for company-brain (admin, members, read vs write)
+alwaysApply: true
+---
+
+# Access Control
+
+## Roles
+
+- **Admin** — the person who installs company-brain (see `project_install.md`).
+  Has access to all company accounts/providers, owns configuration, and scopes
+  every member's access. Onboarding is performed by the admin.
+- **Member** (employee) — may connect their own accounts. The admin scopes what
+  each member can do, along two independent axes (below).
+
+## Two scopes per member (admin-controlled)
+
+1. **Ingest scope** — which of the member's platform accounts (and which
+   platforms) are ingested into the wiki Markdown. Only admin-approved sources
+   feed the wiki.
+2. **Read scope** — which wiki areas (sections/pages) the member may read back.
+   Independent of ingest scope: a member may contribute data they cannot broadly
+   read.
+
+## Read access is delegated to Notion teamspaces
+
+The full Markdown wiki (the source of truth) is **admin-only** — it lives on the
+admin's machine / cloud VM and is never exposed to members directly. Members read
+through **Notion teamspaces**, and **Notion enforces who sees what** (the admin
+sets each teamspace's access level in Notion). company-brain does not build its
+own identity or read-ACL system; it just routes each wiki area to the right
+teamspace.
+
+- `config/notion.yaml` `teamspaces`: teamspace key -> the Notion parent page that
+  pages in that teamspace sync under.
+- `config/notion.yaml` `section_teamspace`: wiki section (exact or path prefix)
+  -> a teamspace key, or `admin_only` to keep that section **MD-only** (never
+  mirrored to Notion). `NotionSync` routes/skips accordingly.
+- Typical tiers: company-wide teamspace, per-department teamspaces (engineering,
+  finance), and admin-only (MD-only or an admin-private teamspace).
+
+## Read vs write asymmetry (the default posture)
+
+- **Reading is least-privilege**, enforced by Notion teamspace permissions; the
+  admin grants access per teamspace. Sensitive sections stay `admin_only`.
+- **Writing/ingesting is generally allowed** once the ingested content is
+  validated — the eval/verify gate (`BaseAgent.verify`) confirms validity before
+  it lands. Rationale: a bad write is recoverable, a bad read leaks information.
+
+## Invariants
+
+- The admin's scoping (config + Notion teamspace permissions) is the source of
+  truth; agents must not widen a member's access or mirror an `admin_only`
+  section to Notion.
+- Finance platforms (Mercury, Ramp) stay **read-only at the source** regardless
+  of role (see `agent-construction`).
+
+## Pending (not yet built)
+
+- **Versioning** — wiki content versioning (validated writes + rollback) is
+  forthcoming.

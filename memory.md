@@ -11,6 +11,21 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-16 — Access control via Notion teamspaces (working tree)
+
+- Member read access is **delegated to Notion teamspaces** (Notion enforces who
+  sees what; admin sets levels in Notion) rather than a company-brain identity/ACL
+  system. The full Markdown wiki is admin-only; members read in Notion.
+- `NotionConfig` gained `teamspaces` (key -> parent page id) and
+  `section_teamspace` (section/prefix -> teamspace key | `admin_only`); helper
+  `teamspace_for_section` (longest-prefix match). `NotionSync` routes a page to
+  its teamspace parent and **skips mirroring `admin_only` sections** (MD-only).
+- Updated the `access-control` rule, `config/notion.yaml` (teamspaces blocks),
+  and `project_install.md`. Backward-compatible: no mapping = previous behavior.
+- Still pending: wiki content versioning (validated writes + rollback). The
+  earlier "company-brain-side identity + read-scope enforcement" approach is
+  dropped in favor of Notion teamspaces.
+
 ## 2026-06-16 — Renamed AGENTS.md -> project_install.md (working tree)
 
 - The agent-assisted install/onboarding runbook is now `project_install.md`
