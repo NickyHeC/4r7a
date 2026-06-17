@@ -39,9 +39,13 @@ QUARTERLY_TERMS = ["Quarterly Metric", "Quarterly Metrics"]
 
 
 class QuarterlyCalculationManager(BaseAgent):
-    """Persistent manager that compiles quarterly financial metrics."""
+    """Persistent manager that compiles quarterly financial metrics.
+
+    Append agent: each quarter's metrics section is prepended (newest on top).
+    """
 
     name = "finance_quarterly_calculation"
+    WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -176,20 +180,15 @@ class QuarterlyCalculationManager(BaseAgent):
     def _cross_verify(self, months: list[str], monthly_data: dict[str, dict]) -> str:
         """Compare computed expenses against the Monthly Expense Reports pages."""
         notes = ["### Expense Cross-Verification", ""]
-        any_found = False
+        # Each month has its own page under "Monthly Expense Reports".
         for m in months:
-            child_id = notion_pages.get_bound_id(f"monthly_expense_{m}")
-            if not child_id:
-                notes.append(f"- {transactions.month_label(m)}: no monthly report bound (skipped)")
-                continue
-            any_found = True
+            label = transactions.month_label(m)
             computed = monthly_data[m]["total_expenses"]
+            bound = notion_pages.get_bound_id(f"monthly_expense_{m}")
+            present = "monthly report present" if bound else "no monthly report yet"
             notes.append(
-                f"- {transactions.month_label(m)}: computed {transactions.fmt_money(computed)} "
-                f"(verify against bound report)"
+                f"- {label}: computed {transactions.fmt_money(computed)} ({present})"
             )
-        if not any_found:
-            notes.append("- No monthly expense reports were available to cross-verify against.")
         return "\n".join(notes)
 
     def _publish_notion(self, quarter: str, report: str) -> str | None:

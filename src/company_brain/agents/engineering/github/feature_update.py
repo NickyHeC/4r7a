@@ -18,7 +18,7 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.github.gh import list_recent_commits
 from company_brain.config import AppConfig
-from company_brain.wiki.publish import read_wiki_page, write_wiki_page
+from company_brain.wiki.publish import APPEND, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,13 @@ TITLE = "Feature Updates"
 
 
 class FeatureUpdateAgent(BaseAgent):
-    """Compiles weekly feature updates from GitHub commits into the wiki."""
+    """Compiles weekly feature updates from GitHub commits into the wiki.
+
+    Append agent: each weekly section is prepended (newest on top).
+    """
 
     name = "github_feature_update"
+    WRITE_MODE = APPEND
 
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -44,23 +48,15 @@ class FeatureUpdateAgent(BaseAgent):
         self.logger.info("Filtered to %d major updates", len(major_commits))
 
         section = self._format_update(major_commits)
-        body = self._prepend_section(section)
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, body, section="engineering/github", type_="report"
+            WIKI_PATH, TITLE, section, mode=self.WRITE_MODE,
+            section="engineering/github", type_="report",
         )
         return {
             "total_commits": len(commits),
             "major_updates": len(major_commits),
             "notion_page_id": page_id,
         }
-
-    def _prepend_section(self, section: str) -> str:
-        existing = read_wiki_page(WIKI_PATH)
-        if existing:
-            # Drop the old top-level heading; keep prior weekly sections below the new one.
-            body = existing.split("\n", 1)[1] if existing.startswith("# ") else existing
-            return f"# {TITLE}\n\n{section}\n{body.lstrip()}"
-        return f"# {TITLE}\n\n{section}"
 
     def _filter_major(self, commits: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter commits to only include major implementations and updates.

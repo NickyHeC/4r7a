@@ -55,10 +55,13 @@ def update_page_body(rel_path: str, body: str) -> bool:
 
 
 def prepend_page_body(rel_path: str, body: str) -> bool:
-    """Prepend content to a wiki page (newest on top), then sync to Notion."""
-    existing = read_wiki_page(rel_path)
-    combined = f"{body.rstrip()}\n\n{existing}" if existing else body
-    write_wiki_page(rel_path, _title_for(rel_path, combined), combined, section="finance", type_="report")
+    """Append a new section to a wiki page (newest on top), then sync to Notion."""
+    from company_brain.wiki.publish import APPEND
+
+    write_wiki_page(
+        rel_path, _title_for(rel_path, body), body,
+        mode=APPEND, section="finance", type_="report",
+    )
     return True
 
 

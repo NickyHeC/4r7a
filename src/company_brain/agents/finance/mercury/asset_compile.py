@@ -26,15 +26,18 @@ class AssetCompileAgent(BaseAgent):
     """Snapshot Mercury bank + treasury balances for a target date."""
 
     name = "finance_asset_compile"
+    WRITE_MODE = "append"
 
-    def __init__(self, config: AppConfig, **kwargs: Any):
+    def __init__(self, config: AppConfig, *, publish: bool = True, **kwargs: Any):
         super().__init__(config, **kwargs)
+        self.publish = publish
 
     def run(self, *, month: str | None = None, quarter: str | None = None, **kwargs: Any) -> dict[str, Any]:
         """Compile assets for a month-end, quarter-end, or current date.
 
         Returns a dict with bank/treasury totals, per-account detail, and a
-        markdown report string.
+        markdown report string. When ``publish`` is set, the snapshot is appended
+        (newest on top) to the "Total Assets" wiki page and synced to Notion.
         """
         if month:
             target = mc.month_end(month)
@@ -58,6 +61,15 @@ class AssetCompileAgent(BaseAgent):
         total = bank_total + treasury_total
 
         report = self._build_report(label, target, bank, treasury, bank_total, treasury_total, total)
+
+        page_id = None
+        if self.publish:
+            from company_brain.wiki.publish import write_wiki_page
+            page_id = write_wiki_page(
+                "finance/total-assets.md", "Total Assets", report,
+                mode=self.WRITE_MODE, section="finance", type_="report",
+            )
+
         return {
             "label": label,
             "target_date": str(target),
@@ -67,6 +79,7 @@ class AssetCompileAgent(BaseAgent):
             "bank": bank,
             "treasury": treasury,
             "report": report,
+            "notion_page_id": page_id,
         }
 
     def _collect_bank(self, target: date, is_historical: bool) -> list[dict]:
@@ -111,7 +124,7 @@ class AssetCompileAgent(BaseAgent):
 
     @staticmethod
     def _build_report(label, target, bank, treasury, bank_total, treasury_total, total) -> str:
-        lines = [f"# Total Assets — {label} (as of {target})", ""]
+        lines = [f"## Total Assets — {label} (as of {target})", ""]
         lines.append("## Mercury Bank Accounts")
         lines.append("")
         for b in sorted(bank, key=lambda x: -x["balance"]):

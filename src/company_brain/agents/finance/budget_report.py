@@ -29,9 +29,13 @@ QUARTERLY_KEY = "quarterly_metric"
 
 
 class BudgetReportAgent(BaseAgent):
-    """Match quarterly expenses to company events and update Budget Summary."""
+    """Match quarterly expenses to company events and update Budget Summary.
+
+    Append agent: each quarter's section is prepended (newest on top).
+    """
 
     name = "finance_budget_report"
+    WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, model: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

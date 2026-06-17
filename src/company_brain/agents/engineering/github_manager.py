@@ -46,6 +46,7 @@ class GitHubManager(BaseAgent):
     def _specialist_class(self, key: str) -> type | None:
         if key in self._specialists:
             return self._specialists[key]
+        from company_brain.agents.engineering.github.branch_monitor import BranchMonitorAgent
         from company_brain.agents.engineering.github.feature_update import FeatureUpdateAgent
         from company_brain.agents.engineering.github.open_pr import OpenPRAgent
         from company_brain.agents.engineering.github.product_features import ProductFeaturesAgent
@@ -54,6 +55,7 @@ class GitHubManager(BaseAgent):
             "open_pr": OpenPRAgent,
             "feature_update": FeatureUpdateAgent,
             "product_features": ProductFeaturesAgent,
+            "branch_monitor": BranchMonitorAgent,
         }.get(key)
 
     def run(self, **kwargs: Any) -> Any:
@@ -77,6 +79,9 @@ class GitHubManager(BaseAgent):
         self.logger.info("Running morning GitHub check")
         today = datetime.now()
         is_monday = today.weekday() == 0
+
+        # Branch status is refreshed every morning regardless of other activity.
+        self._dispatch("branch_monitor")
 
         if self._has_open_pr_changes():
             self._dispatch("open_pr")

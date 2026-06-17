@@ -43,9 +43,14 @@ _CATEGORY_RE = re.compile(r"category:\s*([^|]+)", re.IGNORECASE)
 
 
 class RequestManualAccountingAgent(BaseAgent):
-    """Solicit human categorization, then teach the source agent and rerun it."""
+    """Solicit human categorization, then teach the source agent and rerun it.
+
+    Update agent: the Manual Accounting page is overwritten to show the CURRENT
+    set of items needing attention (not a growing log).
+    """
 
     name = "finance_request_manual_accounting"
+    WRITE_MODE = "update"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -69,7 +74,7 @@ class RequestManualAccountingAgent(BaseAgent):
             self.logger.warning("Could not bind 'Manual Accounting' page")
             return {"status": "no_page"}
 
-        notion_pages.prepend_page_body(page_id, self._build_checklist(context, uncategorized))
+        notion_pages.update_page_body(page_id, self._build_checklist(context, uncategorized))
         self._post_request(page_id, context, len(uncategorized))
 
         # Default to a bounded polling loop; callers/tests may disable waiting.

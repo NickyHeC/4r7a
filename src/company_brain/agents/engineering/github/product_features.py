@@ -18,7 +18,7 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.github.gh import list_recent_commits
 from company_brain.config import AppConfig
-from company_brain.wiki.publish import read_wiki_page, write_wiki_page
+from company_brain.wiki.publish import APPEND, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,13 @@ TITLE = "Product Features"
 
 
 class ProductFeaturesAgent(BaseAgent):
-    """Maintains a ranked list of user-facing product features in the wiki."""
+    """Maintains user-facing product features in the wiki.
+
+    Append agent: newly detected features are prepended (newest on top).
+    """
 
     name = "github_product_features"
+    WRITE_MODE = APPEND
 
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -45,10 +49,10 @@ class ProductFeaturesAgent(BaseAgent):
             self.logger.info("No new user-facing features detected")
             return {"new_features": 0}
 
-        existing = read_wiki_page(WIKI_PATH)
-        merged = self._merge_and_rank(existing, features)
+        section = self._format_features(features)
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, merged, section="engineering/github", type_="report"
+            WIKI_PATH, TITLE, section, mode=self.WRITE_MODE,
+            section="engineering/github", type_="report",
         )
         return {"new_features": len(features), "notion_page_id": page_id}
 
@@ -74,25 +78,12 @@ class ProductFeaturesAgent(BaseAgent):
                 })
         return features
 
-    def _merge_and_rank(self, existing_content: str, new_features: list[dict[str, Any]]) -> str:
-        """Merge new features into existing content and re-rank by importance.
-
-        Ranking heuristic: newer core features rank higher, utility/minor
-        features rank lower. Full AI-powered ranking can be added later.
-        """
-        new_section = "\n".join(
+    def _format_features(self, features: list[dict[str, Any]]) -> str:
+        """Build the new-features section (prepended newest-on-top by append mode)."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        lines = [f"## Detected {today}", ""]
+        lines += [
             f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})"
-            for f in new_features
-        )
-
-        if not existing_content.strip():
-            return f"# {TITLE}\n\n{new_section}\n"
-
-        # Prepend new features (most recent = likely most important).
-        if f"# {TITLE}" in existing_content:
-            return existing_content.replace(
-                f"# {TITLE}\n",
-                f"# {TITLE}\n\n{new_section}\n",
-                1,
-            )
-        return f"# {TITLE}\n\n{new_section}\n\n{existing_content}"
+            for f in features
+        ]
+        return "\n".join(lines)

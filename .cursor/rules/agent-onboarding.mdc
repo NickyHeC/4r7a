@@ -16,9 +16,14 @@ When adding agents for a **new platform**, ask the user:
 
 An onboarding agent runs **once** when the platform is first connected to the project. It:
 
-1. **Scans** — systematically reads and analyses all relevant data in the newly connected platform (repos, channels, boards, etc.)
-2. **Populates** — updates Notion pages and other connected platforms with the discovered information, following the rules of the other agents associated with this platform
-3. **Exits** — marks itself as complete; does not run again
+1. **Scans** — systematically reads the newly connected platform (repos, channels, boards, accounts, ...).
+2. **Backfills by running the specialist agents** — it does NOT write placeholder pages. It instantiates and runs the department/platform's own specialist agents to fill their wiki pages with real data, exactly as they would on a scheduled run. This guarantees onboarding output matches steady-state output.
+   - `finance_onboarding` runs the `monthly_expense` / `quarterly_calculation` managers across every historical month/quarter.
+   - `github_onboarding` runs `open_pr`, `branch_monitor`, `feature_update`, `product_features` once to populate their pages.
+   - Backfill may pass flags to avoid noise (e.g. finance uses `escalate=False` so historical periods don't spam manual-accounting requests).
+3. **Exits** — marks itself as complete; does not run again.
+
+Future onboarding agents follow the same shape: scan, then call the platform's specialists to fill pages.
 
 ## Naming
 

@@ -32,9 +32,14 @@ _RESULT_END = "<<<END_AUDIT_MD>>>"
 
 
 class SubscriptionAuditAgent(BaseAgent):
-    """Detect recurring subscriptions, verify pricing, flag overlaps."""
+    """Detect recurring subscriptions, verify pricing, flag overlaps.
+
+    Update agent: the Company Subscriptions page is overwritten with the current
+    audit each run.
+    """
 
     name = "finance_subscription_audit"
+    WRITE_MODE = "update"
 
     def __init__(self, config: AppConfig, model: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

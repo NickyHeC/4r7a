@@ -15,7 +15,7 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.github.gh import list_open_prs
 from company_brain.config import AppConfig
-from company_brain.wiki.publish import write_wiki_page
+from company_brain.wiki.publish import UPDATE, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +24,13 @@ TITLE = "Open PRs"
 
 
 class OpenPRAgent(BaseAgent):
-    """Reads open PRs from GitHub and updates the Open PRs wiki page."""
+    """Reads open PRs from GitHub and updates the Open PRs wiki page.
+
+    Update agent: the page is overwritten each run with the current PR list.
+    """
 
     name = "github_open_pr"
+    WRITE_MODE = UPDATE
 
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -38,7 +42,8 @@ class OpenPRAgent(BaseAgent):
 
         body = f"# {TITLE}\n\n{self._format_pr_list(prs)}\n"
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, body, section="engineering/github", type_="report"
+            WIKI_PATH, TITLE, body, mode=self.WRITE_MODE,
+            section="engineering/github", type_="report",
         )
         return {"pr_count": len(prs), "notion_page_id": page_id}
 

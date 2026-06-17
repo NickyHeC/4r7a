@@ -28,10 +28,55 @@ def gh_json(args: list[str]) -> Any:
 def list_open_prs(repo: str | None = None) -> list[dict[str, Any]]:
     """List open pull requests with key metadata."""
     args = ["pr", "list", "--state", "open", "--json",
-            "number,title,url,author,createdAt,headRefName,labels,reviewDecision"]
+            "number,title,url,author,createdAt,updatedAt,headRefName,baseRefName,"
+            "labels,reviewDecision"]
     if repo:
         args.extend(["--repo", repo])
     return gh_json(args)
+
+
+def default_branch(repo: str) -> str:
+    """Return the repo's default branch name (best-effort, 'main' fallback)."""
+    try:
+        data = gh_json(["repo", "view", repo, "--json", "defaultBranchRef"])
+        return (data or {}).get("defaultBranchRef", {}).get("name", "main")
+    except GitHubCLIError:
+        return "main"
+
+
+def list_branches(repo: str) -> list[dict[str, Any]]:
+    """List branches with their head commit sha (read-only)."""
+    try:
+        return gh_json(["api", f"repos/{repo}/branches", "--paginate"]) or []
+    except GitHubCLIError:
+        return []
+
+
+def compare_branches(repo: str, base: str, head: str) -> dict[str, Any]:
+    """Compare two refs. Returns {ahead_by, behind_by, status} or {} on failure.
+
+    ``ahead_by`` = commits ``head`` is ahead of ``base``; ``behind_by`` = commits
+    ``head`` is behind ``base``.
+    """
+    try:
+        data = gh_json(["api", f"repos/{repo}/compare/{base}...{head}"])
+        if isinstance(data, dict):
+            return {
+                "ahead_by": data.get("ahead_by", 0),
+                "behind_by": data.get("behind_by", 0),
+                "status": data.get("status", ""),
+            }
+    except GitHubCLIError:
+        pass
+    return {}
+
+
+def list_deployments(repo: str) -> list[dict[str, Any]]:
+    """List recent deployments (best-effort; empty if none/unconfigured)."""
+    try:
+        return gh_json(["api", f"repos/{repo}/deployments", "--paginate"]) or []
+    except GitHubCLIError:
+        return []
 
 
 def list_recent_commits(repo: str | None = None, since: str | None = None) -> list[dict[str, Any]]:

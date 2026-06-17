@@ -1,8 +1,13 @@
-# AGENTS.md — Onboarding runbook for the assisting AI coding agent
+# project_install.md — Onboarding runbook for the assisting AI coding agent
 
 You are an AI coding agent helping a human set up **company-brain**: a company
 wiki "brain" (Markdown source of truth, mirrored to Notion) operated by a fleet
 of specialist agents across their platforms. Follow this runbook step by step.
+
+> **Read `memory.md` first.** It is a reverse-chronological development log that
+> gives you the current architecture and recent decisions without reading the
+> whole codebase — start there for context, then open specific files as needed.
+> After making meaningful changes, prepend a new entry to it.
 
 ## Operating principles (read first)
 
@@ -96,5 +101,5 @@ When the user wants a new platform, follow the project rules in `.cursor/rules/`
   `agent-onboarding.mdc`, `agent-lifecycle.mdc` — eval/cost gates, runtime,
   scheduling, onboarding, and lifecycle conventions.
 
-Keep both docs in sync: `README.md` is for humans; this `AGENTS.md` is the
-onboarding runbook for the assisting agent.
+Keep both docs in sync: `README.md` is for humans; this `project_install.md` is
+the onboarding runbook for the assisting agent.

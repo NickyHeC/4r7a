@@ -1,0 +1,95 @@
+# Repo Memory Log
+
+**Purpose: read this first.** This file is the fast path to development context so
+an AI coding agent does not have to read the entire project to understand how it
+got here. Skim the recent entries to learn the current architecture and recent
+decisions, then dive into specific files only as needed (saves tokens/time).
+
+A running log of significant actions, decisions, and changes. Newest entries on
+top. Each entry: date, summary, key changes, and the commit it landed in (or
+"working tree" if not yet committed). After meaningful work, prepend a new entry.
+
+---
+
+## 2026-06-16 — Renamed AGENTS.md -> project_install.md (working tree)
+
+- The agent-assisted install/onboarding runbook is now `project_install.md`
+  (the `AGENTS.md` filename is reserved for other use later). Updated all
+  references (README, cli `doctor`, agent-construction rule, self-references).
+
+## 2026-06-16 — Update/append write modes + GitHub onboarding backfill (working tree)
+
+- Added an explicit `WRITE_MODE` ("update" | "append") to every page-writing agent
+  and a `mode=` argument to `write_wiki_page` (append = new section prepended under
+  the heading, newest on top; update = overwrite).
+  - Update: `open_pr`, `branch_monitor`, `subscription_audit`, `request_manual_accounting`, `monthly_expense` (per-month pages).
+  - Append: `feature_update`, `product_features`, `quarterly_calculation`, `budget_report`, `asset_compile`.
+- `request_manual_accounting` switched prepend -> update (page shows the current set).
+- `github_onboarding` now backfills by **running the GitHub specialists** (open_pr,
+  branch_monitor, feature_update, product_features) instead of seeding placeholder
+  pages — mirroring `finance_onboarding`.
+- `asset_compile` now publishes appended snapshots to a "Total Assets" page.
+- `monthly_expense` kept per-month pages (reverted a brief rolling-page experiment).
+- Docs: `wiki-data-flow` (update/append convention) and `agent-onboarding` (backfill
+  via specialists) rules updated.
+
+## 2026-06-16 — Branch monitor agent (working tree)
+
+- Added `branch_monitor.py` GitHub specialist: maintains a "Branch Status" wiki page
+  with, per repo, an environments table (deploy / ahead-behind prod / status) and a
+  branches/PRs table (target env / ahead-behind / last activity / risk).
+- Dispatched by the GitHub manager every morning; extended `gh.py` with read-only
+  `default_branch`, `list_branches`, `compare_branches`, `list_deployments`.
+
+## 2026-06-16 — Self-maintaining foundation + open-source onboarding (`265de2f`)
+
+- Self-maintaining loop in `BaseAgent.execute()`: `should_run` cost gate -> run ->
+  `verify` triage (ok/rework/noise) with bounded iteration.
+- New: `agents/result.py`, `agents/gates.py` (state store + change/dedup), `notify.py`
+  (Signal/Notifier: detect everything, notify selectively), `runtime/sandbox.py`
+  (optional smolvm sandboxed verification).
+- Open-source onboarding: `config.resolve_mode()` (local vs cloud), `company-brain
+  doctor` command, root `AGENTS.md` setup runbook, README slimmed to human-facing.
+- Mercury/Ramp documented read-only at client + rule + README.
+- Cleanup: removed `scripts/setup_wiki.py` and `wiki-gen-skill.md`.
+
+## 2026-06-16 — Markdown wiki source of truth + Notion mirror + runtime (`9de72b2`)
+
+- The wiki is now a directory of Markdown files (source of truth); Notion is a synced
+  mirror. New `WikiStore`/`MarkdownDoc`, `NotionSync`, `wiki/absorb.py` LLM writer loop,
+  `wiki/indexer.py` (`_index.md` + `_backlinks.json`), and `wiki/publish.py` helper.
+- Ingestion writes `raw/entries/*.md`; absorb log moved to `wiki/_absorb_log.json`.
+- Added `runtime/` (AgentRuntime/AgentDeployer: local now, smol cloud later) and a
+  `Smolfile`; agents write MD-first then sync.
+- Renamed `manual_request` -> `request_manual_accounting`.
+
+## 2026-06-15 — Finance department + department reorganization (`a8434a8`)
+
+- Reorganized agents into department -> platform; GitHub moved under `engineering/`
+  with a `github_manager`.
+- Added the finance department: Mercury (read-only CLI) and Ramp (read-only MCP)
+  platforms, specialists (asset_compile, bank_transaction, mercury_card_spend,
+  ramp_card_spend), persistent managers (monthly_expense, quarterly_calculation),
+  cross-platform agents (budget_report, subscription_audit, request_manual_accounting),
+  and finance_onboarding.
+- Added agent rules: construction (SDK selection, integrations), organization,
+  scheduling, onboarding, lifecycle.
+
+## 2026-06-15 — Hierarchical agent display in README (`e7884a1`)
+
+- Showed each manager above a table of its specialist sub-agents; codified the
+  display convention in the organization rule.
+
+## 2026-06-15 — Initial scaffold, agent rules, GitHub agents (`a034341`)
+
+- Renamed the internal project to 四库七阁 (repo dir unchanged).
+- Established the agent-construction rule set (Anthropic Claude Agent SDK vs OpenAI
+  Agents SDK selection; Slack SDK; Notion discover-or-create; GitHub CLI read-only).
+- Created the first GitHub agents (open_pr, feature_update, product_features,
+  github_onboarding) under a GitHub manager.
+- Gitignored personal `notepad.md`.
+
+## 2026-06-15 — Initial commit (`f4168bb`)
+
+- Base project: README, LICENSE, config (wiki.yaml/notion.yaml), and the
+  `company_brain` package skeleton (cli, config, notion, wiki, ingestion, output).

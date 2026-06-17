@@ -230,4 +230,4 @@ def doctor() -> None:
     config = load_config()
     check("Wiki initialized in Notion", config.notion.is_initialized, "run 'company-brain init'")
     click.echo()
-    click.echo("Connect platforms with the help of an AI coding agent — see AGENTS.md.")
+    click.echo("Connect platforms with the help of an AI coding agent — see project_install.md.")

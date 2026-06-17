@@ -31,6 +31,7 @@ Managers (dispatch specialist agents based on the information they gather; a dep
 | Agent                  | Schedule                | Description                                                 |
 | ---------------------- | ----------------------- | ----------------------------------------------------------- |
 | `open_pr.py`           | On demand (via manager) | Syncs open PRs to a Notion "Open PRs" page                  |
+| `branch_monitor.py`    | Every morning (via manager) | Maintains per-repo environment + branch/PR status tables on a "Branch Status" page |
 | `feature_update.py`    | Mondays (via manager)   | Compiles major commits into a weekly "Feature Updates" page |
 | `product_features.py`  | On demand (via manager) | Maintains a ranked "Product Features" page for end users    |
 | `github_onboarding.py` | Once (first connection) | Scans all repos, seeds all GitHub-related Notion pages      |
@@ -39,7 +40,7 @@ Managers (dispatch specialist agents based on the information they gather; a dep
 
 Managers (dispatch specialist agents based on the information they gather; each spans the department's platforms):
 
-`monthly_expense.py` — Persistent manager (1st of each month at 08:00, idles otherwise). Dispatches the transaction specialists for the previous month, sorts outbound spend into budget categories, posts the report to Slack #finance, and creates a Notion "<Month> Expense Report" under "Monthly Expense Reports".
+`monthly_expense.py` — Persistent manager (1st of each month at 08:00, idles otherwise). Dispatches the transaction specialists for the previous month, sorts outbound spend into budget categories, posts the report to Slack #finance, and writes a per-month "<Month> Expense Report" page under "Monthly Expense Reports".
 
 `quarterly_calculation.py` — Persistent manager (5th of each quarter at 09:00, idles otherwise). Computes Revenue, Expenses, Net Income, EBITDA, and Net Burn with a monthly breakdown into the Notion "Quarterly Metric" page; then starts `budget_report` and `subscription_audit` (or `request_manual_accounting` if anything is uncategorized).
 
@@ -82,7 +83,7 @@ The target state runs every agent in an isolated [smol](https://github.com/smol-
 
 company-brain is designed to be installed with the help of an AI coding agent.
 Open this repo in your AI coding agent and ask it to **"set up company-brain"** —
-it follows [`AGENTS.md`](AGENTS.md), a step-by-step runbook that picks the mode,
+it follows [`project_install.md`](project_install.md), a step-by-step runbook that picks the mode,
 installs the CLIs, connects your platforms (with read-only finance tokens), runs
 the onboarding agents, and verifies everything with `company-brain doctor`.
 
@@ -123,7 +124,7 @@ ntn login && company-brain init
 
 ```
 company-brain/
-  AGENTS.md            # Agent-assisted setup runbook (read by your AI coding agent)
+  project_install.md   # Agent-assisted setup/onboarding runbook (read by your AI coding agent)
   Smolfile             # smol VM definition (image, net allow-list, shared wiki volume)
   wiki/                # Markdown wiki — source of truth (gitignored; shared volume in cloud)
   raw/entries/         # Raw ingested Markdown entries (gitignored)
@@ -145,6 +146,7 @@ company-brain/
         github/                  # Platform — specialist agents live directly here
           gh.py                  # Read-only GitHub CLI wrapper (shared)
           open_pr.py             # Open PRs -> wiki MD -> Notion (daily)
+          branch_monitor.py      # Per-repo env + branch/PR status tables (every morning)
           feature_update.py      # Weekly feature updates -> wiki MD -> Notion (Mondays)
           product_features.py    # User-facing product features -> wiki MD -> Notion (ranked)
           github_onboarding.py   # One-time repo scan on first GitHub connection

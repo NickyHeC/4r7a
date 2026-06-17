@@ -19,11 +19,16 @@ from company_brain.wiki.store import LocalWikiStore, MarkdownDoc, WikiStore
 logger = logging.getLogger(__name__)
 
 
+UPDATE = "update"
+APPEND = "append"
+
+
 def write_wiki_page(
     rel_path: str,
     title: str,
     body: str,
     *,
+    mode: str = UPDATE,
     section: str | None = None,
     type_: str = "page",
     sources: Sequence[str] | None = None,
@@ -33,6 +38,13 @@ def write_wiki_page(
 ) -> str | None:
     """Write a wiki page to the store and (optionally) sync it to Notion.
 
+    ``mode``:
+    - ``"update"`` (default): ``body`` replaces the whole page body (overwrite).
+      Use for pages that show a current snapshot (open PRs, branch status).
+    - ``"append"``: ``body`` is a NEW SECTION prepended under the page heading,
+      above prior sections, so the newest run appears on top. Use for running
+      logs (weekly updates, quarterly metrics, monthly reports, asset snapshots).
+
     Returns the Notion page id when synced, else None.
     """
     store = store or LocalWikiStore()
@@ -41,6 +53,9 @@ def write_wiki_page(
     fm: dict = {}
     if store.exists(rel_path):
         fm = dict(store.read(rel_path).frontmatter or {})
+
+    if mode == APPEND:
+        body = _prepend_section(store, rel_path, title, body)
 
     now = datetime.now(timezone.utc).isoformat()
     fm.setdefault("id", p.stem)
@@ -59,7 +74,7 @@ def write_wiki_page(
         fm.setdefault("sources", [])
 
     store.write(rel_path, MarkdownDoc(frontmatter=fm, body=body))
-    logger.info("Wrote wiki page %s", rel_path)
+    logger.info("Wrote wiki page %s (mode=%s)", rel_path, mode)
 
     if not sync:
         return None
@@ -76,3 +91,20 @@ def read_wiki_page(rel_path: str, store: WikiStore | None = None) -> str:
     if not store.exists(rel_path):
         return ""
     return store.read(rel_path).body
+
+
+def _prepend_section(store: WikiStore, rel_path: str, title: str, section: str) -> str:
+    """Assemble an append-mode body: title heading, newest section, prior sections."""
+    prior = ""
+    if store.exists(rel_path):
+        existing = store.read(rel_path).body
+        # Drop a leading "# Title" heading so we keep a single page heading.
+        if existing.lstrip().startswith("# "):
+            after = existing.split("\n", 1)
+            prior = after[1].lstrip("\n") if len(after) > 1 else ""
+        else:
+            prior = existing
+    parts = [f"# {title}", "", section.strip()]
+    if prior.strip():
+        parts += ["", prior.strip()]
+    return "\n".join(parts).rstrip() + "\n"

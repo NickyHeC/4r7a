@@ -36,9 +36,14 @@ PARENT_TERMS = ["Monthly Expense Reports", "Monthly Expense Report"]
 
 
 class MonthlyExpenseManager(BaseAgent):
-    """Persistent manager that compiles a monthly expense report."""
+    """Persistent manager that compiles a monthly expense report.
+
+    Update agent: each month gets its own page under "Monthly Expense Reports",
+    overwritten in place on re-run.
+    """
 
     name = "finance_monthly_expense"
+    WRITE_MODE = "update"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -152,18 +157,16 @@ class MonthlyExpenseManager(BaseAgent):
         return "\n".join(lines)
 
     def _publish_notion(self, month: str, report: str) -> str | None:
-        parent_id = notion_pages.ensure_page(PARENT_KEY, PARENT_TERMS, "Monthly Expense Reports")
-        if not parent_id:
-            self.logger.warning("Could not bind 'Monthly Expense Reports' parent page")
-            return None
+        # Each month gets its own page under "Monthly Expense Reports", overwritten
+        # in place on re-run.
+        notion_pages.ensure_page(PARENT_KEY, PARENT_TERMS, "Monthly Expense Reports")
         label = transactions.month_label(month)
         child_key = f"monthly_expense_{month}"
         page_id = notion_pages.ensure_page(
             child_key, [f"{label} Expense Report"], f"{label} Expense Report",
             parent_key=PARENT_KEY,
         )
-        if page_id:
-            notion_pages.update_page_body(page_id, report)
+        notion_pages.update_page_body(page_id, report)
         return page_id
 
     def _publish_slack(self, month: str, grand_total: float, page_id: str | None) -> None:
