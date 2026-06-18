@@ -57,6 +57,20 @@ def resolve_sandbox() -> str:
     return os.getenv("COMPANY_BRAIN_SANDBOX", "off").strip().lower()
 
 
+def resolve_llm_provider() -> str:
+    """Active LLM provider key: ``anthropic`` | ``openai`` | ``glm`` (or custom).
+
+    Explicit ``COMPANY_BRAIN_LLM_PROVIDER`` wins; otherwise falls back to the
+    ``default_provider`` declared in ``config/models.yaml``. This is the single
+    knob that switches the model powering every agent (hosted provider keys, or a
+    self-hosted/remote open-source GLM-5 endpoint).
+    """
+    env = os.getenv("COMPANY_BRAIN_LLM_PROVIDER", "").strip().lower()
+    if env:
+        return env
+    return (load_models_config().default_provider or "anthropic").strip().lower()
+
+
 class ArticleTypeConfig(BaseModel):
     structure: list[str] = Field(default_factory=list)
     length_target: list[int] = Field(default_factory=lambda: [20, 80])
@@ -130,6 +144,27 @@ class NotionConfig(BaseModel):
         return self.section_teamspace[best]
 
 
+class ProviderSpec(BaseModel):
+    """One entry in ``config/models.yaml`` ``providers``.
+
+    ``sdk`` declares which agent SDK drives this provider: ``claude`` (Anthropic
+    Claude Agent SDK) or ``openai`` (OpenAI Agents SDK, also used for any
+    OpenAI-compatible endpoint such as a self-hosted/remote GLM-5 server).
+    ``model`` is an optional default model id (overridable via
+    ``COMPANY_BRAIN_LLM_MODEL``); blank means the SDK's own default.
+    """
+
+    sdk: str = "claude"
+    model: str | None = None
+
+
+class ModelsConfig(BaseModel):
+    """LLM provider configuration loaded from ``config/models.yaml``."""
+
+    default_provider: str = "anthropic"
+    providers: dict[str, ProviderSpec] = Field(default_factory=dict)
+
+
 class AppConfig(BaseModel):
     """Top-level config holding both wiki and notion configs."""
 
@@ -156,6 +191,15 @@ def load_wiki_config(config_dir: Path | None = None) -> WikiConfig:
 def load_notion_config(config_dir: Path | None = None) -> NotionConfig:
     path = (config_dir or CONFIG_DIR) / "notion.yaml"
     return NotionConfig(**_load_yaml(path))
+
+
+def load_models_config(config_dir: Path | None = None) -> ModelsConfig:
+    """Load LLM provider config from ``config/models.yaml`` (defaults if absent)."""
+    path = (config_dir or CONFIG_DIR) / "models.yaml"
+    data = _load_yaml(path)
+    if not data:
+        return ModelsConfig()
+    return ModelsConfig(**data)
 
 
 def load_config(config_dir: Path | None = None) -> AppConfig:

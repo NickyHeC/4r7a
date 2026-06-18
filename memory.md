@@ -11,6 +11,58 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-18 — LLM provider abstraction + open-source GLM-5 option (working tree)
+
+- **One knob switches the model behind every agent**: new `config/models.yaml`
+  (`default_provider` + `providers` with `sdk: claude|openai` and a model id) and
+  `COMPANY_BRAIN_LLM_PROVIDER` env, resolved by `config.resolve_llm_provider()` /
+  `config.load_models_config()` (added `ProviderSpec`/`ModelsConfig`).
+- New `company_brain/llm/` package: `provider.py` (`LLMProvider` +
+  `resolve_provider()` reading per-provider `*_BASE_URL`/`*_API_KEY` env;
+  `prompt_caching_1h_enabled()`), `claude.py` (`model_kwargs()`/`options_env()`
+  for Claude-SDK agents), `openai_agents.py` (`make_model()`/`make_run_config()`
+  binding OpenAI-Agents-SDK specialists to the provider — LitellmModel for
+  anthropic, OpenAIChatCompletionsModel over AsyncOpenAI(base_url) for
+  openai/glm). All SDK imports lazy.
+- **SDK split is now provider-aware**: Claude Agent SDK = MCP-native/big-context
+  agents (absorb, ramp_card_spend, budget_report, subscription_audit) — wired to
+  splat `llm.claude.model_kwargs()/options_env()` into `ClaudeAgentOptions`.
+  OpenAI Agents SDK = the provider-flexible path (can target a self-hosted/remote
+  open-source GLM-5 OpenAI-compatible endpoint at no external-token cost).
+- **GLM-5 (https://github.com/zai-org/GLM-5)** is the `glm` provider: cloud option
+  = self-hosted on the GPU VM via **Ollama** (`ollama pull glm-5`, OpenAI-compatible
+  at `:11434/v1` — easier than pulling raw weights; SGLang/vLLM remain alternatives),
+  local option = remote-connect via `GLM_BASE_URL`. Locally installing GLM-5 is
+  not realistic, so local installs default to a hosted provider key.
+- **Prompt caching**: Claude Agent SDK caches tools+system+context automatically;
+  `ENABLE_PROMPT_CACHING_1H` extends the write TTL to 1h for recurring agents
+  whose intra-run calls are minutes apart. Self-hosted GLM uses the engine's
+  prefix caching (SGLang RadixAttention / vLLM `--enable-prefix-caching`).
+- Added `openai-agents[litellm]` dep; `.env.example` provider/GLM/OpenAI vars +
+  caching knob; `sfile` allow_hosts (api.openai.com + GLM host placeholder);
+  `doctor` now prints the active `LLM:` provider/model/endpoint and checks the
+  right credential; updated README, project_install.md, agent-construction rule.
+
+## 2026-06-17 — Operations department + Gmail connection layer (working tree)
+
+- New **operations** department (`agents/operations/`): the catch-all for general
+  platforms that don't fit a specific department (Gmail, Slack ops, Notion ops,
+  Linear, ...). Only the **Gmail connection layer** is built so far — no
+  specialists, manager, or onboarding agent yet (user will spec those next).
+- `operations/gmail/gmail_client.py` mirrors `ramp_client`: builds the
+  `mcp_servers` mapping for the Claude Agent SDK with two paths selected by
+  `GMAIL_MCP_PROVIDER` — **official** (Google-hosted Gmail MCP, HTTP at
+  `gmailmcp.googleapis.com/mcp/v1`, OAuth `gmail.readonly`+`gmail.compose`,
+  default) and **composio** (hosted MCP, HTTP + `x-api-key`). Posture is
+  **read + labels + draft compose, never send**: `GMAIL_SEND_FORBIDDEN=True`,
+  `send_allowed()` stays false unless a human opts in via config + env.
+- Added `config/operations.yaml` (provider/scopes/allow_send) + loader
+  `operations/shared/config.py`; `.env.example` Gmail/Composio vars; Smolfile
+  allow_hosts (gmailmcp/gmail/oauth2/accounts.googleapis + backend.composio.dev);
+  a `doctor` Gmail check; README (Operations platform map + tree + config) and
+  `project_install.md` (Gmail connect step, both paths); `agent_list.md` gained an
+  Operations section noting connectivity-only (agents forthcoming).
+
 ## 2026-06-17 — Onboarding hands off to managers; FourSeven rename (working tree)
 
 - **Onboarding -> manager handoff**: onboarding agents now start their platform's

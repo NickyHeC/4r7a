@@ -83,8 +83,59 @@ run `company-brain doctor` to confirm.
 1. Create a Slack bot token; set `SLACK_BOT_TOKEN`.
 2. Set the finance channel id in `config/finance.yaml` (`slack.channel_id`).
 
-### Anthropic (LLM agents)
-- Set `ANTHROPIC_API_KEY` (used by the absorb writer and LLM-backed agents).
+### Gmail (operations department) — read + labels + DRAFT only, never send
+Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `official`):
+
+- **Official Gmail MCP (default, recommended for open source).** The admin uses
+  their own Google Cloud project so the trust stays with them. In Google Cloud:
+  enable `gmail.googleapis.com` and `gmailmcp.googleapis.com`, configure the OAuth
+  consent screen with scopes `gmail.readonly` + `gmail.compose`, create an OAuth
+  client, and complete the consent flow. Set `GMAIL_OAUTH_CLIENT_ID`,
+  `GMAIL_OAUTH_CLIENT_SECRET`, and `GMAIL_OAUTH_ACCESS_TOKEN` (server URL defaults
+  to `https://gmailmcp.googleapis.com/mcp/v1`). Enterprise Workspace accounts may
+  need a super admin to mark the OAuth app Trusted for the restricted scopes.
+  Docs: https://developers.google.com/workspace/gmail/api/guides/configure-mcp-server
+- **Composio (optional, less setup).** Set `COMPOSIO_API_KEY` and either
+  `COMPOSIO_GMAIL_MCP_URL` (a pre-created server/session URL) or let the composio
+  SDK mint a Tool Router session for `COMPOSIO_USER_ID`. Adds a vendor dependency.
+  Docs: https://composio.dev/toolkits/gmail
+
+Posture: agents only read, label, and draft — **never send**. Keep
+`gmail.allow_send: false` in `config/operations.yaml`. Verify with `doctor`
+("Gmail connection ... read+draft").
+
+### LLM provider (which model powers the agents)
+One knob — `COMPANY_BRAIN_LLM_PROVIDER` (resolved against `config/models.yaml`) —
+selects the model for every agent. Confirm the choice with the user.
+
+- **local installs → a hosted provider key (default).** Locally installing GLM-5
+  is not realistic, so default to `anthropic` (set `ANTHROPIC_API_KEY`) or
+  `openai` (set `OPENAI_API_KEY`).
+  - *Option:* a local install can still use open-source GLM-5 by **remote-connecting
+    to an open-source host** — set `COMPANY_BRAIN_LLM_PROVIDER=glm` and point
+    `GLM_BASE_URL` at that host's OpenAI-compatible endpoint (and `GLM_API_KEY`
+    if it requires one).
+- **cloud installs → GLM-5 self-hosted (open-source, no external tokens) or a
+  hosted key.** To run GLM-5 on the GPU VM, use **Ollama** (easier than pulling
+  raw weights from the GitHub/HF repo — it handles download, quantization, and
+  serving, and exposes an OpenAI-compatible API out of the box):
+  1. Install Ollama (https://ollama.com/download) and start it (`ollama serve`).
+  2. **Pull the newest GLM-5** from the Ollama model library:
+     `ollama pull glm-5` (use the latest GLM-5 tag the library publishes).
+  3. Set `COMPANY_BRAIN_LLM_PROVIDER=glm` and point `GLM_BASE_URL` at Ollama's
+     OpenAI-compatible endpoint (`http://localhost:11434/v1`); `GLM_API_KEY` can
+     be any non-empty value (`ollama` ignores it). Set `COMPANY_BRAIN_LLM_MODEL`
+     to the exact Ollama model tag you pulled (e.g. `glm-5`). Add the host to the
+     `sfile`/Smolfile `allow_hosts` only if Ollama runs off-VM.
+  - GLM-5 is large (744B-A40B); run Ollama on a capable GPU VM. For high-throughput
+    production serving, SGLang (RadixAttention) or vLLM (`--enable-prefix-caching`)
+    remain alternatives — same `glm` provider, just a different `GLM_BASE_URL`.
+
+The OpenAI Agents SDK specialists run on whichever provider is selected; the
+Claude Agent SDK agents (absorb writer, MCP-native reasoning agents) use Anthropic
+by default and can be pointed at an open-source model via `ANTHROPIC_BASE_URL`
+(a LiteLLM gateway). Verify with `company-brain doctor` (the `LLM:` line shows the
+active provider, model, and endpoint).
 
 ## Step 3 — Onboard each connected platform
 

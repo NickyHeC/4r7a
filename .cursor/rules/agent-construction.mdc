@@ -50,13 +50,56 @@ async for message in query(
 ```python
 from agents import Agent, Runner
 
+from company_brain.llm import openai_agents as oa
+
 agent = Agent(
     name="specialist",
     instructions="...",
     tools=[...],
+    model=oa.make_model(),  # binds to the configured provider
 )
-result = Runner.run_sync(agent, "...")
+result = Runner.run_sync(agent, "...", run_config=oa.make_run_config())
 ```
+
+## Model provider selection (one knob for every agent)
+
+The model behind every agent is resolved from `config/models.yaml` +
+`COMPANY_BRAIN_LLM_PROVIDER` through `company_brain.llm` — never hardcode a model
+or an API client. Providers:
+
+- **`anthropic`** (`sdk: claude`) — hosted Anthropic API. Default for **local**
+  installs (needs only `ANTHROPIC_API_KEY`, no GPU).
+- **`openai`** (`sdk: openai`) — hosted OpenAI API.
+- **`glm`** (`sdk: openai`) — open-source [GLM-5](https://github.com/zai-org/GLM-5)
+  served behind an OpenAI-compatible endpoint; **no external tokens are billed**.
+  Install via **Ollama** (`ollama pull glm-5`, serves at `:11434/v1`) — easier than
+  pulling raw weights; SGLang/vLLM are alternatives. This is the **cloud** option
+  (self-hosted on the GPU VM) or a remote open-source host a local install
+  connects to. Requires `GLM_BASE_URL`; locally installing GLM-5 is not realistic.
+
+Wiring per SDK:
+
+- **OpenAI Agents SDK** (the provider-flexible path) — bind with
+  `oa.make_model()` / `oa.make_run_config()` from `company_brain.llm.openai_agents`.
+  This is what lets a specialist run on Anthropic (via LiteLLM), OpenAI, or a
+  self-hosted/remote GLM-5 by flipping one env var.
+- **Claude Agent SDK** — splat `**llm.claude.model_kwargs(self.model)` and
+  `env=llm.claude.options_env()` into `ClaudeAgentOptions` (resolves the model
+  from the active provider and enables the 1h prompt-cache TTL when configured).
+  To run a Claude-SDK agent on an open-source model, point `ANTHROPIC_BASE_URL`
+  at a LiteLLM gateway exposing an Anthropic-compatible endpoint (deployment/env
+  concern, not a code change).
+
+## Prompt caching
+
+The Claude Agent SDK caches the tool definitions + system prompt + context
+automatically — do not hand-roll `cache_control`. To keep cache hits across a
+recurring agent's intra-run LLM calls (absorb batches, the verify/rework loop),
+keep `system_prompt` byte-stable (put volatile data like dates in the user
+prompt, never the system prefix) and set `ENABLE_PROMPT_CACHING_1H=1` when calls
+are spaced minutes apart. When self-hosting GLM-5, prefix/KV caching is handled
+by the serving engine (Ollama caches automatically; SGLang RadixAttention is
+automatic; vLLM needs `--enable-prefix-caching`).
 
 ## Integration SDKs
 

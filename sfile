@@ -16,7 +16,20 @@ allow_hosts = [
   "api.ramp.com",
   "slack.com",
   "api.github.com",
+  # LLM providers (see config/models.yaml + COMPANY_BRAIN_LLM_PROVIDER)
   "api.anthropic.com",
+  "api.openai.com",
+  # Open-source GLM-5 (cloud option): served via Ollama (OpenAI-compatible at
+  # :11434/v1). Add the host here only when GLM_BASE_URL points off-VM; an Ollama
+  # server colocated on the same VM / private network needs no allow-host entry.
+  # "your-glm-host:11434",
+  # Gmail (operations) — official Google-hosted Gmail MCP + OAuth
+  "gmailmcp.googleapis.com",
+  "gmail.googleapis.com",
+  "oauth2.googleapis.com",
+  "accounts.google.com",
+  # Gmail (operations) — optional Composio-hosted Gmail MCP
+  "backend.composio.dev",
 ]
 
 [dev]

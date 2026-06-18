@@ -168,9 +168,12 @@ Produce a markdown report titled "# Subscription Audit" with:
 
 Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
 
+        from company_brain.llm import claude as llm_claude
+
         options = ClaudeAgentOptions(
             allowed_tools=["WebSearch"],
-            **({"model": self.model} if self.model else {}),
+            env=llm_claude.options_env(),
+            **llm_claude.model_kwargs(self.model),
         )
         out: list[str] = []
         async for message in query(prompt=prompt, options=options):

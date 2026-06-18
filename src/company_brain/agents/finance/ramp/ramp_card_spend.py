@@ -64,11 +64,14 @@ class RampCardSpendAgent(BaseAgent):
     async def _query_ramp(self, start: str, end: str) -> str:
         from claude_agent_sdk import ClaudeAgentOptions, query
 
+        from company_brain.llm import claude as llm_claude
+
         prompt = self._build_prompt(start, end)
         options = ClaudeAgentOptions(
             allowed_tools=ramp_client.ramp_allowed_tools(),
             mcp_servers=ramp_client.ramp_mcp_servers(),
-            **({"model": self.model} if self.model else {}),
+            env=llm_claude.options_env(),
+            **llm_claude.model_kwargs(self.model),
         )
 
         collected: list[str] = []

@@ -98,7 +98,12 @@ Write a concise markdown section that:
 - calls out anything anomalous
 Output only the markdown section."""
 
-        options = ClaudeAgentOptions(**({"model": self.model} if self.model else {}))
+        from company_brain.llm import claude as llm_claude
+
+        options = ClaudeAgentOptions(
+            env=llm_claude.options_env(),
+            **llm_claude.model_kwargs(self.model),
+        )
         out: list[str] = []
         async for message in query(prompt=prompt, options=options):
             result = getattr(message, "result", None)

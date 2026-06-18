@@ -17,6 +17,10 @@ dependencies = [
     "python-dotenv>=1.0",
     "slack-sdk>=3.27",
     "claude-agent-sdk>=0.1",
+    # OpenAI Agents SDK is the provider-flexible path (OpenAI, Anthropic via
+    # LiteLLM, or a self-hosted/remote open-source GLM-5 OpenAI-compatible
+    # endpoint). The [litellm] extra enables the 100+ provider model adapters.
+    "openai-agents[litellm]>=0.1",
 ]
 
 [project.optional-dependencies]

@@ -150,3 +150,12 @@ A blank field means it does not apply to that agent.
 <tr><td colspan="5">&nbsp;</td></tr>
 </tbody>
 </table>
+
+## Operations
+
+The catch-all department for general platforms that don't belong to a more specific
+department. Platform connectivity is being set up; agents are not yet specced and will
+be added here (managers, then cross-platform agents, then platform specialists, with the
+onboarding agent last) as they are built.
+
+- **Gmail** (`operations/gmail/`) — connection layer in place via `gmail_client.py`: Google's official Gmail MCP server by default, or Composio for less setup. Posture is read + labels + draft compose only (agents never send email). No agents yet.

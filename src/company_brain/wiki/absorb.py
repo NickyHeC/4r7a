@@ -98,13 +98,16 @@ class AbsorbWriter:
     async def _absorb_batch(self, batch: list[RawEntry]) -> None:
         from claude_agent_sdk import ClaudeAgentOptions, query
 
+        from company_brain.llm import claude as llm_claude
+
         prompt = self._build_prompt(batch)
         options = ClaudeAgentOptions(
             allowed_tools=["Read", "Write", "Edit", "Glob", "Grep"],
             permission_mode="acceptEdits",
             cwd=str(self.wiki_dir),
             system_prompt=SYSTEM_PROMPT,
-            **({"model": self.model} if self.model else {}),
+            env=llm_claude.options_env(),
+            **llm_claude.model_kwargs(self.model),
         )
         async for _ in query(prompt=prompt, options=options):
             pass

@@ -1,0 +1,20 @@
+# Operations department configuration.
+#
+# Operations is the catch-all department for general platforms that don't belong
+# to a more specific department (Gmail, Slack ops, Notion ops, Linear, ...).
+# Holds non-secret settings only — tokens, OAuth credentials, and API keys live
+# in .env (gitignored), never here.
+
+gmail:
+  # Connection provider for the Gmail MCP server:
+  #   official  — Google's hosted Gmail MCP (Workspace Developer Preview). Default.
+  #   composio  — Composio's hosted Gmail MCP (less setup, vendor dependency).
+  # Overridable at runtime with GMAIL_MCP_PROVIDER.
+  provider: official
+
+  # Write posture: read + labels + DRAFT compose. Agents never send email — they
+  # propose drafts a human reviews and sends. Keep allow_send false.
+  scopes:
+    - https://www.googleapis.com/auth/gmail.readonly
+    - https://www.googleapis.com/auth/gmail.compose
+  allow_send: false
