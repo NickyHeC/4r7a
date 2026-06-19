@@ -24,8 +24,8 @@ The wiki Markdown lives on a shared volume (`COMPANY_BRAIN_WIKI_DIR`, e.g. `/wor
 Agents are organized **department → platform → agents**. Each department has one or
 more persistent **managers** that dispatch specialist agents based on what they find.
 This section is a high-level map of the departments and the platforms they cover —
-for the detailed work, scope, sources, and destinations of every agent, see
-[`agent_list.md`](agent_list.md).
+for the detailed work, scope, sources, and destinations of every agent, see the
+**[Agent Handbook](docs/agents/README.md)** (`docs/agents/` — one file per department).
 
 ### Engineering
 

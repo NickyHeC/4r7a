@@ -29,9 +29,12 @@ An onboarding agent runs **once** when the platform is first connected to the pr
 
 Future onboarding agents follow the same shape: scan, backfill via the platform's specialists, then start that platform's persistent manager(s) at their next scheduled time.
 
-## Display in `agent_list.md`
+## Display in agent handbook
 
-The onboarding agent **always appears at the end** of its platform's / department's list in [`agent_list.md`](../../agent_list.md) (after every specialist and cross-platform agent for that scope).
+The onboarding agent **always appears at the end** of its platform's section in the
+department handbook under [`docs/agents/`](../../docs/agents/README.md) (after every
+specialist and cross-platform agent for that scope). Also update the root
+[`agent_list.md`](../../agent_list.md) index if department list changes.
 
 ## Naming
 

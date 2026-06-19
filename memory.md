@@ -11,6 +11,14 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-18 — Agent handbook split (`docs/agents/`) (working tree)
+
+- Replaced monolithic `agent_list.md` HTML tables with **department handbooks**:
+  `docs/agents/engineering.md`, `finance.md`, `operations.md` (+ README index).
+- Operations handbook includes Gmail architecture, routing records, **label taxonomy**,
+  service profiles, schedules, and per-agent runbooks.
+- Root `agent_list.md` is now a short index; README and `agent-onboarding` rule updated.
+
 ## 2026-06-18 — Gmail Phase 5: service profiles + classifier eval (working tree)
 
 - **Profiles** (`shared/profiles.py`, `config/operations.yaml`): `executive_assistant`
