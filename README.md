@@ -45,7 +45,8 @@ subscription audit, manual-accounting requests). All read-only at the source.
 The catch-all department for general platforms that don't belong to a more specific
 department (Gmail, Slack ops, Notion ops, Linear, ...).
 
-- **Gmail** — connected via MCP, with two paths: Google's official Gmail MCP server (default; each admin uses their own Google Cloud OAuth client) or [Composio](https://composio.dev/toolkits/gmail) for less setup. Posture is **read + labels + draft compose only — agents never send email**. Specialist agents and a manager are being specced.
+- **Gmail** — MCP + REST executive assistant through Phase 4 (triage, CRM, Linear tasks, receipt routing). Posture: **read + labels + draft compose only — never send**.
+- **Linear** — GraphQL + official MCP (`operations/linear/linear_client.py`) for Gmail task workflows.
 
 ## Self-maintaining foundation
 
@@ -165,9 +166,34 @@ company-brain/
           ramp_client.py
           ramp_card_spend.py
       operations/              # Department (catch-all for general platforms)
-        shared/                  # config loader (config/operations.yaml)
-        gmail/                   # Platform — accessed via MCP
+        gmail_manager.py       # Persistent manager (8/12/4 + 10pm sweep)
+        shared/                  # gmail_config, routing, labels, classify, scheduling
+        gmail/                   # Platform — MCP + REST
           gmail_client.py        # Gmail MCP connection (official Google MCP | Composio)
+          gmail_rest.py          # REST: history, labels, archive (gmail.modify)
+          inbox_triage.py        # Persistent 30m triage (sole raw-mail reader)
+          thread_watcher.py      # Persistent 15m sent-folder watcher
+          inbox_sweep.py         # Nightly lifecycle archive rules
+          draft_reply.py         # MCP draft compose for simple Reply threads
+          decision_propagate.py  # Decision → company timeline wiki
+          gmail_ingest.py        # Ingest → raw entries
+          ingest_queue_review.py # Ambiguous ingest queue + weekly #ingest ping
+          attachment_router.py   # Attachments → wiki volume
+          investor_tracker.py    # Investor CRM + interests
+          gmail_customer_support.py  # Customer → Slack
+          customer_crm.py        # Customer wiki CRM
+          growth_inbound.py      # Press/events routing
+          vendor_tracker.py      # Per-vendor wiki pages
+          gmail_crm.py           # People → Company Connections
+          recruiting_inbound.py  # Job seekers → candidates wiki
+          partnership_digest.py  # Weekly ranked partnership digest
+          inbox_task.py          # Action / complex Reply → Linear
+          team_on_it.py          # Team On It → Linear + Slack
+          duplicate_across_mailboxes.py
+          receipt_router.py      # Weekly receipt gap report
+          gmail_onboarding.py    # One-time labels + backfill + seeds
+        linear/                  # Platform — GraphQL + MCP
+          linear_client.py
 ```
 
 ## Configuration

@@ -11,6 +11,60 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-18 — Gmail Phase 4 + Linear connection (working tree)
+
+- **Linear connection** (`operations/linear/linear_client.py`): GraphQL issue
+  create (default), official MCP at `mcp.linear.app`, optional community `linear`
+  CLI when `LINEAR_USE_CLI=1`. Config: `linear.team_key` / `team_id` in
+  `config/operations.yaml`; `LINEAR_API_KEY` in `.env`.
+- **Phase 4 agents**: `inbox_task` (1. Action + complex 2. Reply → Linear),
+  `team_on_it` (4. Team On It → Linear + Slack), `duplicate_across_mailboxes`,
+  `receipt_router` (Friday weekly gap report). Routing skips `duplicate_of`
+  records for downstream specialists.
+- `doctor` Linear check; Smolfile `api.linear.app` + `mcp.linear.app`; docs in
+  `project_install.md`, `agent_list.md`, README.
+
+## 2026-06-18 — Gmail Phase 3 CRM + notifications (working tree)
+
+- **Phase 3 agents**: `investor_tracker`, `gmail_customer_support`, `customer_crm`,
+  `growth_inbound`, `vendor_tracker`, `gmail_crm`, `recruiting_inbound`,
+  `partnership_digest` (weekly Friday digest + archive low-relevance).
+- Shared: `contact_lists`, `wiki_crm` (seed pages + append helpers); triage now
+  reads investor/customer lists from wiki, tags Vendor/People/Investor.
+- `gmail_manager` dispatches all Phase 3 agents at 8/12/4; onboarding seeds CRM
+  wiki pages. Config: CRM wiki paths, Slack channels (#customer-support, #events,
+  #growth, #partnerships), partnership digest schedule.
+
+## 2026-06-18 — Gmail Phase 2 high-value writers (working tree)
+
+- **Phase 2 agents**: `draft_reply` (MCP draft for simple `2. Reply`),
+  `thread_watcher` (15m sent-folder delta → Decision/Ingest enrichment),
+  `decision_propagate` (timeline wiki append), `gmail_ingest` (clear →
+  `raw/entries`, ambiguous → queue), `ingest_queue_review` (Monday #ingest
+  ping), `attachment_router` (contracts/decks/docs on wiki volume).
+- Shared helpers: `mail_body`, `complexity`, `decision`, `operations_slack`;
+  extended `gmail_rest` (sent history, attachments), `gmail_state`
+  (sent_history_id), routing `find_by_thread` / `upsert_thread_tags`.
+- `gmail_manager` dispatches Phase 2 specialists at 8/12/4; onboarding starts
+  `thread_watcher` alongside triage + manager. Config: wiki paths, `#ingest`
+  Slack channel, thread_watcher interval, ingest review schedule.
+
+## 2026-06-18 — Gmail Phase 0 + Phase 1 (working tree)
+
+- **Phase 0 plumbing**: `gmail_rest.py` (history, labels, modify via
+  `GMAIL_OAUTH_ACCESS_TOKEN`), `gmail_state.py` (historyId cursor at
+  `wiki/operations/gmail/_state.json`), `routing.py` (per-message JSON routing
+  records), `labels.py` (taxonomy with attention visible / domain hidden),
+  `classify.py` (deterministic Phase-1 heuristics), `scheduling.py`,
+  `triage_apply.py`, expanded `config/operations.yaml` (schedules, label taxonomy,
+  `gmail.modify` scope).
+- **Phase 1 agents**: persistent `inbox_triage` (30m workdays, sole raw-mail
+  reader), persistent `gmail_manager` (8/12/4 dispatch shell + 10pm sweep),
+  ephemeral `inbox_sweep` (Reply-sent, FYI-opened, Newsletter/Receipt +1d,
+  Meeting opened), one-time `gmail_onboarding` (labels + 30d backfill, starts
+  triage + manager). Docs: `agent_list.md`, README, `.env.example` (`GMAIL_MAILBOX`,
+  `gmail.modify`), `project_install.md`.
+
 ## 2026-06-18 — LLM provider abstraction + open-source GLM-5 option (working tree)
 
 - **One knob switches the model behind every agent**: new `config/models.yaml`

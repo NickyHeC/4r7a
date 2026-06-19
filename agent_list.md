@@ -154,8 +154,159 @@ A blank field means it does not apply to that agent.
 ## Operations
 
 The catch-all department for general platforms that don't belong to a more specific
-department. Platform connectivity is being set up; agents are not yet specced and will
-be added here (managers, then cross-platform agents, then platform specialists, with the
-onboarding agent last) as they are built.
+department.
 
-- **Gmail** (`operations/gmail/`) — connection layer in place via `gmail_client.py`: Google's official Gmail MCP server by default, or Composio for less setup. Posture is read + labels + draft compose only (agents never send email). No agents yet.
+<table>
+<thead>
+<tr>
+<th>State</th><th>Trigger/Schedule</th><th>Info Source</th><th>Destination</th><th>Notion Page</th>
+</tr>
+</thead>
+<tbody>
+<tr><td colspan="5"><strong>Managers</strong></td></tr>
+<tr><td colspan="5"><strong><code>gmail_manager.py</code></strong></td></tr>
+<tr>
+<td>persistent</td><td>Starts at deploy; wakes 08:00, 12:00, 16:00, and 22:00 on workdays</td><td>Gmail routing records (<code>wiki/operations/gmail/routing/</code>)</td><td></td><td></td>
+</tr>
+<tr><td colspan="5">Scoped to Gmail. At 8am/12pm/4pm workdays dispatches Phase 2–3 specialists (drafts, ingest, attachments, investor/customer/growth/vendor/people/recruiting CRM). Monday 8am: <code>ingest_queue_review</code>. Friday 8am: <code>partnership_digest</code>. At 10pm: <code>inbox_sweep</code>.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong>Gmail specialists</strong> (<code>operations/gmail/</code>)</td></tr>
+<tr><td colspan="5"><strong><code>inbox_triage.py</code></strong></td></tr>
+<tr>
+<td>persistent</td><td>Starts at deploy; every 30 minutes on workdays</td><td>Gmail (REST history delta / backfill query)</td><td><code>operations/gmail/routing/&lt;mailbox&gt;/&lt;message_id&gt;.json</code></td><td></td>
+</tr>
+<tr><td colspan="5">The only raw-mail reader. Classifies new inbound mail with Phase-1 heuristics, applies visible attention labels (1–4) and hidden domain labels, marks read/archives per disposition, and writes one routing record per message. Does not dispatch specialists.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>inbox_sweep.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 22:00 on workdays</td><td>Gmail + routing records</td><td></td><td></td>
+</tr>
+<tr><td colspan="5">Nightly lifecycle sweep: archives Reply threads after a sent reply, FYI after opened, Newsletters/Receipts after +1 day, Meeting after opened. Deterministic REST only.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>thread_watcher.py</code></strong></td></tr>
+<tr>
+<td>persistent</td><td>Starts at deploy; every 15 minutes on workdays</td><td>Gmail sent-folder history delta</td><td>Routing record enrichment</td><td></td>
+</tr>
+<tr><td colspan="5">Watches for new sent mail. Classifies acknowledgments vs decisions vs ingest-worthy replies; applies <code>Decision</code> / <code>Ingest</code> labels; dispatches <code>decision_propagate</code> and <code>gmail_ingest</code>.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>draft_reply.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td>Gmail threads (<code>2. Reply</code>, low complexity)</td><td>Gmail draft (never send)</td><td></td>
+</tr>
+<tr><td colspan="5">Creates draft replies via Gmail MCP for simple Reply threads. Complex threads (legal, long, multi-party) are skipped for human handling.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>decision_propagate.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>thread_watcher</code> on real decisions</td><td>Sent Gmail message</td><td><code>operations/gmail/company-timeline.md</code></td><td>Company Timeline</td>
+</tr>
+<tr><td colspan="5">Appends a decision section to the company timeline wiki page (Notion mirror). Skips thanks/pass acknowledgments.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>gmail_ingest.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>thread_watcher</code> or <code>gmail_manager</code></td><td>Ingest-tagged Gmail threads</td><td><code>raw/entries/*.md</code></td><td></td>
+</tr>
+<tr><td colspan="5">Clear ingest content becomes raw wiki entries for absorb; ambiguous content is flagged for <code>ingest_queue_review</code>.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>ingest_queue_review.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Monday 8am via <code>gmail_manager</code> (configurable)</td><td>Routing records with ambiguous ingest</td><td><code>operations/gmail/ingest-queue.md</code></td><td>Ingest Queue</td>
+</tr>
+<tr><td colspan="5">Appends ambiguous ingest items to the Ingest Queue wiki page and pings <code>#ingest</code> on Slack.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>attachment_router.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td>Gmail message attachments</td><td><code>operations/gmail/attachments/</code></td><td></td>
+</tr>
+<tr><td colspan="5">Fetches attachments from triaged mail and stores them under contracts/decks/documents/other on the wiki volume.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>investor_tracker.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>Investor</code>, <code>Cold Inbound/Investor Interest</code></td><td><code>investors-crm.md</code>, <code>investor-interests.md</code></td><td>Investors CRM, Investor Interests</td>
+</tr>
+<tr><td colspan="5">Confirmed investors append to Investors CRM; cold investor interest appends to Investor Interests (MD first → Notion).</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>gmail_customer_support.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>Customer</code>-tagged mail</td><td></td><td></td>
+</tr>
+<tr><td colspan="5">Posts a summary (with source mailbox) to Slack <code>#customer-support</code> for each customer-tagged message.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>customer_crm.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>Customer</code>-tagged mail</td><td><code>customer-crm.md</code></td><td>Customer CRM</td>
+</tr>
+<tr><td colspan="5">Appends customer interaction log to the Customer CRM wiki page (active customers only; list drives triage).</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>growth_inbound.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td>Press &amp; Podcast, Event Invitations cold tags</td><td><code>media-promotion.md</code></td><td>Media Promotion</td>
+</tr>
+<tr><td colspan="5">Press/podcast → Media Promotion wiki. Event invites → Slack <code>#events</code> (attend) or <code>#growth</code> (sponsor/co-host).</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>vendor_tracker.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>Vendor</code>-tagged mail</td><td><code>vendors/&lt;slug&gt;.md</code></td><td>Per-vendor pages</td>
+</tr>
+<tr><td colspan="5">One wiki page per vendor for ops comms (contact, renewals). Finance costs stay in subscription_audit.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>gmail_crm.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>People</code>, <code>Warm intro</code> (excludes <code>contact_type: investor</code>)</td><td><code>company-connections.md</code></td><td>Company Connections</td>
+</tr>
+<tr><td colspan="5">Appends people/connection interactions to Company Connections — not investor CRM.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>recruiting_inbound.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>Cold Inbound/Job Seekers</code></td><td><code>inbound-candidates.md</code></td><td>Inbound Candidates</td>
+</tr>
+<tr><td colspan="5">Logs job seeker inbound even when auto-archived at triage.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>partnership_digest.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Friday 8am via <code>gmail_manager</code> (configurable)</td><td>Partnership, Founder Networking cold tags</td><td></td><td></td>
+</tr>
+<tr><td colspan="5">Weekly ranked digest to Slack; keeps top relevant messages in inbox, archives the rest.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>inbox_task.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>1. Action</code>, complex <code>2. Reply</code></td><td>Linear issue</td><td></td>
+</tr>
+<tr><td colspan="5">Creates Linear tasks for action mail and complex reply threads (simple replies stay with <code>draft_reply</code>).</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>team_on_it.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Dispatched by <code>gmail_manager</code> at 8/12/4 on workdays</td><td><code>4. Team On It</code></td><td>Linear issue + Slack</td><td></td>
+</tr>
+<tr><td colspan="5">Creates a Linear task and posts to <code>#team-ops</code> (configurable). No Gmail forward (send forbidden).</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>duplicate_across_mailboxes.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>First in each <code>gmail_manager</code> dispatch pass</td><td>Routing records across <code>connected_mailboxes</code></td><td></td><td></td>
+</tr>
+<tr><td colspan="5">Marks secondary copies when the same thread/subject+from appears in multiple connected mailboxes.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong><code>receipt_router.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Friday 8am via <code>gmail_manager</code> (configurable)</td><td>Receipts tags + subscription sender list</td><td><code>receipt-routing.md</code></td><td>Receipt Routing</td>
+</tr>
+<tr><td colspan="5">Weekly gap report for missing subscription receipts; Ramp cross-check note when token set.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong>Linear connection</strong> (<code>operations/linear/</code>)</td></tr>
+<tr><td colspan="5"><strong><code>linear_client.py</code></strong></td></tr>
+<tr>
+<td></td><td></td><td>Linear GraphQL API / MCP / optional CLI</td><td></td><td></td>
+</tr>
+<tr><td colspan="5">Connection layer: GraphQL issue create (default), official MCP at <code>mcp.linear.app</code>, optional <code>linear</code> CLI when <code>LINEAR_USE_CLI=1</code>. Token via <code>LINEAR_API_KEY</code>.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+<tr><td colspan="5"><strong>Onboarding</strong></td></tr>
+<tr><td colspan="5"><strong><code>gmail_onboarding.py</code></strong></td></tr>
+<tr>
+<td>ephemeral</td><td>Once, on first Gmail connection</td><td>Gmail (30-day backfill by default)</td><td>Label taxonomy + routing records</td><td></td>
+</tr>
+<tr><td colspan="5">Ensures the Gmail label taxonomy, seeds CRM wiki pages, runs bounded backfill triage (default 30 days), then starts persistent <code>inbox_triage</code>, <code>thread_watcher</code>, and <code>gmail_manager</code> and exits.</td></tr>
+<tr><td colspan="5">&nbsp;</td></tr>
+</tbody>
+</table>

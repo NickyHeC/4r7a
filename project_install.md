@@ -89,10 +89,12 @@ Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `officia
 - **Official Gmail MCP (default, recommended for open source).** The admin uses
   their own Google Cloud project so the trust stays with them. In Google Cloud:
   enable `gmail.googleapis.com` and `gmailmcp.googleapis.com`, configure the OAuth
-  consent screen with scopes `gmail.readonly` + `gmail.compose`, create an OAuth
-  client, and complete the consent flow. Set `GMAIL_OAUTH_CLIENT_ID`,
+  consent screen with scopes `gmail.readonly` + `gmail.compose` + `gmail.modify`,
+  create an OAuth client, and complete the consent flow. Set `GMAIL_OAUTH_CLIENT_ID`,
   `GMAIL_OAUTH_CLIENT_SECRET`, and `GMAIL_OAUTH_ACCESS_TOKEN` (server URL defaults
-  to `https://gmailmcp.googleapis.com/mcp/v1`). Enterprise Workspace accounts may
+  to `https://gmailmcp.googleapis.com/mcp/v1`). Set `GMAIL_MAILBOX=me` (or the
+  connected email). The `gmail.modify` scope is required for label/archive/read
+  state via `gmail_rest.py` (triage and sweep); MCP handles search/drafts.
   need a super admin to mark the OAuth app Trusted for the restricted scopes.
   Docs: https://developers.google.com/workspace/gmail/api/guides/configure-mcp-server
 - **Composio (optional, less setup).** Set `COMPOSIO_API_KEY` and either
@@ -102,7 +104,24 @@ Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `officia
 
 Posture: agents only read, label, and draft — **never send**. Keep
 `gmail.allow_send: false` in `config/operations.yaml`. Verify with `doctor`
-("Gmail connection ... read+draft").
+("Gmail connection ... read+draft"). On first connect, run `gmail_onboarding`
+(ensures labels, 30-day backfill triage, starts `inbox_triage` + `gmail_manager`).
+
+### Linear (operations department)
+Linear powers Gmail → task workflows (`inbox_task`, `team_on_it`). Pick one auth path:
+
+- **Personal API key (recommended).** In Linear → Settings → Account → Security & Access,
+  create an API key. Set `LINEAR_API_KEY`. Configure `linear.team_key` (e.g. `ENG`) or
+  `linear.team_id` in `config/operations.yaml`.
+  Docs: https://linear.app/developers/graphql
+- **Official MCP (optional).** Remote MCP at `https://mcp.linear.app/mcp` with the same
+  API key as `Authorization: Bearer …` for Claude Agent SDK agents.
+  Docs: https://linear.app/docs/mcp.md
+- **Community CLI (optional).** Install [joa23/linear-cli](https://github.com/joa23/linear-cli)
+  or similar, run `linear auth login`, and set `LINEAR_USE_CLI=1` to delegate issue
+  creation to the `linear` binary instead of direct GraphQL.
+
+Verify with `doctor` ("Linear …"). See https://linear.app/llms.txt for the full doc index.
 
 ### LLM provider (which model powers the agents)
 One knob — `COMPANY_BRAIN_LLM_PROVIDER` (resolved against `config/models.yaml`) —

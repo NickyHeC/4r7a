@@ -1,20 +1,136 @@
 # Operations department configuration.
 #
-# Operations is the catch-all department for general platforms that don't belong
-# to a more specific department (Gmail, Slack ops, Notion ops, Linear, ...).
-# Holds non-secret settings only — tokens, OAuth credentials, and API keys live
-# in .env (gitignored), never here.
+# Non-secret settings only — OAuth tokens and API keys live in .env.
+
+linear:
+  # Team for Gmail → Linear task creation (inbox_task, team_on_it).
+  # Set team_id (UUID) or team_key (e.g. ENG) — team_key is resolved via API.
+  team_key: ENG
+  team_id: ""
+  default_priority: 2
 
 gmail:
-  # Connection provider for the Gmail MCP server:
-  #   official  — Google's hosted Gmail MCP (Workspace Developer Preview). Default.
-  #   composio  — Composio's hosted Gmail MCP (less setup, vendor dependency).
-  # Overridable at runtime with GMAIL_MCP_PROVIDER.
   provider: official
 
-  # Write posture: read + labels + DRAFT compose. Agents never send email — they
-  # propose drafts a human reviews and sends. Keep allow_send false.
+  # OAuth scopes (union requested at consent time):
+  #   gmail.readonly — read mail
+  #   gmail.compose  — create drafts (draft_reply, later phases)
+  #   gmail.modify   — apply labels, archive, mark read/unread
   scopes:
     - https://www.googleapis.com/auth/gmail.readonly
     - https://www.googleapis.com/auth/gmail.compose
+    - https://www.googleapis.com/auth/gmail.modify
   allow_send: false
+
+  # Primary connected mailbox (Gmail API user id; usually an email or "me").
+  mailbox: me
+  # Multi-mailbox dedupe (Phase 4). Primary list entry wins duplicates.
+  connected_mailboxes:
+    - me
+
+  team_on_it:
+    slack_channel: "#team-ops"
+
+  receipt_router:
+    day: friday
+    time: "08:00"
+    wiki_path: operations/gmail/receipt-routing.md
+    subscription_senders:
+      - stripe.com
+      - aws.amazon.com
+      - google.com
+      - mercury.com
+      - ramp.com
+
+  schedules:
+    triage_interval_minutes: 30
+    thread_watcher_interval_minutes: 15
+    manager_times: ["08:00", "12:00", "16:00"]
+    sweep_time: "22:00"
+    ingest_review_day: monday
+    ingest_review_time: "08:00"
+    partnership_digest_day: friday
+    partnership_digest_time: "08:00"
+    workdays_only: true
+
+  wiki:
+    ingest_queue: operations/gmail/ingest-queue.md
+    company_timeline: operations/gmail/company-timeline.md
+    attachments_dir: operations/gmail/attachments
+    investors_crm: operations/gmail/investors-crm.md
+    investor_interests: operations/gmail/investor-interests.md
+    customer_crm: operations/gmail/customer-crm.md
+    media_promotion: operations/gmail/media-promotion.md
+    company_connections: operations/gmail/company-connections.md
+    inbound_candidates: operations/gmail/inbound-candidates.md
+    vendors_dir: operations/gmail/vendors
+
+  slack:
+    ingest_channel: "#ingest"
+    customer_support_channel: "#customer-support"
+    events_channel: "#events"
+    growth_channel: "#growth"
+    partnership_digest_channel: "#partnerships"
+    # Optional Slack user ID for partnership digest DM (overrides channel when set).
+    partnership_digest_user: ""
+
+  onboarding:
+    backfill_days: 30
+
+  # Label taxonomy. ``visible: true`` → messageListVisibility show (inbox list).
+  labels:
+    attention:
+      - name: "1. Action"
+        visible: true
+      - name: "2. Reply"
+        visible: true
+      - name: "3. FYI"
+        visible: true
+      - name: "4. Team On It"
+        visible: true
+    domain:
+      - name: Customer
+        visible: false
+      - name: Investor
+        visible: false
+      - name: Receipts
+        visible: false
+      - name: "AI Meeting Notes"
+        visible: false
+      - name: Meeting
+        visible: false
+      - name: "Meeting Request"
+        visible: false
+      - name: Ingest
+        visible: false
+      - name: Vendor
+        visible: false
+      - name: People
+        visible: false
+      - name: "Warm intro"
+        visible: false
+      - name: Decision
+        visible: false
+    cold_inbound_parent: Cold Inbound
+    cold_inbound:
+      - name: "Sales Outreach"
+        auto_archive: true
+      - name: "Investor Interest"
+        auto_archive: false
+      - name: "Job Seekers"
+        auto_archive: true
+      - name: Partnership
+        auto_archive: false
+      - name: "Founder Networking"
+        auto_archive: false
+      - name: "Press & Podcast"
+        auto_archive: false
+      - name: "Event Invitations"
+        auto_archive: false
+      - name: Miscellaneous
+        auto_archive: true
+    newsletters_parent: Newsletters
+
+  # Wiki paths for confirmed investors / customers (parsed for triage + CRM agents).
+  investors_wiki: operations/gmail/investors-crm.md
+  customers_wiki: operations/gmail/customer-crm.md

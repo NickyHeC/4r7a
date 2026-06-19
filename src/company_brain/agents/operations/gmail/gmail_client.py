@@ -7,7 +7,8 @@ supported; select with ``GMAIL_MCP_PROVIDER`` (or ``gmail.provider`` in
 1. ``official`` (default) — Google's official, Google-hosted Gmail MCP server
    (Workspace Developer Preview). HTTP transport at
    ``https://gmailmcp.googleapis.com/mcp/v1`` with OAuth 2.0 (scopes
-   ``gmail.readonly`` + ``gmail.compose``). Best fit for an open-source project:
+   ``gmail.readonly`` + ``gmail.compose`` (+ ``gmail.modify`` for REST label/archive
+   via ``gmail_rest.py``). Best fit for an open-source project:
    each admin connects their own Google Cloud project / OAuth client, so the
    trust burden stays with them. Setup: enable ``gmail.googleapis.com`` +
    ``gmailmcp.googleapis.com`` in the project, configure the OAuth consent

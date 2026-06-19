@@ -263,6 +263,16 @@ def doctor() -> None:
         "set Gmail OAuth (official) or COMPOSIO_API_KEY (composio) — see project_install.md",
     )
 
+    try:
+        from company_brain.agents.operations.linear import linear_client as linear
+        linear_ok = linear.linear_is_configured()
+    except Exception:
+        linear_ok = False
+    check(
+        "Linear (API key or linear CLI)", linear_ok,
+        "set LINEAR_API_KEY (Settings → Security & Access) — see project_install.md",
+    )
+
     config = load_config()
     check("Wiki initialized in Notion", config.notion.is_initialized, "run 'company-brain init'")
     click.echo()
