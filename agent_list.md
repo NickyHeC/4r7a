@@ -168,7 +168,7 @@ department.
 <tr>
 <td>persistent</td><td>Starts at deploy; wakes 08:00, 12:00, 16:00, and 22:00 on workdays</td><td>Gmail routing records (<code>wiki/operations/gmail/routing/</code>)</td><td></td><td></td>
 </tr>
-<tr><td colspan="5">Scoped to Gmail. At 8am/12pm/4pm workdays dispatches Phase 2–3 specialists (drafts, ingest, attachments, investor/customer/growth/vendor/people/recruiting CRM). Monday 8am: <code>ingest_queue_review</code>. Friday 8am: <code>partnership_digest</code>. At 10pm: <code>inbox_sweep</code>.</td></tr>
+<tr><td colspan="5">Scoped to Gmail for every connected account. Dispatches profile-enabled specialists at 8/12/4 workdays (see <code>gmail.profiles</code> in <code>config/operations.yaml</code>). Monday 8am: <code>ingest_queue_review</code> when enabled. Friday 8am: <code>partnership_digest</code> / <code>receipt_router</code> when enabled. At 10pm: <code>inbox_sweep</code> when enabled.</td></tr>
 <tr><td colspan="5">&nbsp;</td></tr>
 <tr><td colspan="5">&nbsp;</td></tr>
 <tr><td colspan="5"><strong>Gmail specialists</strong> (<code>operations/gmail/</code>)</td></tr>

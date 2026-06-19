@@ -1,0 +1,52 @@
+# Sample threads → expected tags (classifier eval, Phase 5).
+cases:
+  - name: receipt
+    message:
+      subject: "Your receipt from Stripe"
+      from: "billing@stripe.com"
+      snippet: "Thanks for your payment"
+    expect_domain:
+      - Receipts
+    mark_read: true
+    archive_now: false
+
+  - name: newsletter
+    message:
+      subject: "Weekly digest"
+      from: "Substack <news@substack.com>"
+      list_unsub: "<mailto:unsub@x.com>"
+      snippet: "Top posts this week"
+    expect_domain_prefix: "Newsletters/"
+    mark_read: true
+
+  - name: cold_sales
+    message:
+      subject: "Quick question about your product"
+      from: "sales@vendor.com"
+      snippet: "Book a demo"
+    expect_domain:
+      - "Cold Inbound/Sales Outreach"
+    archive_now: true
+
+  - name: ai_meeting_notes
+    message:
+      subject: "Meeting notes"
+      from: "Granola <notes@granola.so>"
+      snippet: "Summary of your call"
+    expect_domain:
+      - "AI Meeting Notes"
+    archive_now: true
+
+  - name: action_required
+    message:
+      subject: "Action required: sign the document"
+      from: "legal@partner.com"
+      snippet: "Please sign by Friday"
+    expect_attention: "1. Action"
+
+  - name: reply_question
+    message:
+      subject: "Follow up"
+      from: "colleague@company.com"
+      snippet: "Can you share the deck?"
+    expect_attention: "2. Reply"

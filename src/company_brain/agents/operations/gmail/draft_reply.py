@@ -15,7 +15,7 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_client
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.complexity import is_simple_reply
+from company_brain.agents.operations.shared.complexity import is_simple_reply, is_simple_reply_message
 from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
@@ -43,18 +43,19 @@ class DraftReplyAgent(BaseAgent):
         self._store = RoutingStore()
 
     def should_run(self, **kwargs: Any) -> bool:
-        pending = self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, attention="2. Reply",
-        )
-        return bool(pending)
+        candidates = self._llm_candidates()
+        if not candidates:
+            return False
+        from company_brain.agents.gates import changed_since
+
+        sig = tuple(sorted(r.message_id for r in candidates))
+        return changed_since(f"draft_reply:{self.mailbox}", sig, update=False)
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
-        pending = self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, attention="2. Reply",
-        )
+        candidates = self._llm_candidates()
         drafted = 0
         skipped = 0
-        for record in pending:
+        for record in candidates:
             try:
                 thread = rest.get_thread(record.thread_id, mailbox=self.mailbox)
                 if not is_simple_reply(thread, mailbox=self.mailbox):
@@ -65,7 +66,26 @@ class DraftReplyAgent(BaseAgent):
                 drafted += 1
             except Exception:
                 self.logger.exception("Draft failed for message %s", record.message_id)
+
+        if drafted:
+            from company_brain.agents.gates import mark_handled
+
+            sig = tuple(sorted(r.message_id for r in candidates))
+            mark_handled(f"draft_reply:{self.mailbox}", sig)
         return {"drafted": drafted, "skipped_complex": skipped}
+
+    def _llm_candidates(self):
+        out = []
+        for record in self._store.unhandled_for(
+            SPECIALIST_KEY, mailbox=self.mailbox, attention="2. Reply",
+        ):
+            try:
+                message = rest.get_message(record.message_id, mailbox=self.mailbox)
+                if is_simple_reply_message(message):
+                    out.append(record)
+            except Exception:
+                self.logger.debug("Skipping draft candidate %s", record.message_id)
+        return out
 
     async def _create_draft(self, thread_id: str, message_id: str) -> None:
         from claude_agent_sdk import ClaudeAgentOptions, query

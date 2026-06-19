@@ -45,7 +45,7 @@ subscription audit, manual-accounting requests). All read-only at the source.
 The catch-all department for general platforms that don't belong to a more specific
 department (Gmail, Slack ops, Notion ops, Linear, ...).
 
-- **Gmail** — MCP + REST executive assistant through Phase 4 (triage, CRM, Linear tasks, receipt routing). Posture: **read + labels + draft compose only — never send**.
+- **Gmail** — MCP + REST executive assistant (Phases 0–5): triage, CRM, Linear tasks, receipt routing, and **service profiles** (EA / employee / service account). Posture: **read + labels + draft compose only — never send**.
 - **Linear** — GraphQL + official MCP (`operations/linear/linear_client.py`) for Gmail task workflows.
 
 ## Self-maintaining foundation

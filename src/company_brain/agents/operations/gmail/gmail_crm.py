@@ -15,6 +15,7 @@ from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import company_connections_path, mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
+from company_brain.agents.operations.shared.profiles import profile_spec
 from company_brain.config import AppConfig
 
 SPECIALIST_KEY = "gmail_crm"
@@ -50,8 +51,11 @@ class GmailCRMAgent(BaseAgent):
         return {"updated": updated}
 
     def _pending(self):
+        tags = {"People"}
+        if profile_spec(self.mailbox).warm_intro:
+            tags.add("Warm intro")
         return self._store.unhandled_with_any_tag(
-            SPECIALIST_KEY, {"People", "Warm intro"},
+            SPECIALIST_KEY, tags,
             mailbox=self.mailbox,
             exclude_contact_type="investor",
         )

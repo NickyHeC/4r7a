@@ -105,7 +105,21 @@ Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `officia
 Posture: agents only read, label, and draft — **never send**. Keep
 `gmail.allow_send: false` in `config/operations.yaml`. Verify with `doctor`
 ("Gmail connection ... read+draft"). On first connect, run `gmail_onboarding`
-(ensures labels, 30-day backfill triage, starts `inbox_triage` + `gmail_manager`).
+(ensures labels, 30-day backfill triage, starts profile-enabled persistent agents
++ `gmail_manager`).
+
+**Service profiles** (`config/operations.yaml` → `gmail.profiles`):
+
+| Profile | Use case |
+|---------|----------|
+| `executive_assistant` (default) | Full EA package for startup founders — all labels, nested cold inbound/newsletters, every specialist |
+| `employee` | Employee Gmail — attention 1–4, flat `Cold Inbound` / `Newsletters`, no Investor or Warm intro; investor/partnership/receipt agents off |
+| `service_account` | Purpose-built inboxes — attention 1–3 only; minimal domain labels and agents; override per mailbox |
+
+Set the active profile with `gmail.profile` (default) or `GMAIL_PROFILE=employee` per
+deploy. Per-mailbox overrides: `gmail.mailbox_profiles` (see commented examples in config).
+`gmail_manager` runs for every connected account; triage labels and dispatched
+specialists follow the profile.
 
 ### Linear (operations department)
 Linear powers Gmail → task workflows (`inbox_task`, `team_on_it`). Pick one auth path:

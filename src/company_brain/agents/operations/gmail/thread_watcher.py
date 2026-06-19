@@ -25,6 +25,7 @@ from company_brain.agents.operations.shared.gmail_config import (
 from company_brain.agents.operations.shared.gmail_state import GmailState
 from company_brain.agents.operations.shared.labels import apply_labels
 from company_brain.agents.operations.shared.routing import RoutingStore
+from company_brain.agents.operations.shared.profiles import agent_enabled, profile_spec
 from company_brain.agents.operations.shared.scheduling import is_workday, next_interval
 from company_brain.config import AppConfig
 
@@ -106,10 +107,10 @@ class ThreadWatcherAgent(BaseAgent):
         add_tags: list[str] = []
         extracted: dict[str, Any] = {"sent_message_id": message_id}
 
-        if kind == "decision":
+        if kind == "decision" and profile_spec(self.mailbox).allows_domain(DECISION_LABEL):
             add_tags.append(DECISION_LABEL)
             extracted["decision"] = True
-        elif kind == "ingest":
+        elif kind == "ingest" and profile_spec(self.mailbox).allows_domain(INGEST_LABEL):
             add_tags.append(INGEST_LABEL)
             extracted["ingest_status"] = "pending"
 
@@ -122,9 +123,9 @@ class ThreadWatcherAgent(BaseAgent):
             self.mailbox, thread_id, add_tags=add_tags, extracted=extracted,
         )
 
-        if kind == "decision":
+        if kind == "decision" and agent_enabled("decision_propagate", self.mailbox):
             self._dispatch_decision_propagate(thread_id, message_id)
-        if kind == "ingest":
+        if kind == "ingest" and agent_enabled("gmail_ingest", self.mailbox):
             self._dispatch_gmail_ingest(thread_id)
 
         return {

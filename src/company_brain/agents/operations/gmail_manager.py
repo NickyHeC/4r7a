@@ -25,6 +25,11 @@ from company_brain.agents.operations.shared.linear_config import (
     receipt_router_day,
     receipt_router_time,
 )
+from company_brain.agents.operations.shared.profiles import (
+    MANAGER_DISPATCH_ORDER,
+    WEEKLY_DISPATCH,
+    agent_enabled,
+)
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.scheduling import (
     is_scheduled_moment,
@@ -70,61 +75,36 @@ class GmailManager(BaseAgent):
                 await self._dispatch_pass(at=nxt)
 
     async def _dispatch_pass(self, *, at: datetime | None = None) -> None:
-        self.logger.info("Gmail manager dispatch pass")
-        from company_brain.agents.operations.gmail.attachment_router import AttachmentRouterAgent
-        from company_brain.agents.operations.gmail.customer_crm import CustomerCRMAgent
-        from company_brain.agents.operations.gmail.draft_reply import DraftReplyAgent
-        from company_brain.agents.operations.gmail.duplicate_across_mailboxes import (
-            DuplicateAcrossMailboxesAgent,
-        )
-        from company_brain.agents.operations.gmail.gmail_crm import GmailCRMAgent
-        from company_brain.agents.operations.gmail.gmail_customer_support import (
-            GmailCustomerSupportAgent,
-        )
-        from company_brain.agents.operations.gmail.gmail_ingest import GmailIngestAgent
-        from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent
-        from company_brain.agents.operations.gmail.inbox_task import InboxTaskAgent
-        from company_brain.agents.operations.gmail.ingest_queue_review import (
-            IngestQueueReviewAgent,
-        )
-        from company_brain.agents.operations.gmail.investor_tracker import InvestorTrackerAgent
-        from company_brain.agents.operations.gmail.partnership_digest import (
-            PartnershipDigestAgent,
-        )
-        from company_brain.agents.operations.gmail.receipt_router import ReceiptRouterAgent
-        from company_brain.agents.operations.gmail.recruiting_inbound import (
-            RecruitingInboundAgent,
-        )
-        from company_brain.agents.operations.gmail.team_on_it import TeamOnItAgent
-        from company_brain.agents.operations.gmail.vendor_tracker import VendorTrackerAgent
+        from company_brain.agents.operations.shared.profiles import profile_spec
         from company_brain.runtime import get_runtime
 
+        spec = profile_spec(self.mailbox)
+        self.logger.info("Gmail manager dispatch pass (profile=%s)", spec.name)
         runtime = get_runtime()
-        self._run_agent(runtime, DuplicateAcrossMailboxesAgent)
+        dispatch_map = _dispatch_agent_classes()
 
-        for agent_cls in (
-            InboxTaskAgent,
-            TeamOnItAgent,
-            DraftReplyAgent,
-            GmailIngestAgent,
-            AttachmentRouterAgent,
-            InvestorTrackerAgent,
-            GmailCustomerSupportAgent,
-            CustomerCRMAgent,
-            GrowthInboundAgent,
-            VendorTrackerAgent,
-            GmailCRMAgent,
-            RecruitingInboundAgent,
-        ):
-            self._run_agent(runtime, agent_cls)
+        for key in MANAGER_DISPATCH_ORDER:
+            if key in WEEKLY_DISPATCH:
+                continue
+            if not agent_enabled(key, self.mailbox):
+                continue
+            cls = dispatch_map.get(key)
+            if cls:
+                self._run_agent(runtime, cls)
 
         now = at or datetime.now()
-        if is_scheduled_moment(now, ingest_review_day(), ingest_review_time()):
-            self._run_agent(runtime, IngestQueueReviewAgent, ping_slack=True)
-        if is_scheduled_moment(now, partnership_digest_day(), partnership_digest_time()):
-            self._run_agent(runtime, PartnershipDigestAgent)
-        if is_scheduled_moment(now, receipt_router_day(), receipt_router_time()):
-            self._run_agent(runtime, ReceiptRouterAgent)
+        if agent_enabled("ingest_queue_review", self.mailbox) and is_scheduled_moment(
+            now, ingest_review_day(), ingest_review_time(),
+        ):
+            self._run_agent(runtime, dispatch_map["ingest_queue_review"], ping_slack=True)
+        if agent_enabled("partnership_digest", self.mailbox) and is_scheduled_moment(
+            now, partnership_digest_day(), partnership_digest_time(),
+        ):
+            self._run_agent(runtime, dispatch_map["partnership_digest"])
+        if agent_enabled("receipt_router", self.mailbox) and is_scheduled_moment(
+            now, receipt_router_day(), receipt_router_time(),
+        ):
+            self._run_agent(runtime, dispatch_map["receipt_router"])
 
         records = list(self._store.iter_mailbox(self.mailbox))
         with_attention = sum(1 for r in records if r.attention)
@@ -143,6 +123,9 @@ class GmailManager(BaseAgent):
             self.logger.exception("%s dispatch failed", agent_cls.__name__)
 
     async def _run_sweep(self) -> None:
+        if not agent_enabled("inbox_sweep", self.mailbox):
+            self.logger.info("inbox_sweep disabled for profile — skipping sweep")
+            return
         self.logger.info("Gmail manager dispatching inbox_sweep")
         from company_brain.agents.operations.gmail.inbox_sweep import InboxSweepAgent
         from company_brain.runtime import get_runtime
@@ -151,3 +134,45 @@ class GmailManager(BaseAgent):
             get_runtime().run(InboxSweepAgent, self.config, mailbox=self.mailbox)
         except Exception:
             self.logger.exception("inbox_sweep failed")
+
+
+def _dispatch_agent_classes() -> dict[str, type]:
+    from company_brain.agents.operations.gmail.attachment_router import AttachmentRouterAgent
+    from company_brain.agents.operations.gmail.customer_crm import CustomerCRMAgent
+    from company_brain.agents.operations.gmail.draft_reply import DraftReplyAgent
+    from company_brain.agents.operations.gmail.duplicate_across_mailboxes import (
+        DuplicateAcrossMailboxesAgent,
+    )
+    from company_brain.agents.operations.gmail.gmail_crm import GmailCRMAgent
+    from company_brain.agents.operations.gmail.gmail_customer_support import (
+        GmailCustomerSupportAgent,
+    )
+    from company_brain.agents.operations.gmail.gmail_ingest import GmailIngestAgent
+    from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent
+    from company_brain.agents.operations.gmail.inbox_task import InboxTaskAgent
+    from company_brain.agents.operations.gmail.ingest_queue_review import IngestQueueReviewAgent
+    from company_brain.agents.operations.gmail.investor_tracker import InvestorTrackerAgent
+    from company_brain.agents.operations.gmail.partnership_digest import PartnershipDigestAgent
+    from company_brain.agents.operations.gmail.receipt_router import ReceiptRouterAgent
+    from company_brain.agents.operations.gmail.recruiting_inbound import RecruitingInboundAgent
+    from company_brain.agents.operations.gmail.team_on_it import TeamOnItAgent
+    from company_brain.agents.operations.gmail.vendor_tracker import VendorTrackerAgent
+
+    return {
+        "duplicate_across_mailboxes": DuplicateAcrossMailboxesAgent,
+        "inbox_task": InboxTaskAgent,
+        "team_on_it": TeamOnItAgent,
+        "draft_reply": DraftReplyAgent,
+        "gmail_ingest": GmailIngestAgent,
+        "attachment_router": AttachmentRouterAgent,
+        "investor_tracker": InvestorTrackerAgent,
+        "gmail_customer_support": GmailCustomerSupportAgent,
+        "customer_crm": CustomerCRMAgent,
+        "growth_inbound": GrowthInboundAgent,
+        "vendor_tracker": VendorTrackerAgent,
+        "gmail_crm": GmailCRMAgent,
+        "recruiting_inbound": RecruitingInboundAgent,
+        "ingest_queue_review": IngestQueueReviewAgent,
+        "partnership_digest": PartnershipDigestAgent,
+        "receipt_router": ReceiptRouterAgent,
+    }

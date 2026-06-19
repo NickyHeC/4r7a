@@ -14,6 +14,11 @@ from company_brain.agents.operations.shared.gmail_config import (
     investors_crm_path,
     label_defs,
 )
+from company_brain.agents.operations.shared.profiles import (
+    normalize_attention,
+    normalize_domain_tags,
+    profile_spec,
+)
 
 
 @dataclass
@@ -42,6 +47,7 @@ def classify_message(message: dict[str, Any], *, mailbox: str = "me") -> TriageR
     from_hdr = (headers.get("from") or "").lower()
     snippet = rest.snippet(message).lower()
     list_unsub = headers.get("list-unsubscribe") or headers.get("list-unsubscribe-post")
+    spec = profile_spec(mailbox)
 
     result = TriageResult(
         extracted={
@@ -52,81 +58,96 @@ def classify_message(message: dict[str, Any], *, mailbox: str = "me") -> TriageR
     )
 
     # AI meeting notes
-    if any(s in from_hdr for s in AI_MEETING_SENDERS) or "meeting notes" in subject:
-        result.domain_tags.append("AI Meeting Notes")
-        result.mark_read = True
-        result.archive_now = True
-        return result
+    if spec.allows_domain("AI Meeting Notes"):
+        if any(s in from_hdr for s in AI_MEETING_SENDERS) or "meeting notes" in subject:
+            result.domain_tags.append("AI Meeting Notes")
+            result.mark_read = True
+            result.archive_now = True
+            return _finalize(result, mailbox=mailbox)
 
     # Receipts
-    if any(h in subject for h in RECEIPT_HINTS) or "receipt" in snippet[:200]:
-        result.domain_tags.append("Receipts")
-        result.mark_read = True
-        return result
+    if spec.allows_domain("Receipts"):
+        if any(h in subject for h in RECEIPT_HINTS) or "receipt" in snippet[:200]:
+            result.domain_tags.append("Receipts")
+            result.mark_read = True
+            return _finalize(result, mailbox=mailbox)
 
     # Newsletters
-    if list_unsub or any(h in subject for h in NEWSLETTER_HINTS):
-        name = _newsletter_name(headers.get("from", ""), subject)
-        result.domain_tags.append(f"Newsletters/{name}")
-        result.newsletter_name = name
-        result.mark_read = True
-        return result
+    nl_parent = label_defs().get("newsletters_parent", "Newsletters")
+    if spec.allows_domain(nl_parent) or spec.newsletters_nested:
+        if list_unsub or any(h in subject for h in NEWSLETTER_HINTS):
+            name = _newsletter_name(headers.get("from", ""), subject)
+            tag = f"{nl_parent}/{name}" if spec.newsletters_nested else nl_parent
+            result.domain_tags.append(tag)
+            result.newsletter_name = name
+            result.mark_read = True
+            return _finalize(result, mailbox=mailbox)
 
     # Meeting invites
     if "invite.ics" in str(message.get("payload", {})) or "calendar.google.com" in snippet:
         if "meeting request" in subject or "schedule" in subject:
-            result.domain_tags.append("Meeting Request")
-        else:
+            if spec.allows_domain("Meeting Request"):
+                result.domain_tags.append("Meeting Request")
+        elif spec.allows_domain("Meeting"):
             result.domain_tags.append("Meeting")
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # Confirmed investor (wiki list) before cold inbound
-    if _is_confirmed_investor(from_hdr):
+    if spec.investor and _is_confirmed_investor(from_hdr):
         result.domain_tags.append("Investor")
         result.contact_type = "investor"
         result.attention = result.attention or "2. Reply"
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # Cold inbound
     cold = _classify_cold(from_hdr, subject, snippet)
     if cold:
         parent = label_defs().get("cold_inbound_parent", "Cold Inbound")
-        result.domain_tags.append(f"{parent}/{cold}")
+        if spec.cold_inbound_nested:
+            result.domain_tags.append(f"{parent}/{cold}")
+        elif spec.allows_domain(parent):
+            result.domain_tags.append(parent)
         if cold in auto_archive_cold_tags():
             result.mark_read = True
             result.archive_now = True
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # Customer (active — wiki CRM list)
-    if _is_customer(from_hdr):
+    if spec.allows_domain("Customer") and _is_customer(from_hdr):
         result.domain_tags.append("Customer")
         result.attention = result.attention or "2. Reply"
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # Vendor renewals / billing
-    if _is_vendor(from_hdr, subject, snippet):
+    if spec.allows_domain("Vendor") and _is_vendor(from_hdr, subject, snippet):
         result.domain_tags.append("Vendor")
         result.attention = result.attention or "3. FYI"
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # People (non-investor connections)
-    if _is_people(from_hdr, subject, snippet):
+    if spec.allows_domain("People") and _is_people(from_hdr, subject, snippet):
         result.domain_tags.append("People")
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # Attention heuristics
     if "?" in subject or "?" in snippet[:120]:
         result.attention = "2. Reply"
-        return result
+        return _finalize(result, mailbox=mailbox)
     if any(w in subject for w in ("action required", "signature required", "please sign", "deadline")):
         result.attention = "1. Action"
-        return result
+        return _finalize(result, mailbox=mailbox)
     if subject.startswith("fyi") or "fyi:" in subject:
         result.attention = "3. FYI"
-        return result
+        return _finalize(result, mailbox=mailbox)
 
     # Default: FYI if nothing else
     result.attention = "3. FYI"
+    return _finalize(result, mailbox=mailbox)
+
+
+def _finalize(result: TriageResult, *, mailbox: str) -> TriageResult:
+    result.domain_tags = normalize_domain_tags(result.domain_tags, mailbox=mailbox)
+    result.attention = normalize_attention(result.attention, mailbox=mailbox)
     return result
 
 

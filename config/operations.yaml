@@ -12,6 +12,102 @@ linear:
 gmail:
   provider: official
 
+  # Service profile for GMAIL_MAILBOX when not overridden in mailbox_profiles.
+  # Override per deploy with GMAIL_PROFILE=employee|service_account|...
+  profile: executive_assistant
+
+  # EA vs reduced-service profiles (Phase 5).
+  # gmail_manager runs for every account; triage labels + specialists follow profile.
+  profiles:
+    executive_assistant:
+      description: >-
+        Full executive-assistant package for startup founders (CEO inbox).
+        All attention + domain labels, nested cold inbound and newsletters,
+        every specialist agent.
+      use_full_labels: true
+      agents: all
+
+    employee:
+      description: >-
+        Reduced service for employee Gmail accounts. Basic attention 1–4;
+        flat Cold Inbound and Newsletters (no nested sub-labels); no Investor
+        or Warm intro labels. CRM/notifications agents allocated accordingly.
+      labels:
+        attention:
+          - "1. Action"
+          - "2. Reply"
+          - "3. FYI"
+          - "4. Team On It"
+        domain:
+          - Customer
+          - "AI Meeting Notes"
+          - Receipts
+          - Meeting
+          - "Meeting Request"
+          - Ingest
+          - Vendor
+          - People
+          - Decision
+          - Cold Inbound
+          - Newsletters
+        cold_inbound_nested: false
+        newsletters_nested: false
+        investor: false
+        warm_intro: false
+      agents:
+        - inbox_triage
+        - thread_watcher
+        - inbox_sweep
+        - draft_reply
+        - decision_propagate
+        - gmail_ingest
+        - ingest_queue_review
+        - attachment_router
+        - gmail_customer_support
+        - customer_crm
+        - growth_inbound
+        - vendor_tracker
+        - gmail_crm
+        - recruiting_inbound
+        - inbox_task
+        - team_on_it
+        - duplicate_across_mailboxes
+
+    service_account:
+      description: >-
+        Per-purpose service inbox. Override labels and agents per mailbox in
+        mailbox_profiles below. Admin and communicative accounts keep attention
+        1–3 only (no Team On It delegation label).
+      labels:
+        attention:
+          - "1. Action"
+          - "2. Reply"
+          - "3. FYI"
+        domain:
+          - Receipts
+          - Vendor
+          - Ingest
+        cold_inbound_nested: false
+        newsletters_nested: false
+        investor: false
+        warm_intro: false
+      agents:
+        - inbox_triage
+        - thread_watcher
+        - inbox_sweep
+        - attachment_router
+        - gmail_ingest
+        - vendor_tracker
+
+  # Per-mailbox profile overrides (optional).
+  # mailbox_profiles:
+  #   jane@company.com: employee
+  #   billing@company.com:
+  #     profile: service_account
+  #     labels:
+  #       domain: [Receipts, Vendor]
+  #     agents: [inbox_triage, thread_watcher, vendor_tracker, attachment_router]
+
   # OAuth scopes (union requested at consent time):
   #   gmail.readonly — read mail
   #   gmail.compose  — create drafts (draft_reply, later phases)

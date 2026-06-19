@@ -20,52 +20,63 @@ from company_brain.config import resolve_wiki_dir
 from company_brain.wiki.publish import APPEND, UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
-CRM_SEEDS: list[tuple[str, str, str]] = [
+CRM_SEEDS: list[tuple[str, str, str, str]] = [
     (
         investors_crm_path(),
         "Investors CRM",
         "# Investors CRM\n\n"
         "Confirmed investors (email or domain, one per line):\n\n"
         "- example-vc.com\n",
+        "investors",
     ),
     (
         investor_interests_path(),
         "Investor Interests",
         "# Investor Interests\n\n"
         "Cold inbound investor interest appended below (newest first).\n",
+        "investor_interests",
     ),
     (
         customer_crm_path(),
         "Customer CRM",
         "# Customer CRM\n\n"
         "Active customers (email or domain, one per line):\n\n",
+        "customer_crm",
     ),
     (
         media_promotion_path(),
         "Media Promotion",
         "# Media Promotion\n\n"
         "Press and podcast inbound (newest first).\n",
+        "media_promotion",
     ),
     (
         company_connections_path(),
         "Company Connections",
         "# Company Connections\n\n"
         "People and warm connections (newest first). Excludes investors.\n",
+        "company_connections",
     ),
     (
         inbound_candidates_path(),
         "Inbound Candidates",
         "# Inbound Candidates\n\n"
         "Job seeker inbound (newest first).\n",
+        "inbound_candidates",
     ),
 ]
 
 
-def ensure_gmail_crm_seeds() -> int:
+def ensure_gmail_crm_seeds(mailbox: str | None = None) -> int:
     """Create empty CRM wiki pages if missing. Returns count created."""
+    from company_brain.agents.operations.shared.profiles import crm_seed_keys_for_profile
+
+    allowed = crm_seed_keys_for_profile(mailbox)
     store = LocalWikiStore(root=resolve_wiki_dir())
     created = 0
-    for rel_path, title, body in CRM_SEEDS:
+    for rel_path, title, body, key in CRM_SEEDS:
+        if key not in allowed:
+            continue
         if store.exists(rel_path):
             continue
         write_wiki_page(rel_path, title, body, mode=UPDATE, section="operations/gmail")

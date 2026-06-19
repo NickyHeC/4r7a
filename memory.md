@@ -11,6 +11,16 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-18 — Gmail Phase 5: service profiles + classifier eval (working tree)
+
+- **Profiles** (`shared/profiles.py`, `config/operations.yaml`): `executive_assistant`
+  (full EA for founders), `employee` (flat cold inbound/newsletters, no Investor/Warm
+  intro, reduced agents), `service_account` (1–3 attention, per-purpose overrides via
+  `mailbox_profiles`). `gmail_manager` for all accounts; triage + dispatch respect profile.
+- **Cost gate** on `draft_reply` (`is_simple_reply_message` + `changed_since` / `mark_handled`).
+- **Classifier eval**: `tests/fixtures/gmail_classify_cases.yaml` + expanded unit tests.
+- Docs: README, `agent_list.md`, `project_install.md`, `GMAIL_PROFILE` in `.env.example`.
+
 ## 2026-06-18 — Gmail executive assistant Phases 0–4 + Linear (`e1a0635`)
 
 Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):

@@ -41,7 +41,7 @@ class GmailOnboardingAgent(BaseAgent):
         self.logger.info("Ensured %d Gmail labels", len(labels))
 
         from company_brain.agents.operations.shared.wiki_crm import ensure_gmail_crm_seeds
-        seeded = ensure_gmail_crm_seeds()
+        seeded = ensure_gmail_crm_seeds(self.mailbox)
         if seeded:
             self.logger.info("Created %d CRM seed wiki page(s)", seeded)
 
@@ -62,14 +62,18 @@ class GmailOnboardingAgent(BaseAgent):
         from company_brain.agents.operations.gmail.inbox_triage import InboxTriageAgent
         from company_brain.agents.operations.gmail.thread_watcher import ThreadWatcherAgent
         from company_brain.agents.operations.gmail_manager import GmailManager
+        from company_brain.agents.operations.shared.profiles import agent_enabled
         from company_brain.runtime import get_runtime
 
         self.logger.info(
-            "Starting inbox_triage, thread_watcher, and gmail_manager",
+            "Starting persistent Gmail agents (profile-aware)",
         )
         try:
-            get_runtime().start(InboxTriageAgent, self.config, mailbox=self.mailbox)
-            get_runtime().start(ThreadWatcherAgent, self.config, mailbox=self.mailbox)
-            get_runtime().start(GmailManager, self.config, mailbox=self.mailbox)
+            runtime = get_runtime()
+            if agent_enabled("inbox_triage", self.mailbox):
+                runtime.start(InboxTriageAgent, self.config, mailbox=self.mailbox)
+            if agent_enabled("thread_watcher", self.mailbox):
+                runtime.start(ThreadWatcherAgent, self.config, mailbox=self.mailbox)
+            runtime.start(GmailManager, self.config, mailbox=self.mailbox)
         except Exception:
             self.logger.exception("Failed to start persistent Gmail agents")
