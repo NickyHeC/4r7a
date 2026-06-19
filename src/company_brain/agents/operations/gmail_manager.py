@@ -7,7 +7,6 @@ Persistent agent: 8am, 12pm, 4pm workdays dispatches Phase 2–4 specialists;
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -33,8 +32,6 @@ from company_brain.agents.operations.shared.scheduling import (
     next_daily_times,
 )
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 
 class GmailManager(BaseAgent):

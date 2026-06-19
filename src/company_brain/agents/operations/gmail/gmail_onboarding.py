@@ -9,15 +9,12 @@ SDK: Neither (orchestration only).
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.shared.gmail_config import backfill_days, mailbox_id
 from company_brain.agents.operations.shared.labels import ensure_taxonomy
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 AGENT_KEY = "gmail_onboarding"
 
@@ -31,7 +28,13 @@ class GmailOnboardingAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.mailbox = mailbox or mailbox_id()
 
-    def run(self, *, start_manager: bool = True, backfill_days_override: int | None = None, **kwargs: Any) -> dict[str, Any]:
+    def run(
+        self,
+        *,
+        start_manager: bool = True,
+        backfill_days_override: int | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         self.logger.info("Starting Gmail onboarding for mailbox %s", self.mailbox)
 
         labels = ensure_taxonomy(self.mailbox)

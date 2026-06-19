@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -11,8 +10,6 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from company_brain.config import resolve_wiki_dir
-
-logger = logging.getLogger(__name__)
 
 ROUTING_DIR = "operations/gmail/routing"
 

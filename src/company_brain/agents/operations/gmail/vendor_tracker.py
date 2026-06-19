@@ -8,7 +8,6 @@ SDK: Neither (deterministic wiki writes).
 
 from __future__ import annotations
 
-import logging
 import re
 from pathlib import PurePosixPath
 from typing import Any
@@ -21,8 +20,6 @@ from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, fo
 from company_brain.config import AppConfig
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "vendor_tracker"
 

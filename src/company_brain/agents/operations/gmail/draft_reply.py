@@ -10,7 +10,6 @@ SDK: Anthropic Claude Agent SDK — MCP-native read + draft compose.
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -20,8 +19,6 @@ from company_brain.agents.operations.shared.complexity import is_simple_reply
 from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "draft_reply"
 _RESULT_MARKER = "DRAFT_CREATED"
@@ -33,7 +30,13 @@ class DraftReplyAgent(BaseAgent):
     name = "gmail_draft_reply"
     WRITE_MODE = "update"
 
-    def __init__(self, config: AppConfig, mailbox: str | None = None, model: str | None = None, **kwargs: Any):
+    def __init__(
+        self,
+        config: AppConfig,
+        mailbox: str | None = None,
+        model: str | None = None,
+        **kwargs: Any,
+    ):
         super().__init__(config, **kwargs)
         self.mailbox = mailbox or mailbox_id()
         self.model = model
@@ -98,4 +101,6 @@ When the draft is created, output exactly: {_RESULT_MARKER}"""
                 collected.append(content)
         output = "\n".join(collected)
         if _RESULT_MARKER not in output and "SKIP" not in output:
-            self.logger.warning("Draft agent did not confirm draft creation for thread %s", thread_id)
+            self.logger.warning(
+                "Draft agent did not confirm draft creation for thread %s", thread_id,
+            )

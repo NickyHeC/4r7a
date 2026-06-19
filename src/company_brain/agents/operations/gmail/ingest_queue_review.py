@@ -9,7 +9,6 @@ SDK: Neither (deterministic wiki + Slack).
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -20,8 +19,6 @@ from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Notifier, Signal
 from company_brain.wiki.publish import APPEND, write_wiki_page
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "ingest_queue_review"
 

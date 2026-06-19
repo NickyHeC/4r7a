@@ -10,7 +10,6 @@ SDK: Neither (Linear GraphQL + Slack SDK).
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -28,8 +27,6 @@ from company_brain.agents.operations.shared.operations_slack import OperationsSl
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Notifier, Signal
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "team_on_it"
 

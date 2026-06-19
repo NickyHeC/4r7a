@@ -11,7 +11,6 @@ SDK: Neither (deterministic wiki write; optional Ramp token check).
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -24,8 +23,6 @@ from company_brain.agents.operations.shared.linear_config import (
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
 from company_brain.wiki.publish import APPEND, write_wiki_page
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "receipt_router"
 
@@ -74,7 +71,9 @@ class ReceiptRouterAgent(BaseAgent):
             )
 
         rel_path = receipt_router_wiki_path()
-        write_wiki_page(rel_path, "Receipt Routing", "\n".join(lines), mode=APPEND, section="operations/gmail")
+        write_wiki_page(
+            rel_path, "Receipt Routing", "\n".join(lines), mode=APPEND, section="operations/gmail",
+        )
 
         for record in receipts:
             if SPECIALIST_KEY not in record.handled:

@@ -6,7 +6,6 @@ Gmail REST only — no LLM.
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -16,8 +15,6 @@ from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.labels import archive
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 
 class InboxSweepAgent(BaseAgent):

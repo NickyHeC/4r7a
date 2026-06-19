@@ -11,7 +11,6 @@ SDK: Neither for classification (deterministic heuristics).
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -28,8 +27,6 @@ from company_brain.agents.operations.shared.labels import apply_labels
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.scheduling import is_workday, next_interval
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 DECISION_LABEL = "Decision"
 INGEST_LABEL = "Ingest"

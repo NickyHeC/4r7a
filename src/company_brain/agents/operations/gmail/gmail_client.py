@@ -75,7 +75,8 @@ def send_allowed() -> bool:
     A human can opt in by setting ``gmail.allow_send: true`` in
     ``config/operations.yaml`` AND ``GMAIL_ALLOW_SEND=1`` in the environment.
     """
-    if GMAIL_SEND_FORBIDDEN and os.getenv("GMAIL_ALLOW_SEND", "").strip() not in ("1", "true", "yes"):
+    allowed_env = os.getenv("GMAIL_ALLOW_SEND", "").strip()
+    if GMAIL_SEND_FORBIDDEN and allowed_env not in ("1", "true", "yes"):
         return False
     cfg = (load_operations_config().get("gmail") or {})
     return bool(cfg.get("allow_send", False))

@@ -9,7 +9,6 @@ SDK: Neither (deterministic REST fetch + wiki write).
 
 from __future__ import annotations
 
-import logging
 import re
 from pathlib import PurePosixPath
 from typing import Any
@@ -19,8 +18,6 @@ from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import attachments_dir, mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig, resolve_wiki_dir
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "attachment_router"
 
@@ -53,10 +50,7 @@ class AttachmentRouterAgent(BaseAgent):
         return {"attachments_saved": saved}
 
     def _pending(self):
-        return [
-            r for r in self._store.iter_mailbox(self.mailbox)
-            if SPECIALIST_KEY not in r.handled
-        ]
+        return self._store.unhandled_for(SPECIALIST_KEY, mailbox=self.mailbox)
 
     def _route_message(self, record) -> int:
         message = rest.get_message(record.message_id, mailbox=self.mailbox)

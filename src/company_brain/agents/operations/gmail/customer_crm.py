@@ -8,7 +8,6 @@ SDK: Neither (deterministic wiki writes).
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -17,8 +16,6 @@ from company_brain.agents.operations.shared.gmail_config import customer_crm_pat
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "customer_crm"
 

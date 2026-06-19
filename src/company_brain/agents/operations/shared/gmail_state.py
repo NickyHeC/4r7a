@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from company_brain.config import resolve_wiki_dir
-
-logger = logging.getLogger(__name__)
 
 STATE_REL = "operations/gmail/_state.json"
 

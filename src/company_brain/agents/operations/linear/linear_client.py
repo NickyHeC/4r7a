@@ -17,15 +17,12 @@ Docs: https://linear.app/llms.txt · MCP: https://linear.app/docs/mcp.md
 from __future__ import annotations
 
 import json
-import logging
 import os
 import shutil
 import subprocess
 from typing import Any
 
 import requests
-
-logger = logging.getLogger(__name__)
 
 LINEAR_SERVER_NAME = "linear"
 API_URL = "https://api.linear.app/graphql"

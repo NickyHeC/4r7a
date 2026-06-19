@@ -7,14 +7,11 @@ Requires ``gmail.modify`` in addition to readonly/compose for label changes.
 from __future__ import annotations
 
 import base64
-import logging
 import os
 from email.utils import parsedate_to_datetime
 from typing import Any
 
 import requests
-
-logger = logging.getLogger(__name__)
 
 API_BASE = "https://gmail.googleapis.com/gmail/v1/users"
 
@@ -32,7 +29,13 @@ def _token() -> str:
     return tok
 
 
-def _request(method: str, path: str, *, params: dict | None = None, json_body: dict | None = None) -> Any:
+def _request(
+    method: str,
+    path: str,
+    *,
+    params: dict | None = None,
+    json_body: dict | None = None,
+) -> Any:
     url = f"{API_BASE}/{path.lstrip('/')}"
     resp = requests.request(
         method,
@@ -96,7 +99,12 @@ def iter_messages(query: str, *, max_total: int = 500, mailbox: str = "me"):
     token = None
     count = 0
     while count < max_total:
-        page = list_messages(query, page_token=token, max_results=min(100, max_total - count), mailbox=mailbox)
+        page = list_messages(
+            query,
+            page_token=token,
+            max_results=min(100, max_total - count),
+            mailbox=mailbox,
+        )
         for msg in page.get("messages") or []:
             yield msg["id"]
             count += 1

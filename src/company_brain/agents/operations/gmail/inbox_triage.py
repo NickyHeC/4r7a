@@ -12,7 +12,6 @@ for fetch/modify and shared routing store on the wiki volume.
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -29,8 +28,6 @@ from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.scheduling import is_workday, next_interval
 from company_brain.agents.operations.shared.triage_apply import apply_triage, collect_message_ids
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 
 class InboxTriageAgent(BaseAgent):

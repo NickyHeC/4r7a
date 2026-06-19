@@ -9,7 +9,6 @@ SDK: Neither — deterministic Linear GraphQL / optional CLI.
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -21,8 +20,6 @@ from company_brain.agents.operations.shared.linear_config import default_priorit
 from company_brain.agents.operations.shared.mail_body import plain_text
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "inbox_task"
 

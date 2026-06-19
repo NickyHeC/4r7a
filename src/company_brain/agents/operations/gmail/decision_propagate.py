@@ -8,7 +8,6 @@ SDK: Neither (deterministic wiki write).
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -19,8 +18,6 @@ from company_brain.agents.operations.shared.mail_body import plain_text
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
 from company_brain.wiki.publish import APPEND, write_wiki_page
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "decision_propagate"
 

@@ -9,7 +9,6 @@ SDK: Neither (heuristics + REST archive).
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -22,8 +21,6 @@ from company_brain.agents.operations.shared.operations_slack import partnership_
 from company_brain.agents.operations.shared.routing import RoutingRecord, RoutingStore
 from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Notifier, Signal
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "partnership_digest"
 PARTNERSHIP_TAGS = {"Cold Inbound/Partnership", "Cold Inbound/Founder Networking"}

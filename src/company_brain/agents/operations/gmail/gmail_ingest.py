@@ -9,7 +9,6 @@ SDK: Neither (deterministic extraction).
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -19,8 +18,6 @@ from company_brain.agents.operations.shared.mail_body import plain_text, word_co
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig, resolve_raw_dir
 from company_brain.ingestion.entry import RawEntry
-
-logger = logging.getLogger(__name__)
 
 SPECIALIST_KEY = "gmail_ingest"
 MIN_CLEAR_WORDS = 25
