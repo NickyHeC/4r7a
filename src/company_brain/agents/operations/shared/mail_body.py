@@ -18,7 +18,8 @@ def plain_text(message: dict[str, Any], *, max_chars: int = 8000) -> str:
         data = body.get("data")
         if data and mime in ("text/plain", "text/html"):
             try:
-                raw = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4)).decode("utf-8", errors="replace")
+                decoded = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
+                raw = decoded.decode("utf-8", errors="replace")
                 if mime == "text/html":
                     raw = re.sub(r"<[^>]+>", " ", raw)
                 parts.append(raw)

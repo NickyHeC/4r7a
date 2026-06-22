@@ -1,4 +1,10 @@
-"""Slack helper for operations agents."""
+"""Notification helpers for operations agents.
+
+Per the **"detect everything, notify selectively"** rule, agents never post to
+Slack directly — every human-facing message goes through a severity-gated
+``company_brain.notify.Notifier``. These helpers return a Notifier already bound
+to the right operations Slack channel; the Slack SDK is only the transport.
+"""
 
 from __future__ import annotations
 
@@ -6,9 +12,12 @@ import os
 from typing import Any
 
 from company_brain.agents.operations.shared.gmail_config import slack_cfg
+from company_brain.notify import Notifier
 
 
-class OperationsSlack:
+class _SlackChannel:
+    """Slack transport: a channel-bound ``post(text)`` callable for the Notifier."""
+
     def __init__(self, channel: str, token: str | None = None):
         self.channel = channel
         self._token = token or os.getenv("SLACK_BOT_TOKEN", "")
@@ -32,29 +41,28 @@ class OperationsSlack:
             return None
 
 
-def ingest_slack() -> OperationsSlack:
-    channel = slack_cfg().get("ingest_channel") or "#ingest"
-    return OperationsSlack(channel=channel)
+def channel_notifier(channel: str) -> Notifier:
+    """Severity-gated Notifier that posts to a specific operations Slack channel."""
+    return Notifier(channel_post=_SlackChannel(channel).post)
 
 
-def customer_support_slack() -> OperationsSlack:
-    channel = slack_cfg().get("customer_support_channel") or "#customer-support"
-    return OperationsSlack(channel=channel)
+def ingest_notifier() -> Notifier:
+    return channel_notifier(slack_cfg().get("ingest_channel") or "#ingest")
 
 
-def events_slack() -> OperationsSlack:
-    channel = slack_cfg().get("events_channel") or "#events"
-    return OperationsSlack(channel=channel)
+def customer_support_notifier() -> Notifier:
+    return channel_notifier(slack_cfg().get("customer_support_channel") or "#customer-support")
 
 
-def growth_slack() -> OperationsSlack:
-    channel = slack_cfg().get("growth_channel") or "#growth"
-    return OperationsSlack(channel=channel)
+def events_notifier() -> Notifier:
+    return channel_notifier(slack_cfg().get("events_channel") or "#events")
 
 
-def partnership_digest_slack() -> OperationsSlack:
+def growth_notifier() -> Notifier:
+    return channel_notifier(slack_cfg().get("growth_channel") or "#growth")
+
+
+def partnership_digest_notifier() -> Notifier:
     user = (slack_cfg().get("partnership_digest_user") or "").strip()
-    if user:
-        return OperationsSlack(channel=user)
-    channel = slack_cfg().get("partnership_digest_channel") or "#partnerships"
-    return OperationsSlack(channel=channel)
+    channel = user or slack_cfg().get("partnership_digest_channel") or "#partnerships"
+    return channel_notifier(channel)

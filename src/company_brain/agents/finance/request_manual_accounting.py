@@ -27,10 +27,10 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.config import AppConfig
+from company_brain.notify import ACTIONABLE, Signal, from_finance_config
 
 from .shared import notion_pages, transactions
 from .shared.config import load_finance_config, record_learned_categories
-from .shared.slack import from_config as slack_from_config
 
 logger = logging.getLogger(__name__)
 
@@ -114,11 +114,15 @@ class RequestManualAccountingAgent(BaseAgent):
         return "\n".join(lines)
 
     def _post_request(self, page_id: str, context: dict[str, Any], count: int) -> None:
-        slack = slack_from_config(self.finance_config)
         text = (f"Manual accounting needed for {context.get('period', '')}: "
                 f"{count} uncategorized transaction(s). Please add categories.")
         try:
-            slack.post_with_link(text, "Manual Accounting", notion_pages.page_url(page_id))
+            from_finance_config(self.finance_config).emit(Signal(
+                text=text,
+                severity=ACTIONABLE,
+                link_label="Manual Accounting",
+                link_url=notion_pages.page_url(page_id),
+            ))
         except Exception:
             self.logger.exception("Slack request failed")
 
@@ -137,19 +141,22 @@ class RequestManualAccountingAgent(BaseAgent):
         return False
 
     def _bump(self, page_id: str) -> None:
-        slack = slack_from_config(self.finance_config)
         try:
-            slack.post_with_link(
-                "Reminder: some transactions still need manual categorization.",
-                "Manual Accounting", notion_pages.page_url(page_id),
-            )
+            from_finance_config(self.finance_config).emit(Signal(
+                text="Reminder: some transactions still need manual categorization.",
+                severity=ACTIONABLE,
+                link_label="Manual Accounting",
+                link_url=notion_pages.page_url(page_id),
+            ))
         except Exception:
             self.logger.exception("Slack bump failed")
 
     @staticmethod
     def _seconds_until_noon(now: datetime | None = None) -> float:
         now = now or datetime.now()
-        target = now.replace(hour=CHECK_TIME.hour, minute=CHECK_TIME.minute, second=0, microsecond=0)
+        target = now.replace(
+            hour=CHECK_TIME.hour, minute=CHECK_TIME.minute, second=0, microsecond=0
+        )
         if now >= target:
             target += timedelta(days=1)
         return (target - now).total_seconds()

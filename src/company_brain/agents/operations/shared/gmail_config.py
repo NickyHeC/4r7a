@@ -97,10 +97,6 @@ def investor_interests_path() -> str:
     return wiki_paths().get("investor_interests", "operations/gmail/investor-interests.md")
 
 
-def customer_crm_path() -> str:
-    return customers_wiki_path()
-
-
 def media_promotion_path() -> str:
     return wiki_paths().get("media_promotion", "operations/gmail/media-promotion.md")
 

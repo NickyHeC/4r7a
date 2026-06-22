@@ -133,14 +133,18 @@ def apply_labels(
     add_ids = [lid for n in (add or []) if (lid := _name_to_id(n, mailbox=mailbox))]
     remove_ids = [lid for n in (remove or []) if (lid := _name_to_id(n, mailbox=mailbox))]
     if add_ids or remove_ids:
-        rest.modify_message(message_id, add_label_ids=add_ids, remove_label_ids=remove_ids, mailbox=mailbox)
+        rest.modify_message(
+            message_id, add_label_ids=add_ids, remove_label_ids=remove_ids, mailbox=mailbox
+        )
 
 
 def _name_to_id(name: str, *, mailbox: str) -> str | None:
     for lbl in rest.list_labels(mailbox):
         if lbl.get("name") == name:
             return lbl["id"]
-    created = rest.ensure_label(name, visible=name.startswith(("1.", "2.", "3.", "4.")), mailbox=mailbox)
+    created = rest.ensure_label(
+        name, visible=name.startswith(("1.", "2.", "3.", "4.")), mailbox=mailbox
+    )
     return created
 
 

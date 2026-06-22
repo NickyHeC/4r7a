@@ -5,6 +5,10 @@ Finance agents under `src/company_brain/agents/finance/`. Mercury and Ramp are
 
 **Config:** [`config/finance.yaml`](../../config/finance.yaml) (schedules, Notion titles, Slack channel).
 
+**Notifications:** every Slack `#finance` message is severity-gated through
+`from_finance_config(cfg).emit(Signal(...))` (never a direct Slack call) — `info` is
+logged-only, `actionable` / `alert` are delivered. Detect everything, notify selectively.
+
 ---
 
 ## How it runs

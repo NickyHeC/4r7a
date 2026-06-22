@@ -24,8 +24,8 @@ from company_brain.agents.operations.shared.gmail_config import (
 )
 from company_brain.agents.operations.shared.gmail_state import GmailState
 from company_brain.agents.operations.shared.labels import apply_labels
-from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.profiles import agent_enabled, profile_spec
+from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.scheduling import is_workday, next_interval
 from company_brain.config import AppConfig
 
@@ -50,7 +50,10 @@ class ThreadWatcherAgent(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
-        self.logger.info("Thread watcher starting persistent loop (every %dm)", thread_watcher_interval_minutes())
+        self.logger.info(
+            "Thread watcher starting persistent loop (every %dm)",
+            thread_watcher_interval_minutes(),
+        )
         while True:
             now = datetime.now()
             if not workdays_only() or is_workday(now):

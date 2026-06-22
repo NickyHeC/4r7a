@@ -11,6 +11,30 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-21 — Consistency pass + notification gating enforced (working tree)
+
+- **Lint clean**: `ruff check .` now passes (was 61 errors). Removed dead code
+  (`gh.list_recent_commits` rewrite, `asset_compile` unused `latest`), unused
+  imports, unsorted imports, and wrapped 50 over-length lines (string content
+  preserved via implicit concatenation).
+- **One YAML loader**: added `config.load_yaml_config(name)` / `save_yaml_config`;
+  `load_finance_config` / `load_operations_config` are now thin wrappers. New YAML
+  configs should read through this helper.
+- **Removed `customer_crm_path()` alias** (callers use `customers_wiki_path()`).
+- **"Detect everything, notify selectively" is now mandatory for every human-facing
+  notification.** `operations_slack` exposes only `Notifier`-returning builders
+  (`ingest_notifier()`, `customer_support_notifier()`, `events_notifier()`,
+  `growth_notifier()`, `partnership_digest_notifier()`, `channel_notifier()`); the
+  Slack SDK is just transport. Converted `team_on_it`, `growth_inbound`,
+  `partnership_digest`, `ingest_queue_review`, `gmail_customer_support` to emit
+  `Signal`s. `request_manual_accounting` no longer calls Slack directly (routed via
+  `from_finance_config().emit(Signal(...))`); removed the now-dead
+  `SlackNotifier.post_with_link`. Strengthened the `agent-eval` rule; updated README,
+  operations/finance handbooks.
+- **notepad.md de-linked**: nothing in the repo links to the gitignored scratchpad;
+  removed the reference from `operations.md` and the gmail reference block from
+  `notepad.md` (its content already lives in the operations handbook).
+
 ## 2026-06-18 — Agent handbook split (`docs/agents/`) (working tree)
 
 - Replaced monolithic `agent_list.md` HTML tables with **department handbooks**:

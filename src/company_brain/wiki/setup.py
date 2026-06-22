@@ -17,7 +17,6 @@ from pathlib import Path
 import click
 
 from company_brain.config import (
-    CONFIG_DIR,
     DiscoveryState,
     load_config,
     load_notion_config,

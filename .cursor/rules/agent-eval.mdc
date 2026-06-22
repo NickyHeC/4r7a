@@ -22,8 +22,15 @@ Every agent runs the loop in `BaseAgent.execute()`:
 
 ## Notify selectively (don't be noise)
 
-- Route human-facing messages through `company_brain.notify.Notifier` / `Signal`, not direct Slack calls.
-- Severity: `info` is suppressed by default (logged only); `actionable` and `alert` are delivered. Use `verify()`'s `noise` verdict to suppress routine pings. Detect everything, notify selectively.
+**"Detect everything, notify selectively" applies to every human-facing notification — no exceptions.**
+
+- **Every** human-facing message (Slack, etc.) MUST go through `company_brain.notify.Notifier` / `Signal`. Agents never call a Slack client (`chat_postMessage`, `.post(...)`) directly — that bypasses severity gating and is not allowed.
+- Severity drives delivery: `info` is suppressed by default (logged only); `actionable` and `alert` are delivered. A `Signal` can also be `silent=True` to force suppression. Pick the severity from the outcome (e.g. `ACTIONABLE` only when a human must look), so routine runs stay quiet.
+- Use `verify()`'s `noise` verdict to suppress routine pings as well.
+- Build the `Notifier` from a per-department helper that binds it to the right channel, never a raw poster:
+  - Finance: `from company_brain.notify import from_finance_config` → `from_finance_config(cfg).emit(Signal(...))`.
+  - Operations: `operations.shared.operations_slack` returns Notifiers (`ingest_notifier()`, `customer_support_notifier()`, `events_notifier()`, `growth_notifier()`, `partnership_digest_notifier()`, or `channel_notifier(channel)`); the Slack SDK is only the transport behind them.
+- New platforms add their own `Notifier` builder (a channel-bound `channel_post` callable wrapped by `Notifier`); they do not expose raw posting functions to agents.
 
 ## Default posture
 

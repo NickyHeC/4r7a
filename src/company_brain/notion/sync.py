@@ -109,7 +109,8 @@ class NotionSync:
         parent = parent_id or self._resolve_parent(fm.get("section", ""))
         if not parent:
             logger.warning(
-                "No Notion parent for '%s' (section=%s); cannot create page. Run init or set a binding.",
+                "No Notion parent for '%s' (section=%s); cannot create page. "
+                "Run init or set a binding.",
                 title, fm.get("section"),
             )
             return None

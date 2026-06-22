@@ -103,4 +103,7 @@ def _ramp_status_note() -> str:
     import os
     if not os.getenv("RAMP_TOKEN", "").strip():
         return "_Ramp token not set — full card-receipt reconciliation deferred to finance agents._"
-    return "_Ramp connected — run `ramp_card_spend` / finance monthly reports for transaction-level receipt matching._"
+    return (
+        "_Ramp connected — run `ramp_card_spend` / finance monthly reports "
+        "for transaction-level receipt matching._"
+    )

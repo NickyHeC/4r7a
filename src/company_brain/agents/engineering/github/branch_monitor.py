@@ -100,7 +100,8 @@ class BranchMonitorAgent(BaseAgent):
 
     def _environments_table(self, repo: str, prod_branch: str) -> str:
         rows = [
-            "| Environment | Current deploy | Source branch | Behind prod | Ahead of prod | Status |",
+            "| Environment | Current deploy | Source branch | "
+            "Behind prod | Ahead of prod | Status |",
             "|---|---|---|---|---|---|",
         ]
         branch_heads = {b.get("name"): b.get("commit", {}).get("sha", "")[:7]

@@ -46,7 +46,11 @@ class InvestorTrackerAgent(BaseAgent):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 section = format_mail_section(record, message)
-                if "Investor" in record.domain_tags and INVESTOR_INTEREST_TAG not in record.domain_tags:
+                is_investor = (
+                    "Investor" in record.domain_tags
+                    and INVESTOR_INTEREST_TAG not in record.domain_tags
+                )
+                if is_investor:
                     append_crm_entry(investors_crm_path(), "Investors CRM", section)
                     crm += 1
                 elif INVESTOR_INTEREST_TAG in record.domain_tags:

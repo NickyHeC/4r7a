@@ -10,25 +10,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-from company_brain.config import CONFIG_DIR
+from company_brain.config import load_yaml_config, save_yaml_config
 
 
 def load_finance_config(config_dir: Path | None = None) -> dict[str, Any]:
     """Return the parsed ``config/finance.yaml`` (empty dict if absent)."""
-    path = (config_dir or CONFIG_DIR) / "finance.yaml"
-    if not path.exists():
-        return {}
-    with open(path) as f:
-        return yaml.safe_load(f) or {}
+    return load_yaml_config("finance", config_dir)
 
 
 def save_finance_config(data: dict[str, Any], config_dir: Path | None = None) -> None:
     """Persist the finance config back to disk (used to store learned categories)."""
-    path = (config_dir or CONFIG_DIR) / "finance.yaml"
-    with open(path, "w") as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+    save_yaml_config("finance", data, config_dir)
 
 
 def record_learned_categories(mapping: dict[str, str], config_dir: Path | None = None) -> None:

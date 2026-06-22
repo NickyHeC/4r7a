@@ -54,7 +54,7 @@ Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (che
 
 - **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral [smol](https://github.com/smol-machines/smolvm) sandbox (`COMPANY_BRAIN_SANDBOX=smolvm`) before committing — reproduce, then commit only if it passes.
 - **Cost gates**: expensive agents implement `should_run()` using cheap change-detection (`agents/gates.py`) so no LLM is invoked when nothing changed; re-fires dedup via stored "handled" state.
-- **Notify selectively**: human-facing messages go through `notify.Notifier` — detect everything, deliver only what's `actionable`/`alert`; routine ticks are silent.
+- **Notify selectively**: **every** human-facing message goes through `notify.Notifier` / `Signal` (never a direct Slack call) — detect everything, deliver only what's `actionable`/`alert`; `info` and routine ticks are silent.
 
 ## Cloud direction (smol VMs)
 

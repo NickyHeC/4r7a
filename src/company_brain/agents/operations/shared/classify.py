@@ -37,7 +37,9 @@ AI_MEETING_SENDERS = (
 )
 RECEIPT_HINTS = ("receipt", "invoice", "payment confirmation", "order confirmation", "your receipt")
 NEWSLETTER_HINTS = ("newsletter", "unsubscribe", "view in browser")
-SALES_HINTS = ("quick question", "partnership opportunity", "reaching out", "intro call", "book a demo")
+SALES_HINTS = (
+    "quick question", "partnership opportunity", "reaching out", "intro call", "book a demo",
+)
 JOB_HINTS = ("application received", "job alert", "linkedin", "greenhouse", "lever.co", "ashbyhq")
 
 
@@ -133,7 +135,8 @@ def classify_message(message: dict[str, Any], *, mailbox: str = "me") -> TriageR
     if "?" in subject or "?" in snippet[:120]:
         result.attention = "2. Reply"
         return _finalize(result, mailbox=mailbox)
-    if any(w in subject for w in ("action required", "signature required", "please sign", "deadline")):
+    action_terms = ("action required", "signature required", "please sign", "deadline")
+    if any(w in subject for w in action_terms):
         result.attention = "1. Action"
         return _finalize(result, mailbox=mailbox)
     if subject.startswith("fyi") or "fyi:" in subject:
@@ -193,11 +196,13 @@ def _is_vendor(from_hdr: str, subject: str, snippet: str) -> bool:
     blob = f"{from_hdr} {subject} {snippet}"
     if "billing@" in from_hdr or "accounts@" in from_hdr or "invoices@" in from_hdr:
         return True
-    return any(w in blob for w in ("subscription renewal", "renewal notice", "your plan", "invoice #"))
+    vendor_terms = ("subscription renewal", "renewal notice", "your plan", "invoice #")
+    return any(w in blob for w in vendor_terms)
 
 
 def _is_people(from_hdr: str, subject: str, snippet: str) -> bool:
     blob = f"{subject} {snippet}".lower()
     if "investor" in from_hdr.lower():
         return False
-    return any(w in blob for w in ("nice to meet", "connect you with", "introducing", "pleasure meeting"))
+    people_terms = ("nice to meet", "connect you with", "introducing", "pleasure meeting")
+    return any(w in blob for w in people_terms)

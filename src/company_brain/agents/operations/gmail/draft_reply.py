@@ -15,7 +15,10 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_client
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.complexity import is_simple_reply, is_simple_reply_message
+from company_brain.agents.operations.shared.complexity import (
+    is_simple_reply,
+    is_simple_reply_message,
+)
 from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig

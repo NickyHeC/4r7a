@@ -9,7 +9,6 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
-
 CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
 PROJECT_ROOT = CONFIG_DIR.parent
 
@@ -137,7 +136,10 @@ class NotionConfig(BaseModel):
         if not self.section_teamspace:
             return None
         section = (section or "").strip("/")
-        candidates = [k for k in self.section_teamspace if section == k or section.startswith(k + "/") or k == ""]
+        candidates = [
+            k for k in self.section_teamspace
+            if section == k or section.startswith(k + "/") or k == ""
+        ]
         if not candidates:
             return None
         best = max(candidates, key=len)
@@ -181,6 +183,23 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     with open(path) as f:
         data = yaml.safe_load(f)
     return data or {}
+
+
+def load_yaml_config(name: str, config_dir: Path | None = None) -> dict[str, Any]:
+    """Load ``config/<name>.yaml`` as a plain dict (empty dict if absent).
+
+    The single loader for non-secret department/feature YAML configs (finance,
+    operations, ...). New YAML configs should read through this instead of
+    re-implementing a loader. Secrets stay in the environment, never these files.
+    """
+    return _load_yaml((config_dir or CONFIG_DIR) / f"{name}.yaml")
+
+
+def save_yaml_config(name: str, data: dict[str, Any], config_dir: Path | None = None) -> None:
+    """Persist a plain-dict YAML config back to ``config/<name>.yaml``."""
+    path = (config_dir or CONFIG_DIR) / f"{name}.yaml"
+    with open(path, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
 
 def load_wiki_config(config_dir: Path | None = None) -> WikiConfig:

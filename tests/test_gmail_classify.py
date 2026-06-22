@@ -33,14 +33,20 @@ def test_receipt_mark_read_not_archived_immediately():
 
 def test_newsletter_mark_read():
     result = classify_message(
-        _msg(subject="Weekly digest", from_="Substack <news@substack.com>", list_unsub="<mailto:unsub@x.com>")
+        _msg(
+            subject="Weekly digest",
+            from_="Substack <news@substack.com>",
+            list_unsub="<mailto:unsub@x.com>",
+        )
     )
     assert any(t.startswith("Newsletters/") for t in result.domain_tags)
     assert result.mark_read is True
 
 
 def test_cold_sales_auto_archive():
-    result = classify_message(_msg(subject="Quick question about your product", from_="sales@vendor.com"))
+    result = classify_message(
+        _msg(subject="Quick question about your product", from_="sales@vendor.com")
+    )
     assert "Cold Inbound/Sales Outreach" in result.domain_tags
     assert result.archive_now is True
 
@@ -54,7 +60,11 @@ def test_ai_meeting_notes():
 def test_employee_profile_flat_newsletter(monkeypatch):
     monkeypatch.setenv("GMAIL_PROFILE", "employee")
     result = classify_message(
-        _msg(subject="Weekly digest", from_="Substack <news@substack.com>", list_unsub="<mailto:unsub@x.com>")
+        _msg(
+            subject="Weekly digest",
+            from_="Substack <news@substack.com>",
+            list_unsub="<mailto:unsub@x.com>",
+        )
     )
     assert result.domain_tags == ["Newsletters"]
     assert result.mark_read is True
@@ -62,7 +72,9 @@ def test_employee_profile_flat_newsletter(monkeypatch):
 
 def test_employee_profile_flat_cold_inbound(monkeypatch):
     monkeypatch.setenv("GMAIL_PROFILE", "employee")
-    result = classify_message(_msg(subject="Quick question about your product", from_="sales@vendor.com"))
+    result = classify_message(
+        _msg(subject="Quick question about your product", from_="sales@vendor.com")
+    )
     assert result.domain_tags == ["Cold Inbound"]
     assert result.archive_now is True
 

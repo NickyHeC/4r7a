@@ -3,7 +3,16 @@
 Catch-all department for general platforms: **Gmail executive assistant** and **Linear**
 task workflows. Code lives under `src/company_brain/agents/operations/`.
 
-**Config:** [`config/operations.yaml`](../../config/operations.yaml) · **Env:** `GMAIL_*`, `LINEAR_*`, `SLACK_BOT_TOKEN`
+**Vision:** a team of agents working alongside the user to complete work and document
+information in the company. The **executive assistant** package (**Phases 0–5**) is
+**shipped** — triage, CRM, Linear tasks, receipt routing, and service profiles.
+
+In the ideal case, every company Gmail account connects to company-brain and ingest
+happens automatically once each mailbox is onboarded.
+
+**Config:** [`config/operations.yaml`](../../config/operations.yaml) — profile
+definitions in `gmail.profiles`, active default in `gmail.profile`, per-mailbox
+overrides in `gmail.mailbox_profiles`. **Env:** `GMAIL_*`, `LINEAR_*`, `SLACK_BOT_TOKEN`
 
 **Posture:** Gmail agents **read, label, and draft only — never send**. Finance platforms
 stay read-only at the source (see [Finance handbook](finance.md)).
@@ -162,8 +171,10 @@ specialists follow the active profile.
 | **`employee`** | Employee Gmail | Flat Cold Inbound & Newsletters; no Investor or Warm intro; no investor_tracker, partnership_digest, receipt_router |
 | **`service_account`** | Purpose inboxes | Attention **1–3** only; minimal domain labels; override per mailbox |
 
-**Set profile:** `gmail.profile` in config, `GMAIL_PROFILE=employee` per deploy, or
-`gmail.mailbox_profiles` for per-mailbox overrides. See [`project_install.md`](../../project_install.md).
+**Set profile:** `gmail.profiles` defines each profile's labels and agents;
+`gmail.profile` is the default for `GMAIL_MAILBOX`; override per deploy with
+`GMAIL_PROFILE=employee`, or per mailbox in `gmail.mailbox_profiles`. See
+[`project_install.md`](../../project_install.md).
 
 ---
 
@@ -289,6 +300,11 @@ Fetches attachments from triaged mail onto the wiki volume.
 ---
 
 ## CRM & notifications
+
+All Slack messages below are **severity-gated**: agents emit a `Signal` through a
+`Notifier` (built via `operations_slack` helpers like `ingest_notifier()` /
+`channel_notifier(channel)`), never a direct Slack call. `info` is logged-only;
+only `actionable` / `alert` reach a channel — detect everything, notify selectively.
 
 ### `investor_tracker.py` *(EA profile)*
 
@@ -450,5 +466,3 @@ Not an agent — shared connection layer for **`inbox_task`** and **`team_on_it`
 | Full Ramp receipt cross-check | Gap report shipped; finance reconciliation separate |
 | `security_triage` | Auth alerts, wire-transfer patterns |
 | `meeting_prep` | Pairs with meeting_scheduler |
-
-See also [`notepad.md`](../../notepad.md) for future platform ideas (Granola, Slack ops, Notion ops).

@@ -23,10 +23,10 @@ from company_brain.agents.operations.shared.linear_config import (
     team_on_it_slack_channel,
 )
 from company_brain.agents.operations.shared.mail_body import plain_text
-from company_brain.agents.operations.shared.operations_slack import OperationsSlack
+from company_brain.agents.operations.shared.operations_slack import channel_notifier
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
-from company_brain.notify import ACTIONABLE, Notifier, Signal
+from company_brain.notify import ACTIONABLE, Signal
 
 SPECIALIST_KEY = "team_on_it"
 
@@ -51,7 +51,7 @@ class TeamOnItAgent(BaseAgent):
     def run(self, **kwargs: Any) -> dict[str, Any]:
         handled = 0
         channel = team_on_it_slack_channel()
-        slack = OperationsSlack(channel=channel)
+        notifier = channel_notifier(channel)
 
         for record in self._store.unhandled_for(
             SPECIALIST_KEY, mailbox=self.mailbox, attention="4. Team On It",
@@ -87,7 +87,7 @@ class TeamOnItAgent(BaseAgent):
                 )
                 if url:
                     text += f"\n<{url}|Open in Linear>"
-                Notifier(channel_post=slack.post).emit(Signal(text=text, severity=ACTIONABLE))
+                notifier.emit(Signal(text=text, severity=ACTIONABLE))
 
                 self._store.mark_handled(record, SPECIALIST_KEY)
                 handled += 1

@@ -39,7 +39,10 @@ def make_model(provider: LLMProvider | None = None) -> Any:
     if p.key == "anthropic" or p.sdk == "claude":
         from agents.extensions.models.litellm_model import LitellmModel
 
-        return LitellmModel(model=f"anthropic/{p.model}" if p.model else "anthropic/claude", api_key=p.api_key)
+        return LitellmModel(
+            model=f"anthropic/{p.model}" if p.model else "anthropic/claude",
+            api_key=p.api_key,
+        )
 
     from agents import OpenAIChatCompletionsModel
     from openai import AsyncOpenAI

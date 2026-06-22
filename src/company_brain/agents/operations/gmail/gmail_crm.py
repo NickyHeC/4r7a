@@ -13,9 +13,9 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import company_connections_path, mailbox_id
+from company_brain.agents.operations.shared.profiles import profile_spec
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
-from company_brain.agents.operations.shared.profiles import profile_spec
 from company_brain.config import AppConfig
 
 SPECIALIST_KEY = "gmail_crm"

@@ -52,10 +52,6 @@ class SlackNotifier:
             logger.error("Slack post failed: %s", e.response.get("error") if e.response else e)
             return None
 
-    def post_with_link(self, text: str, link_label: str, url: str) -> str | None:
-        """Post a message with a trailing markdown-style link to a resource."""
-        return self.post(f"{text}\n<{url}|{link_label}>")
-
 
 def from_config(finance_config: dict[str, Any] | None) -> SlackNotifier:
     """Build a SlackNotifier from the finance config block."""

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -93,9 +93,14 @@ class MonthlyExpenseManager(BaseAgent):
         page_id = self._publish_notion(month, report)
         self._publish_slack(month, grand_total, page_id)
 
-        uncategorized = [t for t in txns if cat.classify_budget(t, self.keyword_maps) == cat.UNCATEGORIZED]
+        uncategorized = [
+            t for t in txns
+            if cat.classify_budget(t, self.keyword_maps) == cat.UNCATEGORIZED
+        ]
         if uncategorized and escalate:
-            self.logger.info("%d uncategorized txns — starting request_manual_accounting", len(uncategorized))
+            self.logger.info(
+                "%d uncategorized txns — starting request_manual_accounting", len(uncategorized)
+            )
             self._dispatch_manual_accounting(month, uncategorized)
 
         return {
@@ -143,7 +148,10 @@ class MonthlyExpenseManager(BaseAgent):
         lines.append(f"*Generated: {datetime.now():%Y-%m-%d %H:%M}*")
         lines.append(f"*Total outbound spend: {transactions.fmt_money(grand_total)}*")
         lines.append("")
-        ordered = sorted(grouped.items(), key=lambda kv: (kv[0] == cat.UNCATEGORIZED, -sum(abs(t["amount"]) for t in kv[1])))
+        ordered = sorted(
+            grouped.items(),
+            key=lambda kv: (kv[0] == cat.UNCATEGORIZED, -sum(abs(t["amount"]) for t in kv[1])),
+        )
         for subcat, items in ordered:
             subtotal = sum(abs(t["amount"]) for t in items)
             lines.append(f"## {subcat} — {transactions.fmt_money(subtotal)}")
@@ -177,7 +185,10 @@ class MonthlyExpenseManager(BaseAgent):
         severity = ACTIONABLE if grand_total > 0 else INFO
         try:
             from_finance_config(self.finance_config).emit(Signal(
-                text=f"{label} expense report ready — total outbound {transactions.fmt_money(grand_total)}.",
+                text=(
+                    f"{label} expense report ready — "
+                    f"total outbound {transactions.fmt_money(grand_total)}."
+                ),
                 severity=severity,
                 link_label=f"{label} Expense Report",
                 link_url=notion_pages.page_url(page_id) if page_id else None,

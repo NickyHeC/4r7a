@@ -32,7 +32,9 @@ class AssetCompileAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.publish = publish
 
-    def run(self, *, month: str | None = None, quarter: str | None = None, **kwargs: Any) -> dict[str, Any]:
+    def run(
+        self, *, month: str | None = None, quarter: str | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         """Compile assets for a month-end, quarter-end, or current date.
 
         Returns a dict with bank/treasury totals, per-account detail, and a
@@ -60,7 +62,9 @@ class AssetCompileAgent(BaseAgent):
         treasury_total = sum(t["balance"] for t in treasury)
         total = bank_total + treasury_total
 
-        report = self._build_report(label, target, bank, treasury, bank_total, treasury_total, total)
+        report = self._build_report(
+            label, target, bank, treasury, bank_total, treasury_total, total
+        )
 
         page_id = None
         if self.publish:
@@ -105,8 +109,6 @@ class AssetCompileAgent(BaseAgent):
     def _collect_treasury(self) -> list[dict]:
         treasury: list[dict] = []
         for t in mc.list_treasury_accounts():
-            net_returns = t.get("netReturns", []) or []
-            latest = net_returns[0] if net_returns else {}
             treasury.append({
                 "balance": t.get("currentBalance", 0.0),
                 "source": "live balance (no historical API)",

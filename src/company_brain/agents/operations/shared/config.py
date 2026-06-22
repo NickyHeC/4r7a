@@ -10,15 +10,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-from company_brain.config import CONFIG_DIR
+from company_brain.config import load_yaml_config
 
 
 def load_operations_config(config_dir: Path | None = None) -> dict[str, Any]:
     """Return the parsed ``config/operations.yaml`` (empty dict if absent)."""
-    path = (config_dir or CONFIG_DIR) / "operations.yaml"
-    if not path.exists():
-        return {}
-    with open(path) as f:
-        return yaml.safe_load(f) or {}
+    return load_yaml_config("operations", config_dir)

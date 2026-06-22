@@ -59,7 +59,9 @@ class SubscriptionAuditAgent(BaseAgent):
         n = (output or {}).get("recurring_count", 0)
         return AgentResult(output=output, status="ok" if n else "noise")
 
-    def run(self, *, quarter: str | None = None, months_back: int = 3, **kwargs: Any) -> dict[str, Any]:
+    def run(
+        self, *, quarter: str | None = None, months_back: int = 3, **kwargs: Any
+    ) -> dict[str, Any]:
         self.logger.info("Auditing subscriptions over the past %d months", months_back)
         recurring = self._detect_recurring(self._recent_months(months_back))
         self.logger.info("Detected %d recurring vendors", len(recurring))
@@ -73,7 +75,11 @@ class SubscriptionAuditAgent(BaseAgent):
             notion_pages.update_page_body(page_id, report)
 
         self._post_slack(recurring, page_id)
-        return {"recurring_count": len(recurring), "subscriptions_page_id": page_id, "report": report}
+        return {
+            "recurring_count": len(recurring),
+            "subscriptions_page_id": page_id,
+            "report": report,
+        }
 
     # -- detection ---------------------------------------------------------
 
@@ -103,11 +109,15 @@ class SubscriptionAuditAgent(BaseAgent):
                 .get("transactions", [])
             )
             all_txns.extend(
-                MercuryCardSpendAgent(self.config).execute(start=start, end=end).get("transactions", [])
+                MercuryCardSpendAgent(self.config)
+                .execute(start=start, end=end)
+                .get("transactions", [])
             )
             try:
                 all_txns.extend(
-                    RampCardSpendAgent(self.config).execute(start=start, end=end).get("transactions", [])
+                    RampCardSpendAgent(self.config)
+                    .execute(start=start, end=end)
+                    .get("transactions", [])
                 )
             except Exception:
                 self.logger.exception("Ramp unavailable for %s during subscription audit", month)
@@ -151,7 +161,8 @@ class SubscriptionAuditAgent(BaseAgent):
 
         vendor_block = "\n".join(
             f"- {v['name']}: {v['charge_count']} charges over {v['months_active']} months, "
-            f"avg {transactions.fmt_money(v['avg_amount'])}, total {transactions.fmt_money(v['total'])} "
+            f"avg {transactions.fmt_money(v['avg_amount'])}, "
+            f"total {transactions.fmt_money(v['total'])} "
             f"(source: {v['sources']})"
             for v in recurring
         )
@@ -195,7 +206,8 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
         for v in recurring:
             lines.append(
                 f"| {v['name']} | {v['charge_count']} | {v['months_active']} | "
-                f"{transactions.fmt_money(v['avg_amount'])} | {transactions.fmt_money(v['total'])} | {v['sources']} |"
+                f"{transactions.fmt_money(v['avg_amount'])} | "
+                f"{transactions.fmt_money(v['total'])} | {v['sources']} |"
             )
         lines.append("")
         return "\n".join(lines)

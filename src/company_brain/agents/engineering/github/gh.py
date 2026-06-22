@@ -81,16 +81,12 @@ def list_deployments(repo: str) -> list[dict[str, Any]]:
 
 def list_recent_commits(repo: str | None = None, since: str | None = None) -> list[dict[str, Any]]:
     """List recent commits on the default branch."""
-    args = ["api", f"repos/{repo}/commits" if repo else "repos/{owner}/{repo}/commits"]
-    if repo:
-        args = ["api", f"repos/{repo}/commits", "--paginate", "--jq", ".[]"]
-        endpoint = f"repos/{repo}/commits"
-        params = []
-        if since:
-            params.append(f"since={since}")
-        query = f"{endpoint}{'?' + '&'.join(params) if params else ''}"
-        return gh_json(["api", query, "--paginate"])
-    return []
+    if not repo:
+        return []
+    query = f"repos/{repo}/commits"
+    if since:
+        query += f"?since={since}"
+    return gh_json(["api", query, "--paginate"])
 
 
 def list_repos(org: str | None = None) -> list[dict[str, Any]]:

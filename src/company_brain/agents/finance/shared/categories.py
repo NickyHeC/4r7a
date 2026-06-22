@@ -147,7 +147,9 @@ OTHER_INCOME_KEYWORDS = ["CASHBACK", "DIVIDEND", "INTEREST EARNED", "REWARD"]
 UNCATEGORIZED = "Uncategorized"
 
 
-def _merge_keyword_config(base: dict[str, list[str]], extra: dict[str, list[str]]) -> dict[str, list[str]]:
+def _merge_keyword_config(
+    base: dict[str, list[str]], extra: dict[str, list[str]]
+) -> dict[str, list[str]]:
     merged = {k: list(v) for k, v in base.items()}
     for subcat, keywords in (extra or {}).items():
         merged.setdefault(subcat, [])

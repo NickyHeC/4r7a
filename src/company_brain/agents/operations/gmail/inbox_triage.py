@@ -46,7 +46,9 @@ class InboxTriageAgent(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
-        self.logger.info("Inbox triage starting persistent loop (every %dm)", triage_interval_minutes())
+        self.logger.info(
+            "Inbox triage starting persistent loop (every %dm)", triage_interval_minutes()
+        )
         while True:
             now = datetime.now()
             if not workdays_only() or is_workday(now):
@@ -77,7 +79,9 @@ class InboxTriageAgent(BaseAgent):
             try:
                 message = rest.get_message(msg_id, mailbox=self.mailbox)
                 triage = classify_message(message, mailbox=self.mailbox)
-                results.append(apply_triage(msg_id, triage, mailbox=self.mailbox, store=self._store))
+                results.append(
+                    apply_triage(msg_id, triage, mailbox=self.mailbox, store=self._store)
+                )
             except Exception:
                 self.logger.exception("Failed to triage message %s", msg_id)
 

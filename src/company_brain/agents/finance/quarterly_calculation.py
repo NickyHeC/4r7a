@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
@@ -102,10 +102,15 @@ class QuarterlyCalculationManager(BaseAgent):
 
         uncategorized = transactions.find_uncategorized(all_txns, self.keyword_maps)
         if uncategorized and escalate:
-            self.logger.info("%d uncategorized txns — invoking request_manual_accounting", len(uncategorized))
+            self.logger.info(
+                "%d uncategorized txns — invoking request_manual_accounting", len(uncategorized)
+            )
             self._dispatch_manual_accounting(quarter, uncategorized)
         else:
-            self.logger.info("No uncategorized txns (or escalation off) — starting budget_report + subscription_audit")
+            self.logger.info(
+                "No uncategorized txns (or escalation off) — "
+                "starting budget_report + subscription_audit"
+            )
             self._dispatch_followups(quarter)
 
         return {

@@ -14,11 +14,11 @@ from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import mailbox_id, media_promotion_path
 from company_brain.agents.operations.shared.mail_body import plain_text
-from company_brain.agents.operations.shared.operations_slack import events_slack, growth_slack
+from company_brain.agents.operations.shared.operations_slack import events_notifier, growth_notifier
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
 from company_brain.config import AppConfig
-from company_brain.notify import ACTIONABLE, Notifier, Signal
+from company_brain.notify import ACTIONABLE, Signal
 
 SPECIALIST_KEY = "growth_inbound"
 PRESS_TAG = "Cold Inbound/Press & Podcast"
@@ -65,7 +65,7 @@ class GrowthInboundAgent(BaseAgent):
         preview = plain_text(message, max_chars=300)
         blob = f"{subject} {preview}".lower()
         sponsor = any(h in blob for h in SPONSOR_HINTS)
-        channel = growth_slack() if sponsor else events_slack()
+        notifier = growth_notifier() if sponsor else events_notifier()
         label = "sponsor/co-host" if sponsor else "attend"
         text = (
             f"*Event invitation* ({label})\n"
@@ -73,7 +73,7 @@ class GrowthInboundAgent(BaseAgent):
             f"*From:* {from_}\n\n"
             f"{preview[:300]}"
         )
-        Notifier(channel_post=channel.post).emit(Signal(text=text, severity=ACTIONABLE))
+        notifier.emit(Signal(text=text, severity=ACTIONABLE))
 
     def _pending(self):
         return self._store.unhandled_with_any_tag(

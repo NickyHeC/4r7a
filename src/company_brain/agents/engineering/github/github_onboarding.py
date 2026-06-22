@@ -31,7 +31,9 @@ class GitHubOnboardingAgent(BaseAgent):
 
     name = "github_onboarding"
 
-    def __init__(self, config: AppConfig, org: str | None = None, repo: str | None = None, **kwargs: Any):
+    def __init__(
+        self, config: AppConfig, org: str | None = None, repo: str | None = None, **kwargs: Any
+    ):
         super().__init__(config, **kwargs)
         self.org = org
         self.repo = repo
@@ -84,7 +86,9 @@ class GitHubOnboardingAgent(BaseAgent):
         from company_brain.agents.engineering.github_manager import GitHubManager
         from company_brain.runtime import get_runtime
 
-        self.logger.info("Backfill complete — starting github_manager (idles until next morning check)")
+        self.logger.info(
+            "Backfill complete — starting github_manager (idles until next morning check)"
+        )
         try:
             get_runtime().start(GitHubManager, self.config, repo=self.repo)
         except Exception:

@@ -14,10 +14,10 @@ from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.mail_body import plain_text
-from company_brain.agents.operations.shared.operations_slack import customer_support_slack
+from company_brain.agents.operations.shared.operations_slack import customer_support_notifier
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
-from company_brain.notify import ACTIONABLE, Notifier, Signal
+from company_brain.notify import ACTIONABLE, Signal
 
 SPECIALIST_KEY = "gmail_customer_support"
 
@@ -53,8 +53,7 @@ class GmailCustomerSupportAgent(BaseAgent):
                     f"*From:* {from_}\n\n"
                     f"{preview[:400]}"
                 )
-                slack = customer_support_slack()
-                if Notifier(channel_post=slack.post).emit(Signal(text=text, severity=ACTIONABLE)):
+                if customer_support_notifier().emit(Signal(text=text, severity=ACTIONABLE)):
                     posted += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
             except Exception:

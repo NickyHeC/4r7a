@@ -17,10 +17,10 @@ from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.labels import archive
 from company_brain.agents.operations.shared.mail_body import plain_text
-from company_brain.agents.operations.shared.operations_slack import partnership_digest_slack
+from company_brain.agents.operations.shared.operations_slack import partnership_digest_notifier
 from company_brain.agents.operations.shared.routing import RoutingRecord, RoutingStore
 from company_brain.config import AppConfig
-from company_brain.notify import ACTIONABLE, Notifier, Signal
+from company_brain.notify import ACTIONABLE, Signal
 
 SPECIALIST_KEY = "partnership_digest"
 PARTNERSHIP_TAGS = {"Cold Inbound/Partnership", "Cold Inbound/Founder Networking"}
@@ -65,8 +65,7 @@ class PartnershipDigestAgent(BaseAgent):
             tag = next((t for t in record.domain_tags if t in PARTNERSHIP_TAGS), "")
             lines.append(f"• [{score}] {subject} ({tag})")
 
-        slack = partnership_digest_slack()
-        Notifier(channel_post=slack.post).emit(Signal(
+        partnership_digest_notifier().emit(Signal(
             text="\n".join(lines), severity=ACTIONABLE,
         ))
 

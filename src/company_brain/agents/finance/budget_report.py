@@ -75,7 +75,9 @@ class BudgetReportAgent(BaseAgent):
             if body.strip():
                 return body
         except ImportError:
-            self.logger.warning("claude-agent-sdk not installed — using deterministic budget summary")
+            self.logger.warning(
+                "claude-agent-sdk not installed — using deterministic budget summary"
+            )
         except Exception:
             self.logger.exception("Claude budget composition failed — using deterministic fallback")
         return self._deterministic_section(heading, metric_text)

@@ -79,7 +79,10 @@ class AbsorbWriter:
             return {"absorbed": 0, "batches": 0}
 
         self.wiki_dir.mkdir(parents=True, exist_ok=True)
-        batches = [entries[i:i + CHECKPOINT_EVERY] for i in range(0, len(entries), CHECKPOINT_EVERY)]
+        batches = [
+            entries[i:i + CHECKPOINT_EVERY]
+            for i in range(0, len(entries), CHECKPOINT_EVERY)
+        ]
         for n, batch in enumerate(batches, 1):
             logger.info("Absorb batch %d/%d (%d entries)", n, len(batches), len(batch))
             try:

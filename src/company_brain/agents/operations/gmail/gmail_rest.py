@@ -150,7 +150,9 @@ def list_history(
     return _request("GET", f"{mailbox}/history", params=params)
 
 
-def history_message_ids(start_history_id: str, *, mailbox: str = "me") -> tuple[list[str], str | None]:
+def history_message_ids(
+    start_history_id: str, *, mailbox: str = "me"
+) -> tuple[list[str], str | None]:
     """Return new message ids from history delta and the latest historyId."""
     ids: list[str] = []
     page_token = None
@@ -172,7 +174,9 @@ def history_message_ids(start_history_id: str, *, mailbox: str = "me") -> tuple[
     return list(dict.fromkeys(ids)), latest
 
 
-def history_sent_message_ids(start_history_id: str, *, mailbox: str = "me") -> tuple[list[str], str | None]:
+def history_sent_message_ids(
+    start_history_id: str, *, mailbox: str = "me"
+) -> tuple[list[str], str | None]:
     """Return message ids where the user sent mail (SENT label added)."""
     ids: list[str] = []
     page_token = None

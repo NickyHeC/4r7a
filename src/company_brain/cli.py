@@ -84,7 +84,9 @@ def ingest(source: str | None) -> None:
 
 
 @main.command()
-@click.option("--since", type=click.DateTime(), default=None, help="Only absorb entries after this date.")
+@click.option(
+    "--since", type=click.DateTime(), default=None, help="Only absorb entries after this date."
+)
 @click.option("--model", default=None, help="Override the model for the absorb writer.")
 def absorb(since: datetime | None, model: str | None) -> None:
     """Compile raw entries into wiki articles (MD source of truth) and sync to Notion."""
@@ -235,7 +237,10 @@ def doctor() -> None:
             notion_ok = NotionClient().check_auth()
         except Exception:
             notion_ok = False
-    check("Notion CLI (ntn) authenticated", notion_ok, "install ntn + run 'ntn login', then 'company-brain init'")
+    check(
+        "Notion CLI (ntn) authenticated", notion_ok,
+        "install ntn + run 'ntn login', then 'company-brain init'",
+    )
 
     check("GitHub CLI (gh) installed", shutil.which("gh") is not None, "install gh (read-only)")
     check("Mercury token (read-only)", bool(os.getenv("MERCURY_TOKEN")), "set MERCURY_TOKEN")
@@ -246,7 +251,8 @@ def doctor() -> None:
     if provider == "glm":
         check(
             "GLM-5 endpoint (open-source, no external tokens)", bool(os.getenv("GLM_BASE_URL")),
-            "set GLM_BASE_URL to your OpenAI-compatible GLM-5 server (cloud self-host or remote host)",
+            "set GLM_BASE_URL to your OpenAI-compatible GLM-5 server "
+            "(cloud self-host or remote host)",
         )
     elif provider == "openai":
         check("OpenAI API key", bool(os.getenv("OPENAI_API_KEY")), "set OPENAI_API_KEY")

@@ -20,7 +20,9 @@ from __future__ import annotations
 from company_brain.llm.provider import LLMProvider, prompt_caching_1h_enabled, resolve_provider
 
 
-def model_kwargs(explicit: str | None = None, provider: LLMProvider | None = None) -> dict[str, str]:
+def model_kwargs(
+    explicit: str | None = None, provider: LLMProvider | None = None
+) -> dict[str, str]:
     """``{"model": ...}`` to splat into ``ClaudeAgentOptions`` (empty -> SDK default).
 
     An ``explicit`` model (e.g. a CLI ``--model`` override) wins. Otherwise the

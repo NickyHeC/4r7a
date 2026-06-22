@@ -61,7 +61,11 @@ def write_wiki_page(
     fm.setdefault("id", p.stem)
     fm["title"] = title
     fm["type"] = type_
-    fm["section"] = section if section is not None else str(p.parent) if str(p.parent) != "." else ""
+    if section is not None:
+        fm["section"] = section
+    else:
+        parent = str(p.parent)
+        fm["section"] = parent if parent != "." else ""
     fm.setdefault("created", now)
     fm["last_updated"] = now
     if related is not None:

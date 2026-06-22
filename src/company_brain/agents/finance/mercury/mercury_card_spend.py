@@ -14,7 +14,6 @@ from collections import defaultdict
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.config import AppConfig
 
 from . import mercury_client as mc
 

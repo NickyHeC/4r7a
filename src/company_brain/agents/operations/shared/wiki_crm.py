@@ -8,7 +8,7 @@ from typing import Any
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import (
     company_connections_path,
-    customer_crm_path,
+    customers_wiki_path,
     inbound_candidates_path,
     investor_interests_path,
     investors_crm_path,
@@ -37,7 +37,7 @@ CRM_SEEDS: list[tuple[str, str, str, str]] = [
         "investor_interests",
     ),
     (
-        customer_crm_path(),
+        customers_wiki_path(),
         "Customer CRM",
         "# Customer CRM\n\n"
         "Active customers (email or domain, one per line):\n\n",
@@ -84,7 +84,9 @@ def ensure_gmail_crm_seeds(mailbox: str | None = None) -> int:
     return created
 
 
-def format_mail_section(record: RoutingRecord, message: dict[str, Any], *, max_body: int = 2500) -> str:
+def format_mail_section(
+    record: RoutingRecord, message: dict[str, Any], *, max_body: int = 2500
+) -> str:
     subject = record.extracted.get("subject") or rest.message_subject_from(message)
     from_ = record.extracted.get("from") or rest.message_from(message)
     date = record.extracted.get("date") or rest.message_date(message) or ""

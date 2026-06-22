@@ -12,7 +12,7 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import customer_crm_path, mailbox_id
+from company_brain.agents.operations.shared.gmail_config import customers_wiki_path, mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
 from company_brain.config import AppConfig
@@ -44,7 +44,7 @@ class CustomerCRMAgent(BaseAgent):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 append_crm_entry(
-                    customer_crm_path(), "Customer CRM",
+                    customers_wiki_path(), "Customer CRM",
                     format_mail_section(record, message),
                 )
                 self._store.mark_handled(record, SPECIALIST_KEY)
