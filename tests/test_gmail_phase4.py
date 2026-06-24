@@ -17,7 +17,7 @@ def test_fingerprint_stable():
 
 
 def test_linear_configured_with_env(monkeypatch):
-    from company_brain.agents.operations.linear import linear_client
+    from company_brain.agents.engineering.linear import linear_client
 
     monkeypatch.delenv("LINEAR_API_KEY", raising=False)
     monkeypatch.delenv("LINEAR_OAUTH_ACCESS_TOKEN", raising=False)

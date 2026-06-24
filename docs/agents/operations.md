@@ -12,7 +12,7 @@ happens automatically once each mailbox is onboarded.
 
 **Config:** [`config/operations.yaml`](../../config/operations.yaml) — profile
 definitions in `gmail.profiles`, active default in `gmail.profile`, per-mailbox
-overrides in `gmail.mailbox_profiles`. **Env:** `GMAIL_*`, `LINEAR_*`, `SLACK_BOT_TOKEN`
+overrides in `gmail.mailbox_profiles`. **Env:** `GMAIL_*`, `GRANOLA_*`, `LINEAR_*`, `SLACK_BOT_TOKEN`
 
 **Posture:** Gmail agents **read, label, and draft only — never send**. Finance platforms
 stay read-only at the source (see [Finance handbook](finance.md)).
@@ -390,7 +390,7 @@ Keeps top-scoring messages in inbox; archives the rest.
 |---|---|
 | **Tags** | `1. Action`, complex `2. Reply` |
 | **Destination** | Linear issue (GraphQL) |
-| **Requires** | `LINEAR_API_KEY`, `linear.team_key` |
+| **Requires** | `LINEAR_API_KEY`, `linear.team_key` in `config/engineering.yaml` |
 
 Simple replies stay with **`draft_reply`**.
 
@@ -426,15 +426,87 @@ deferred to finance agents.
 
 ---
 
-## Linear connection (`operations/linear/`)
+## Linear (via engineering connection layer)
 
-### `linear_client.py`
+Gmail task agents use the **engineering** Linear client — there is no separate
+operations Linear platform folder.
 
-Not an agent — shared connection layer for **`inbox_task`** and **`team_on_it`**:
+### `engineering/linear/linear_client.py`
+
+Cross-department connection layer (see [Engineering handbook](engineering.md)):
 
 1. **GraphQL API** (default) — `LINEAR_API_KEY` → `api.linear.app/graphql`
 2. **Official MCP** — `https://mcp.linear.app/mcp` (Claude SDK agents)
 3. **Community CLI** (optional) — `LINEAR_USE_CLI=1` + `linear` on PATH
+
+Used by **`inbox_task`** and **`team_on_it`** for issue creation. Team defaults:
+`config/engineering.yaml` → `linear.team_key` / `linear.team_id`.
+
+---
+
+## Google Calendar (`operations/gcal/`)
+
+Connection mirrors Gmail: official Google-hosted Calendar MCP at
+`https://calendarmcp.googleapis.com/mcp/v1` plus REST (`gcal_rest.py`) for
+deterministic agents. OAuth token can be shared with Gmail when calendar scopes
+are on the same consent.
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `calendar_availability.py` | On demand | Returns open meeting slots (used by `ext_meeting_scheduler`) |
+| `book_meeting.py` | On demand | Creates calendar events with guests + Google Meet link |
+| `daily_agenda.py` | **08:00** workdays (opt-in) | Slack DM rundown of today's meetings; **off by default** |
+
+#### Gmail cross-platform (`operations/gmail/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `ext_meeting_scheduler.py` | Via `gmail_manager` 8/12/4 | Proposes times (draft) or books meetings for `Meeting Request` threads where the user confirmed |
+
+**`ext_meeting_scheduler`** evaluates meeting importance (investor/customer → high;
+cold inbound → low). Low-importance slots avoid booking before significant calendar
+events. Config: `config/operations.yaml` → `gcal.*`; enable morning DM with
+`gcal.daily_agenda.enabled: true` + `slack_user` (or `GCAL_DAILY_AGENDA=1`).
+
+---
+
+## Granola (`operations/granola/`)
+
+Single specialist — no manager. **`granola_ingest.py`** runs persistently and pulls
+meeting notes at end of day.
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `granola_ingest.py` | **18:00** workdays | Fetches today's Granola notes, writes raw entries + daily digest wiki page |
+
+### Deployment modes
+
+| Mode | API keys | Scope |
+|------|----------|-------|
+| **business** | One key per member (`GRANOLA_MEMBER_KEYS`) | Personal notes for each roster entry in `granola.members` |
+| **enterprise** | Single `GRANOLA_API_KEY` | Public notes (Team-space folders visible to workspace) |
+
+Business mode deduplicates notes by Granola note id across member keys. Enterprise mode
+pulls all notes accessible to the company key in one pass.
+
+### Output
+
+1. **Raw entries** — one `raw/entries/*.md` per meeting (tags: `granola`, `meeting`) for absorb.
+2. **Daily digest** — `operations/granola/daily/YYYY-MM-DD.md` (compiled snapshot, `update` mode).
+
+Config: `config/operations.yaml` → `granola.schedule.ingest_time` (default `18:00`),
+`granola.wiki.daily_digest`. Client: `granola/granola_client.py` (REST, read-only).
+
+### `granola_onboarding.py`
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **Schedule** | Once, on first Granola connection |
+| **Source** | Granola (default **30-day** backfill) |
+
+1. Runs **`granola_ingest`** once per day across the backfill window (oldest first).
+2. Starts persistent **`granola_ingest`** via `get_runtime().start()` and exits.
 
 ---
 
@@ -460,7 +532,6 @@ Not an agent — shared connection layer for **`inbox_task`** and **`team_on_it`
 
 | Item | Notes |
 |------|-------|
-| `meeting_scheduler` | — |
 | Warm intro classifier | Confident cases only; heuristic TBD |
 | `inbox_task` archive on Linear done | Linear-side agent, not gmail sweep |
 | Full Ramp receipt cross-check | Gap report shipped; finance reconciliation separate |

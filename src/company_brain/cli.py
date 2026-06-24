@@ -270,13 +270,42 @@ def doctor() -> None:
     )
 
     try:
-        from company_brain.agents.operations.linear import linear_client as linear
-        linear_ok = linear.linear_is_configured()
+        from company_brain.agents.engineering.linear import linear_client as linear
+        linear_ok = linear.check_connection() if linear.linear_is_configured() else False
     except Exception:
         linear_ok = False
     check(
         "Linear (API key or linear CLI)", linear_ok,
-        "set LINEAR_API_KEY (Settings → Security & Access) — see project_install.md",
+        "set LINEAR_API_KEY or install linear CLI — see project_install.md",
+    )
+
+    try:
+        from company_brain.agents.operations.shared import granola_config as granola
+        from company_brain.agents.operations.granola import granola_client as granola_api
+        granola_ok = (
+            granola_api.check_connection()
+            if granola.granola_is_configured()
+            else False
+        )
+        granola_mode = granola.granola_mode() if granola.granola_is_configured() else "unset"
+    except Exception:
+        granola_ok, granola_mode = False, "unset"
+    check(
+        f"Granola meeting notes ({granola_mode}, read-only)",
+        granola_ok,
+        "set GRANOLA_API_KEY (enterprise) or GRANOLA_MEMBER_KEYS (business) — see project_install.md",
+    )
+
+    try:
+        from company_brain.agents.operations.gcal import gcal_rest as gcal_api
+        from company_brain.agents.operations.shared import gcal_config as gcal
+        gcal_ok = gcal_api.check_connection() if gcal.gcal_is_configured() else False
+    except Exception:
+        gcal_ok = False
+    check(
+        "Google Calendar (OAuth, read + book)",
+        gcal_ok,
+        "add calendar scopes to OAuth token — see project_install.md",
     )
 
     config = load_config()

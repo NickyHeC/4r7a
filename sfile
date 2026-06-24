@@ -30,9 +30,14 @@ allow_hosts = [
   "accounts.google.com",
   # Gmail (operations) — optional Composio-hosted Gmail MCP
   "backend.composio.dev",
-  # Linear (operations) — GraphQL API + official MCP
+  # Linear (engineering) — GraphQL API + official MCP
   "api.linear.app",
   "mcp.linear.app",
+  # Granola (operations) — meeting notes REST API
+  "public-api.granola.ai",
+  # Google Calendar (operations) — REST + official MCP
+  "calendarmcp.googleapis.com",
+  "calendar.googleapis.com",
 ]
 
 [dev]

@@ -15,8 +15,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.operations.shared.gmail_config import mailbox_id
-from company_brain.agents.operations.shared.linear_config import (
+from company_brain.agents.operations.shared.gmail_config import (
+    mailbox_id,
     receipt_router_wiki_path,
     subscription_sender_domains,
 )

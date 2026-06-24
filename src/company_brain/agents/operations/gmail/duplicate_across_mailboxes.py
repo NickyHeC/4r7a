@@ -13,8 +13,7 @@ import hashlib
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.operations.shared.gmail_config import mailbox_id
-from company_brain.agents.operations.shared.linear_config import connected_mailboxes
+from company_brain.agents.operations.shared.gmail_config import connected_mailboxes, mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingRecord, RoutingStore
 from company_brain.config import AppConfig
 

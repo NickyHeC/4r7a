@@ -11,6 +11,39 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-23 — Google Calendar + meeting scheduler (working tree)
+
+- Added **`operations/gcal/`**: `gcal_client.py` (official Calendar MCP), `gcal_rest.py`
+  (REST), `calendar_availability.py`, `book_meeting.py`, optional `daily_agenda.py`
+  (Slack DM, off by default).
+- **`ext_meeting_scheduler.py`** in Gmail: proposes times via draft or books confirmed
+  meetings; dispatched by `gmail_manager`. `doctor` + `sfile` updated.
+
+## 2026-06-23 — Granola onboarding agent (working tree)
+
+- Added **`granola_onboarding.py`**: runs `granola_ingest` once per day across a
+  configurable backfill window (default 30 days), then `get_runtime().start(GranolaIngestAgent)`.
+- `granola.onboarding.backfill_days` in `config/operations.yaml`; docs updated.
+
+## 2026-06-23 — Granola meeting-notes ingest (working tree)
+
+- Added **`operations/granola/`** platform: `granola_client.py` (REST read-only against
+  `public-api.granola.ai`), `granola_ingest.py` (persistent daily 6pm ingest, no manager).
+- Supports **business** (per-member API keys + roster) and **enterprise** (single public-notes
+  key) modes via `config/operations.yaml` → `granola` + `GRANOLA_*` env vars.
+- Writes raw entries for absorb plus a daily compiled wiki page at
+  `operations/granola/daily/{date}.md`. `doctor` checks Granola; `sfile` allow_hosts updated.
+
+## 2026-06-21 — Linear connection under engineering (working tree)
+
+- Moved Linear from `operations/linear/` to **`engineering/linear/linear_client.py`**
+  (GraphQL + official MCP + optional community CLI). Added read helpers
+  (`viewer`, `list_teams`, `list_issues`, `get_issue`) and `check_connection()` for
+  `doctor`. New `config/engineering.yaml` + `engineering/shared/` config loaders.
+- Operations Gmail agents (`inbox_task`, `team_on_it`) import the engineering client;
+  misplaced gmail helpers moved from `operations/shared/linear_config.py` into
+  `gmail_config.py`. No new Linear agents yet.
+
 ## 2026-06-21 — Consistency pass + notification gating enforced (working tree)
 
 - **Lint clean**: `ruff check .` now passes (was 61 errors). Removed dead code

@@ -13,15 +13,14 @@ from __future__ import annotations
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.linear import linear_client
-from company_brain.agents.operations.shared.gmail_config import mailbox_id
-from company_brain.agents.operations.shared.linear_config import (
+from company_brain.agents.engineering.linear import linear_client
+from company_brain.agents.engineering.shared.linear_config import (
     default_priority,
     team_id,
     team_key,
-    team_on_it_slack_channel,
 )
+from company_brain.agents.operations.gmail import gmail_rest as rest
+from company_brain.agents.operations.shared.gmail_config import mailbox_id, team_on_it_slack_channel
 from company_brain.agents.operations.shared.mail_body import plain_text
 from company_brain.agents.operations.shared.operations_slack import channel_notifier
 from company_brain.agents.operations.shared.routing import RoutingStore

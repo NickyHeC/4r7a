@@ -2,13 +2,6 @@
 #
 # Non-secret settings only — OAuth tokens and API keys live in .env.
 
-linear:
-  # Team for Gmail → Linear task creation (inbox_task, team_on_it).
-  # Set team_id (UUID) or team_key (e.g. ENG) — team_key is resolved via API.
-  team_key: ENG
-  team_id: ""
-  default_priority: 2
-
 gmail:
   provider: official
 
@@ -230,3 +223,48 @@ gmail:
   # Wiki paths for confirmed investors / customers (parsed for triage + CRM agents).
   investors_wiki: operations/gmail/investors-crm.md
   customers_wiki: operations/gmail/customer-crm.md
+
+# Granola meeting notes (operations/granola/).
+# Business: one API key per member (personal-notes scope) in GRANOLA_MEMBER_KEYS.
+# Enterprise: single GRANOLA_API_KEY with public-notes scope (Team space).
+granola:
+  mode: business  # business | enterprise
+  schedule:
+    ingest_time: "18:00"
+    workdays_only: true
+  # Business mode roster — keys live in env (GRANOLA_MEMBER_KEYS or GRANOLA_API_KEY_<LABEL>).
+  members: []
+  # members:
+  #   - label: alice
+  #     email: alice@company.com
+  #   - label: bob
+  #     email: bob@company.com
+  wiki:
+    daily_digest: operations/granola/daily/{date}.md
+  onboarding:
+    backfill_days: 30
+
+# Google Calendar (operations/gcal/). OAuth token can be shared with Gmail
+# (GMAIL_OAUTH_ACCESS_TOKEN) when calendar scopes are on the same consent.
+gcal:
+  provider: official
+  calendar_id: primary
+  business_hours:
+    start: "09:00"
+    end: "17:00"
+    timezone: UTC
+  meeting:
+    default_duration_minutes: 30
+    slot_count: 3
+    meet_conference: true
+  significant_event:
+    min_duration_minutes: 60
+    keywords:
+      - all-hands
+      - board
+      - investor
+      - company meeting
+  daily_agenda:
+    enabled: false
+    time: "08:00"
+    slack_user: ""

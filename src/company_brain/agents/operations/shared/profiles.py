@@ -35,6 +35,7 @@ ALL_GMAIL_AGENTS = frozenset({
     "team_on_it",
     "duplicate_across_mailboxes",
     "receipt_router",
+    "ext_meeting_scheduler",
 })
 
 MANAGER_DISPATCH_ORDER = [
@@ -42,6 +43,7 @@ MANAGER_DISPATCH_ORDER = [
     "inbox_task",
     "team_on_it",
     "draft_reply",
+    "ext_meeting_scheduler",
     "gmail_ingest",
     "attachment_router",
     "investor_tracker",

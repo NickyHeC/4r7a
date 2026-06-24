@@ -305,3 +305,43 @@ def get_attachment(message_id: str, attachment_id: str, *, mailbox: str = "me") 
     data = _request("GET", f"{mailbox}/messages/{message_id}/attachments/{attachment_id}")
     raw = data.get("data") or ""
     return base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4))
+
+
+def create_reply_draft(
+    thread_id: str,
+    body: str,
+    *,
+    mailbox: str = "me",
+) -> dict[str, Any]:
+    """Create an in-thread reply draft (never sends)."""
+    thread = get_thread(thread_id, mailbox=mailbox)
+    messages = thread.get("messages") or []
+    if not messages:
+        raise ValueError(f"Thread {thread_id} has no messages")
+    latest = messages[-1]
+    headers = header_map(latest)
+    to_addr = headers.get("from", "")
+    subject = headers.get("subject", "")
+    if subject and not subject.lower().startswith("re:"):
+        subject = f"Re: {subject}"
+    msg_id = headers.get("message-id", "")
+    refs = headers.get("references", "")
+    reference = f"{refs} {msg_id}".strip() if msg_id else refs
+
+    lines = [
+        f"To: {to_addr}",
+        f"Subject: {subject}",
+        "Content-Type: text/plain; charset=utf-8",
+    ]
+    if msg_id:
+        lines.append(f"In-Reply-To: {msg_id}")
+    if reference:
+        lines.append(f"References: {reference}")
+    lines.extend(["", body])
+    raw = "\r\n".join(lines)
+    encoded = base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii")
+    return _request(
+        "POST",
+        f"{mailbox}/drafts",
+        json_body={"message": {"raw": encoded, "threadId": thread_id}},
+    )

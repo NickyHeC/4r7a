@@ -1,13 +1,38 @@
 # Engineering — Agent Handbook
 
-GitHub agents under `src/company_brain/agents/engineering/`. All GitHub access is
+GitHub and Linear agents under `src/company_brain/agents/engineering/`. GitHub access is
 **read-only** via the `gh` CLI.
 
-**Config:** repo scope and schedules are set in agent code and environment (`gh auth`).
+**Config:** GitHub repo scope and schedules are set in agent code and environment (`gh auth`).
+Linear team defaults live in [`config/engineering.yaml`](../../config/engineering.yaml)
+(`linear.team_key` / `linear.team_id`).
 
 ---
 
-## How it runs
+## Linear connection (`engineering/linear/`)
+
+Connection layer only — **no engineering Linear agents yet** (you will spec those next).
+
+### `linear_client.py`
+
+Not an agent — shared connection layer for GraphQL, MCP, and optional CLI:
+
+| Path | When | Auth |
+|------|------|------|
+| **GraphQL API** (default) | Deterministic agents, issue create/read | `LINEAR_API_KEY` → `api.linear.app/graphql` |
+| **Official MCP** | Claude Agent SDK agents | Same key → `https://mcp.linear.app/mcp` |
+| **Community CLI** | `LINEAR_USE_CLI=1` + `linear` on PATH | `linear auth login` (e.g. [joa23/linear-cli](https://github.com/joa23/linear-cli)) |
+
+**Read helpers:** `viewer()`, `list_teams()`, `list_issues()`, `get_issue()`.
+
+**Write (cross-department):** `create_issue()` — used today by operations Gmail agents
+(`inbox_task`, `team_on_it`).
+
+Docs index: https://linear.app/llms.txt
+
+---
+
+## GitHub — how it runs
 
 ```mermaid
 flowchart TD

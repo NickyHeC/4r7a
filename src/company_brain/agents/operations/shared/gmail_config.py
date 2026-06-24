@@ -139,3 +139,46 @@ def ingest_review_time() -> time:
 
 def slack_cfg() -> dict[str, Any]:
     return gmail_cfg().get("slack") or {}
+
+
+def connected_mailboxes() -> list[str]:
+    import os
+
+    raw = os.getenv("GMAIL_CONNECTED_MAILBOXES", "").strip()
+    if raw:
+        return [m.strip() for m in raw.split(",") if m.strip()]
+    boxes = gmail_cfg().get("connected_mailboxes") or []
+    if boxes:
+        return [str(m) for m in boxes]
+    primary = os.getenv("GMAIL_MAILBOX", "").strip() or str(gmail_cfg().get("mailbox", "me"))
+    return [primary]
+
+
+def team_on_it_cfg() -> dict[str, Any]:
+    return gmail_cfg().get("team_on_it") or {}
+
+
+def team_on_it_slack_channel() -> str:
+    return team_on_it_cfg().get("slack_channel") or "#team-ops"
+
+
+def receipt_router_day() -> str:
+    rr = gmail_cfg().get("receipt_router") or {}
+    return str(rr.get("day", "friday")).lower()
+
+
+def receipt_router_time() -> time:
+    rr = gmail_cfg().get("receipt_router") or {}
+    raw = rr.get("time", "08:00")
+    hour, minute = raw.split(":", 1)
+    return time(int(hour), int(minute))
+
+
+def receipt_router_wiki_path() -> str:
+    rr = gmail_cfg().get("receipt_router") or {}
+    return rr.get("wiki_path", "operations/gmail/receipt-routing.md")
+
+
+def subscription_sender_domains() -> list[str]:
+    rr = gmail_cfg().get("receipt_router") or {}
+    return [str(d).lower() for d in (rr.get("subscription_senders") or [])]

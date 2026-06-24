@@ -1,0 +1,9 @@
+# Engineering department configuration.
+#
+# Non-secret settings only — API keys and OAuth tokens live in .env.
+
+linear:
+  # Default team for issue creation (set team_id UUID or team_key e.g. ENG).
+  team_key: ENG
+  team_id: ""
+  default_priority: 2

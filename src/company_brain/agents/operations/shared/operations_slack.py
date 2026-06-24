@@ -66,3 +66,8 @@ def partnership_digest_notifier() -> Notifier:
     user = (slack_cfg().get("partnership_digest_user") or "").strip()
     channel = user or slack_cfg().get("partnership_digest_channel") or "#partnerships"
     return channel_notifier(channel)
+
+
+def daily_agenda_notifier(slack_user_id: str) -> Notifier:
+    """DM notifier for the optional daily agenda agent."""
+    return channel_notifier(slack_user_id)

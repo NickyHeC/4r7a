@@ -121,21 +121,57 @@ deploy. Per-mailbox overrides: `gmail.mailbox_profiles` (see commented examples 
 `gmail_manager` runs for every connected account; triage labels and dispatched
 specialists follow the profile.
 
-### Linear (operations department)
-Linear powers Gmail → task workflows (`inbox_task`, `team_on_it`). Pick one auth path:
+### Linear (engineering department)
+Linear powers issue tracking for engineering agents (forthcoming) and cross-department
+Gmail workflows (`inbox_task`, `team_on_it`). Pick one auth path:
 
 - **Personal API key (recommended).** In Linear → Settings → Account → Security & Access,
   create an API key. Set `LINEAR_API_KEY`. Configure `linear.team_key` (e.g. `ENG`) or
-  `linear.team_id` in `config/operations.yaml`.
+  `linear.team_id` in `config/engineering.yaml`.
   Docs: https://linear.app/developers/graphql
 - **Official MCP (optional).** Remote MCP at `https://mcp.linear.app/mcp` with the same
   API key as `Authorization: Bearer …` for Claude Agent SDK agents.
   Docs: https://linear.app/docs/mcp.md
 - **Community CLI (optional).** Install [joa23/linear-cli](https://github.com/joa23/linear-cli)
-  or similar, run `linear auth login`, and set `LINEAR_USE_CLI=1` to delegate issue
-  creation to the `linear` binary instead of direct GraphQL.
+  or similar, run `linear auth login`, and set `LINEAR_USE_CLI=1` to delegate reads/writes
+  to the `linear` binary instead of direct GraphQL.
 
-Verify with `doctor` ("Linear …"). See https://linear.app/llms.txt for the full doc index.
+Connection layer: `engineering/linear/linear_client.py`. Verify with `doctor` ("Linear …").
+See https://linear.app/llms.txt for the full doc index.
+
+### Granola (operations department) — read-only meeting notes
+Granola supplies AI meeting notes and transcripts. The **`granola_ingest`** agent pulls
+notes from meetings that happened that day and ingests them at **6pm** (workdays).
+
+Pick a deployment mode (`granola.mode` in `config/operations.yaml`, or auto-detected from env):
+
+- **Business plan — per-member keys.** Each teammate who uses Granola creates an API key
+  in Granola → Settings → Connectors → API keys with **Personal notes** scope. List
+  members in `granola.members` (label + email) and set keys via
+  `GRANOLA_MEMBER_KEYS=alice:grn_...,bob:grn_...` or `GRANOLA_API_KEY_<LABEL>`.
+- **Enterprise plan — company-wide key.** Create one API key with **Public notes** scope
+  (notes must live in Team-space folders visible to the workspace). Set `GRANOLA_API_KEY`.
+
+Docs: https://docs.granola.ai/introduction · Connection layer:
+`operations/granola/granola_client.py`. On first connect, run **`granola_onboarding`**
+(default **30-day** backfill via `granola.onboarding.backfill_days`, then starts
+`granola_ingest` at its next 6pm wake). Verify with `doctor` ("Granola meeting notes …").
+
+### Google Calendar (operations department) — read + book meetings
+Google Calendar uses the same OAuth setup pattern as Gmail. Enable
+`calendar-json.googleapis.com` and `calendarmcp.googleapis.com` in your Google Cloud
+project, add calendar scopes to the OAuth consent screen, and include them in the
+token used by `GMAIL_OAUTH_ACCESS_TOKEN` (or set `GCAL_OAUTH_ACCESS_TOKEN`).
+
+Agents:
+- **`calendar_availability`** — open slots for meeting proposals
+- **`book_meeting`** — create events with guests and Google Meet links
+- **`ext_meeting_scheduler`** (Gmail folder) — drafts time proposals or books confirmed meetings
+- **`daily_agenda`** — optional morning Slack DM (`gcal.daily_agenda.enabled: false` by default)
+
+Docs: https://developers.google.com/workspace/calendar/api/guides/configure-mcp-server
+· Connection: `operations/gcal/gcal_client.py` + `gcal_rest.py`. Verify with
+`doctor` ("Google Calendar …").
 
 ### LLM provider (which model powers the agents)
 One knob — `COMPANY_BRAIN_LLM_PROVIDER` (resolved against `config/models.yaml`) —

@@ -18,12 +18,10 @@ from company_brain.agents.operations.shared.gmail_config import (
     manager_times,
     partnership_digest_day,
     partnership_digest_time,
-    sweep_time,
-    workdays_only,
-)
-from company_brain.agents.operations.shared.linear_config import (
     receipt_router_day,
     receipt_router_time,
+    sweep_time,
+    workdays_only,
 )
 from company_brain.agents.operations.shared.profiles import (
     MANAGER_DISPATCH_ORDER,
@@ -147,6 +145,9 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.gmail_customer_support import (
         GmailCustomerSupportAgent,
     )
+    from company_brain.agents.operations.gmail.ext_meeting_scheduler import (
+        ExtMeetingSchedulerAgent,
+    )
     from company_brain.agents.operations.gmail.gmail_ingest import GmailIngestAgent
     from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent
     from company_brain.agents.operations.gmail.inbox_task import InboxTaskAgent
@@ -163,6 +164,7 @@ def _dispatch_agent_classes() -> dict[str, type]:
         "inbox_task": InboxTaskAgent,
         "team_on_it": TeamOnItAgent,
         "draft_reply": DraftReplyAgent,
+        "ext_meeting_scheduler": ExtMeetingSchedulerAgent,
         "gmail_ingest": GmailIngestAgent,
         "attachment_router": AttachmentRouterAgent,
         "investor_tracker": InvestorTrackerAgent,
