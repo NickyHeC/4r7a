@@ -182,3 +182,23 @@ def receipt_router_wiki_path() -> str:
 def subscription_sender_domains() -> list[str]:
     rr = gmail_cfg().get("receipt_router") or {}
     return [str(d).lower() for d in (rr.get("subscription_senders") or [])]
+
+
+def receipt_router_cfg() -> dict[str, Any]:
+    return gmail_cfg().get("receipt_router") or {}
+
+
+def receipt_company_domain() -> str:
+    return str(receipt_router_cfg().get("company_domain") or "").strip().lower()
+
+
+def receipt_destination_mailbox() -> str:
+    """Inbox Ramp watches for auto-attaching receipts (default: primary mailbox)."""
+    dest = receipt_router_cfg().get("destination_mailbox")
+    if dest:
+        return str(dest)
+    return mailbox_id()
+
+
+def receipt_forward_enabled() -> bool:
+    return bool(receipt_router_cfg().get("forward_enabled", True))

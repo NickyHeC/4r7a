@@ -141,12 +141,12 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.duplicate_across_mailboxes import (
         DuplicateAcrossMailboxesAgent,
     )
+    from company_brain.agents.operations.gmail.ext_meeting_scheduler import (
+        ExtMeetingSchedulerAgent,
+    )
     from company_brain.agents.operations.gmail.gmail_crm import GmailCRMAgent
     from company_brain.agents.operations.gmail.gmail_customer_support import (
         GmailCustomerSupportAgent,
-    )
-    from company_brain.agents.operations.gmail.ext_meeting_scheduler import (
-        ExtMeetingSchedulerAgent,
     )
     from company_brain.agents.operations.gmail.gmail_ingest import GmailIngestAgent
     from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent

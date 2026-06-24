@@ -124,6 +124,11 @@ gmail:
     day: friday
     time: "08:00"
     wiki_path: operations/gmail/receipt-routing.md
+    # Inbox Ramp watches for auto-attaching receipts (Gmail API user id or email).
+    destination_mailbox: me
+    # Only copy receipts between mailboxes on this domain (no external forward).
+    company_domain: company.com
+    forward_enabled: true
     subscription_senders:
       - stripe.com
       - aws.amazon.com

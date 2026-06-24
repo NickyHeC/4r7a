@@ -280,8 +280,8 @@ def doctor() -> None:
     )
 
     try:
-        from company_brain.agents.operations.shared import granola_config as granola
         from company_brain.agents.operations.granola import granola_client as granola_api
+        from company_brain.agents.operations.shared import granola_config as granola
         granola_ok = (
             granola_api.check_connection()
             if granola.granola_is_configured()
@@ -293,7 +293,8 @@ def doctor() -> None:
     check(
         f"Granola meeting notes ({granola_mode}, read-only)",
         granola_ok,
-        "set GRANOLA_API_KEY (enterprise) or GRANOLA_MEMBER_KEYS (business) — see project_install.md",
+        "set GRANOLA_API_KEY (enterprise) or GRANOLA_MEMBER_KEYS (business) "
+        "— see project_install.md",
     )
 
     try:

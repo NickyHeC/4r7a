@@ -7,7 +7,9 @@ Requires ``gmail.modify`` in addition to readonly/compose for label changes.
 from __future__ import annotations
 
 import base64
+import email
 import os
+from email import policy
 from email.utils import parsedate_to_datetime
 from typing import Any
 
@@ -54,6 +56,22 @@ def _request(
 
 def get_profile(mailbox: str = "me") -> dict[str, Any]:
     return _request("GET", f"{mailbox}/profile")
+
+
+def mailbox_email(mailbox: str = "me") -> str:
+    """Resolve a Gmail API user id to an email address."""
+    if "@" in mailbox:
+        return mailbox.lower()
+    return str(get_profile(mailbox).get("emailAddress") or "").lower()
+
+
+def mailbox_on_company_domain(mailbox: str, company_domain: str) -> bool:
+    if not company_domain:
+        return False
+    addr = mailbox_email(mailbox)
+    if not addr:
+        return mailbox == "me"
+    return addr.split("@")[-1] == company_domain.lower()
 
 
 def list_labels(mailbox: str = "me") -> list[dict[str, Any]]:
@@ -345,3 +363,38 @@ def create_reply_draft(
         f"{mailbox}/drafts",
         json_body={"message": {"raw": encoded, "threadId": thread_id}},
     )
+
+
+def get_message_raw(message_id: str, *, mailbox: str = "me") -> str:
+    data = _request("GET", f"{mailbox}/messages/{message_id}", params={"format": "raw"})
+    return data.get("raw") or ""
+
+
+def copy_message_to_mailbox(
+    message_id: str,
+    *,
+    from_mailbox: str,
+    to_mailbox: str,
+    label_names: list[str] | None = None,
+) -> dict[str, Any]:
+    """Insert a copy into ``to_mailbox`` (inbox import — does not send mail)."""
+    raw = get_message_raw(message_id, mailbox=from_mailbox)
+    if not raw:
+        raise ValueError(f"Message {message_id} has no raw content")
+    body: dict[str, Any] = {"raw": _raw_for_insert(raw)}
+    label_ids = ["INBOX"]
+    if label_names:
+        label_ids.extend(ensure_label(name, mailbox=to_mailbox) for name in label_names)
+    body["labelIds"] = label_ids
+    return _request("POST", f"{to_mailbox}/messages", json_body=body)
+
+
+def _raw_for_insert(raw_b64: str) -> str:
+    """Strip Message-ID so Gmail accepts the insert as a new message."""
+    padding = "=" * (-len(raw_b64) % 4)
+    data = base64.urlsafe_b64decode(raw_b64 + padding)
+    msg = email.message_from_bytes(data, policy=policy.SMTP)
+    for header in ("Message-ID", "DKIM-Signature", "ARC-Seal", "ARC-Message-Signature"):
+        if header in msg:
+            del msg[header]
+    return base64.urlsafe_b64encode(msg.as_bytes(policy=policy.SMTP)).decode("ascii")

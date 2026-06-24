@@ -11,6 +11,14 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-23 — Receipt forwarding for Ramp inbox (working tree)
+
+- **`receipt_forward.py`**: copies missing subscription receipts from sibling
+  company-domain mailboxes into `receipt_router.destination_mailbox` via Gmail
+  insert (no send). Policy: `company_domain` + `forward_enabled` in config.
+- **`receipt_router`** refocused: route mail for Ramp auto-attach, not transaction
+  reconciliation.
+
 ## 2026-06-23 — Google Calendar + meeting scheduler (working tree)
 
 - Added **`operations/gcal/`**: `gcal_client.py` (official Calendar MCP), `gcal_rest.py`

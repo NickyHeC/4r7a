@@ -417,12 +417,14 @@ Marks secondary copies with `extracted.duplicate_of` so specialists don't double
 | | |
 |---|---|
 | **Schedule** | **Friday 08:00** |
+| **Purpose** | Get receipts into the inbox Ramp watches — not transaction reconciliation |
 | **Tags** | `Receipts` + subscription sender list |
-| **Destination** | `receipt-routing.md` |
-| **Write mode** | append |
+| **Forwarding** | Copies missing receipts from other **company-domain** mailboxes via Gmail insert (no external send) |
+| **Destination** | `receipt_router.destination_mailbox` (default primary) |
+| **Wiki** | `receipt-routing.md` (append) |
 
-Weekly gap report vs configured subscription domains. Full Ramp transaction match
-deferred to finance agents.
+Ramp auto-attaches from the destination inbox. This agent only routes mail there;
+it does not cross-check Ramp transactions (Ramp owns documentation gaps).
 
 ---
 
@@ -534,6 +536,6 @@ Config: `config/operations.yaml` → `granola.schedule.ingest_time` (default `18
 |------|-------|
 | Warm intro classifier | Confident cases only; heuristic TBD |
 | `inbox_task` archive on Linear done | Linear-side agent, not gmail sweep |
-| Full Ramp receipt cross-check | Gap report shipped; finance reconciliation separate |
+| Full Ramp receipt cross-check | Not needed — Ramp flags needs-receipt/memo; router only delivers mail to Ramp inbox |
 | `security_triage` | Auth alerts, wire-transfer patterns |
 | `meeting_prep` | Pairs with meeting_scheduler |
