@@ -11,6 +11,24 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-25 — Revert Excalidraw diagrams (working tree)
+
+- Removed `docs/diagrams/`, excalidraw skill, PNG renders, playwright render tooling.
+- Restored **Mermaid** flowcharts in each `docs/agents/` handbook file.
+
+## 2026-06-24 — Doctor registry + no-sus protocol (working tree)
+
+- **`src/company_brain/doctor/`**: scored doctors — `connect`, `agents`, `wiki`,
+  `ops`; CLI group `company-brain doctor [code|all|…]`; history in
+  `config/doctor-history.json`.
+- **`.cursor/rules/platform-boundary.mdc`** + **`.cursor/skills/no-sus-agent-doctor/`**
+  for pre-ship audits (Kevin Liu doctor pattern).
+- **CI**: `.github/workflows/ci.yml` — ruff, pytest, `doctor code --min-score 85`.
+- **`.pre-commit-config.yaml`** — ruff + pytest.
+- **`docs/development.md`** — fix loop, doctor registry, no-sus triggers.
+- **README Expectations** — creator disclaimer on agent limits and user accountability
+  (from `notepad.md`).
+
 ## 2026-06-23 — Receipt forwarding for Ramp inbox (working tree)
 
 - **`receipt_forward.py`**: copies missing subscription receipts from sibling

@@ -1,0 +1,40 @@
+---
+description: Do not duplicate platform features — integrate, configure, or report instead
+globs: src/company_brain/agents/**/*.py
+alwaysApply: true
+---
+
+# Platform Boundary
+
+Before adding agent logic, ask: **does the connected platform already do this?**
+
+If yes: integrate, configure, or surface a gap in the wiki — **do not reimplement**.
+
+## Ownership
+
+| Platform | company-brain owns | Platform owns |
+|----------|-------------------|---------------|
+| **Ramp** | Route receipt mail to the inbox Ramp watches | Receipt/memo gaps, card policy, spend categorization, transaction documentation |
+| **Mercury** | Read transactions into wiki reports | Banking, payments, account state |
+| **Gmail** | Triage, labels, drafts, inbox insert (no send) | Send, threading, delivery |
+| **Google Calendar** | Propose slots, book events when confirmed | Calendar sync, attendee delivery |
+| **Granola** | Daily ingest of meeting notes | Note access scopes, summaries, transcripts |
+| **Notion** | Mirror from wiki MD | Read ACL via teamspaces |
+
+## Rules
+
+1. **No full reconciliation** unless explicitly approved. Example: `receipt_router`
+   gets mail to the Ramp inbox; Ramp flags missing receipts/memos — we do not
+   cross-check every card transaction.
+2. **Proposing reconciliation is fine** in design discussion; building it requires
+   explicit approval (default: no).
+3. **Actuation stays minimal** — agents propose (wiki, drafts, calendar events);
+   humans or the platform complete high-risk actions.
+4. **One source of truth per decision** — wiki MD for operational pages; routing
+   records for Gmail dispatch; `config/state.json` for cost-gate markers.
+
+## When adding a new integration
+
+- Read the platform's docs first (`llms.txt` or handbook link).
+- Add hosts to `sfile` `allow_hosts` when introducing new API egress.
+- Document scope in the department handbook — what the agent does **and does not** do.

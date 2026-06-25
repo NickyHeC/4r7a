@@ -31,6 +31,7 @@ flowchart TD
     IT[inbox_triage every 30m workdays]
     TW[thread_watcher every 15m workdays]
     GM[gmail_manager 8/12/4 + 22:00 workdays]
+    GR[granola_ingest 18:00 workdays]
   end
   IT -->|classify + label| RR[(routing record JSON)]
   TW -->|sent-mail enrich| RR
@@ -38,6 +39,8 @@ flowchart TD
   TW --> DP[decision_propagate]
   TW --> GI[gmail_ingest]
   ON[gmail_onboarding once] --> IT & TW & GM
+  SPEC -->|Meeting Request| GCAL[calendar_availability · book_meeting]
+  GR --> WIKI[raw entries + daily digest MD]
 ```
 
 ### Schedules (workdays, configurable)
@@ -425,6 +428,7 @@ Marks secondary copies with `extracted.duplicate_of` so specialists don't double
 
 Ramp auto-attaches from the destination inbox. This agent only routes mail there;
 it does not cross-check Ramp transactions (Ramp owns documentation gaps).
+Forwarding logic lives in `receipt_forward.py` (invoked by `receipt_router`).
 
 ---
 
@@ -467,8 +471,10 @@ are on the same consent.
 
 **`ext_meeting_scheduler`** evaluates meeting importance (investor/customer → high;
 cold inbound → low). Low-importance slots avoid booking before significant calendar
-events. Config: `config/operations.yaml` → `gcal.*`; enable morning DM with
-`gcal.daily_agenda.enabled: true` + `slack_user` (or `GCAL_DAILY_AGENDA=1`).
+events. When it books, thread context is written into the Google Calendar event
+description — no separate `meeting_prep` agent. Config: `config/operations.yaml` →
+`gcal.*`; enable morning DM with `gcal.daily_agenda.enabled: true` + `slack_user`
+(or `GCAL_DAILY_AGENDA=1`).
 
 ---
 
@@ -538,4 +544,3 @@ Config: `config/operations.yaml` → `granola.schedule.ingest_time` (default `18
 | `inbox_task` archive on Linear done | Linear-side agent, not gmail sweep |
 | Full Ramp receipt cross-check | Not needed — Ramp flags needs-receipt/memo; router only delivers mail to Ramp inbox |
 | `security_triage` | Auth alerts, wire-transfer patterns |
-| `meeting_prep` | Pairs with meeting_scheduler |

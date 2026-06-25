@@ -4,6 +4,14 @@ Detailed documentation for every agent in company-brain — how they run, what t
 read, what they write, and department-specific conventions (label schemas, schedules,
 profiles). For the high-level pitch and data-flow overview, see [`README.md`](../../README.md).
 
+```mermaid
+flowchart LR
+  ENG[Engineering] --> WIKI[wiki MD]
+  FIN[Finance] --> WIKI
+  OPS[Operations] --> WIKI
+  WIKI --> Notion[Notion mirror]
+```
+
 ## Departments
 
 | Department | Scope | Handbook |
@@ -38,3 +46,6 @@ agents run to completion when dispatched.
 **Adding an agent:** Update the department handbook, [`README.md`](../../README.md)
 (high-level map), and [`project_install.md`](../../project_install.md) (connect steps).
 Onboarding agents always appear **last** in their platform section.
+
+**Development loop:** [`docs/development.md`](../development.md) — ruff, pytest,
+`company-brain doctor`.

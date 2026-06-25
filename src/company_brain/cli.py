@@ -12,9 +12,6 @@ import click
 from company_brain.config import (
     load_config,
     load_notion_config,
-    resolve_llm_provider,
-    resolve_mode,
-    resolve_runtime,
     resolve_wiki_dir,
 )
 from company_brain.wiki.index import WikiIndex
@@ -194,122 +191,114 @@ def cleanup() -> None:
     click.echo("Cleanup agents will be implemented in subsequent phases.")
 
 
-@main.command()
-def doctor() -> None:
-    """Diagnose setup: deployment mode, wiki location, and platform connections.
+@main.group(invoke_without_command=True)
+@click.pass_context
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON report.")
+@click.option("--min-score", type=int, default=None, help="Exit 1 if aggregate score is below N.")
+@click.option("--no-history", is_flag=True, help="Skip appending config/doctor-history.json.")
+def doctor(ctx: click.Context, as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Diagnose company-brain health (connectivity, agents, wiki, ops).
 
-    Used during agent-assisted onboarding to verify each platform after it is
-    connected. Reads only — never mutates anything.
+    Run ``company-brain doctor all`` for the full registry, or a single doctor:
+    ``connect``, ``agents``, ``wiki``, ``ops``.
     """
-    import os
-    import shutil
+    if ctx.invoked_subcommand is None:
+        from company_brain.doctor.runner import main_exit
 
-    click.secho("company-brain doctor", bold=True)
-    click.echo(f"  Mode:        {resolve_mode()}")
-    click.echo(f"  Runtime:     {resolve_runtime()}")
-    click.echo(f"  Wiki dir:    {resolve_wiki_dir()}")
-    click.echo(f"  Sandbox:     {os.getenv('COMPANY_BRAIN_SANDBOX', 'off')}")
-
-    provider_line = resolve_llm_provider()
-    provider_hint = ""
-    try:
-        from company_brain.llm.provider import resolve_provider
-
-        p = resolve_provider()
-        model = p.model or "(SDK default)"
-        target = p.base_url or "hosted API"
-        provider_line = f"{p.key} (sdk={p.sdk}, model={model}, {target})"
-    except Exception as exc:  # misconfigured provider — surface, don't crash doctor
-        provider_hint = f"  -> {exc}"
-    click.echo(f"  LLM:         {provider_line}")
-    if provider_hint:
-        click.secho(provider_hint, fg="yellow")
-    click.echo()
-
-    def check(label: str, ok: bool, hint: str) -> None:
-        mark = click.style("OK ", fg="green") if ok else click.style("-- ", fg="yellow")
-        click.echo(f"  [{mark}] {label}" + ("" if ok else f"  ({hint})"))
-
-    notion_ok = False
-    if shutil.which("ntn"):
-        try:
-            from company_brain.notion.client import NotionClient
-            notion_ok = NotionClient().check_auth()
-        except Exception:
-            notion_ok = False
-    check(
-        "Notion CLI (ntn) authenticated", notion_ok,
-        "install ntn + run 'ntn login', then 'company-brain init'",
-    )
-
-    check("GitHub CLI (gh) installed", shutil.which("gh") is not None, "install gh (read-only)")
-    check("Mercury token (read-only)", bool(os.getenv("MERCURY_TOKEN")), "set MERCURY_TOKEN")
-    check("Ramp token (read-only)", bool(os.getenv("RAMP_TOKEN")), "set RAMP_TOKEN + Ramp MCP")
-    check("Slack bot token", bool(os.getenv("SLACK_BOT_TOKEN")), "set SLACK_BOT_TOKEN")
-
-    provider = resolve_llm_provider()
-    if provider == "glm":
-        check(
-            "GLM-5 endpoint (open-source, no external tokens)", bool(os.getenv("GLM_BASE_URL")),
-            "set GLM_BASE_URL to your OpenAI-compatible GLM-5 server "
-            "(cloud self-host or remote host)",
+        main_exit(
+            None,
+            as_json=as_json,
+            min_score=min_score,
+            record_history=not no_history,
         )
-    elif provider == "openai":
-        check("OpenAI API key", bool(os.getenv("OPENAI_API_KEY")), "set OPENAI_API_KEY")
-    else:
-        check("Anthropic API key", bool(os.getenv("ANTHROPIC_API_KEY")), "set ANTHROPIC_API_KEY")
 
-    try:
-        from company_brain.agents.operations.gmail import gmail_client as gmail
-        gmail_ok, gmail_provider = gmail.gmail_is_configured(), gmail.gmail_provider()
-    except Exception:
-        gmail_ok, gmail_provider = False, "official"
-    check(
-        f"Gmail connection ({gmail_provider}, read+draft)", gmail_ok,
-        "set Gmail OAuth (official) or COMPOSIO_API_KEY (composio) — see project_install.md",
+
+def _doctor_options(fn):
+    fn = click.option("--json", "as_json", is_flag=True)(fn)
+    fn = click.option("--min-score", type=int, default=None)(fn)
+    fn = click.option("--no-history", is_flag=True)(fn)
+    return fn
+
+
+@doctor.command("connect")
+@_doctor_options
+def doctor_connect(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Platform connectivity and env tokens."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["connect"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
     )
 
-    try:
-        from company_brain.agents.engineering.linear import linear_client as linear
-        linear_ok = linear.check_connection() if linear.linear_is_configured() else False
-    except Exception:
-        linear_ok = False
-    check(
-        "Linear (API key or linear CLI)", linear_ok,
-        "set LINEAR_API_KEY or install linear CLI — see project_install.md",
+
+@doctor.command("agents")
+@_doctor_options
+def doctor_agents(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Agent naming, docs, Smolfile allow_hosts, handbook coverage."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["agents"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
     )
 
-    try:
-        from company_brain.agents.operations.granola import granola_client as granola_api
-        from company_brain.agents.operations.shared import granola_config as granola
-        granola_ok = (
-            granola_api.check_connection()
-            if granola.granola_is_configured()
-            else False
-        )
-        granola_mode = granola.granola_mode() if granola.granola_is_configured() else "unset"
-    except Exception:
-        granola_ok, granola_mode = False, "unset"
-    check(
-        f"Granola meeting notes ({granola_mode}, read-only)",
-        granola_ok,
-        "set GRANOLA_API_KEY (enterprise) or GRANOLA_MEMBER_KEYS (business) "
-        "— see project_install.md",
+
+@doctor.command("wiki")
+@_doctor_options
+def doctor_wiki(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Wiki MD-first / Notion mirror invariants."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["wiki"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
     )
 
-    try:
-        from company_brain.agents.operations.gcal import gcal_rest as gcal_api
-        from company_brain.agents.operations.shared import gcal_config as gcal
-        gcal_ok = gcal_api.check_connection() if gcal.gcal_is_configured() else False
-    except Exception:
-        gcal_ok = False
-    check(
-        "Google Calendar (OAuth, read + book)",
-        gcal_ok,
-        "add calendar scopes to OAuth token — see project_install.md",
+
+@doctor.command("ops")
+@_doctor_options
+def doctor_ops(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Slack notifier, Gmail actuation, receipt forwarding policy."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["ops"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
     )
 
-    config = load_config()
-    check("Wiki initialized in Notion", config.notion.is_initialized, "run 'company-brain init'")
-    click.echo()
-    click.echo("Connect platforms with the help of an AI coding agent — see project_install.md.")
+
+@doctor.command("code")
+@_doctor_options
+def doctor_code(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Deterministic code checks (agents, wiki, ops) — no env tokens required."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["agents", "wiki", "ops"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
+    )
+
+
+@doctor.command("all")
+@_doctor_options
+def doctor_all(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Run every doctor in the registry."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        None,
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
+    )
