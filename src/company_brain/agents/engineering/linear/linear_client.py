@@ -21,6 +21,7 @@ import json
 import os
 import shutil
 import subprocess
+from datetime import datetime
 from typing import Any
 
 import requests
@@ -44,7 +45,12 @@ query Teams {
 _ISSUES = """
 query Issues($filter: IssueFilter, $first: Int) {
   issues(filter: $filter, first: $first) {
-    nodes { id identifier url title state { name } priority priorityLabel updatedAt }
+    nodes {
+      id identifier url title updatedAt
+      state { name type }
+      team { id key name }
+      project { id name }
+    }
   }
 }
 """
@@ -53,7 +59,44 @@ _ISSUE = """
 query Issue($id: String!) {
   issue(id: $id) {
     id identifier url title description
-    state { name } priority priorityLabel updatedAt
+    state { name type } priority priorityLabel updatedAt
+    team { id key name }
+    project { id name }
+  }
+}
+"""
+
+_ISSUES_UPDATED = """
+query IssuesUpdated($filter: IssueFilter, $first: Int) {
+  issues(filter: $filter, first: $first, orderBy: updatedAt) {
+    nodes {
+      id identifier url title updatedAt
+      state { name type }
+      team { id key name }
+      project { id name }
+    }
+  }
+}
+"""
+
+_ISSUES_OPEN = """
+query OpenIssues($filter: IssueFilter, $first: Int) {
+  issues(filter: $filter, first: $first, orderBy: updatedAt) {
+    nodes {
+      id identifier url title updatedAt
+      state { id name type }
+      team { id key name }
+      project { id name }
+    }
+  }
+}
+"""
+
+_ISSUE_UPDATE = """
+mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
+  issueUpdate(id: $id, input: $input) {
+    success
+    issue { id identifier url title state { name type } updatedAt }
   }
 }
 """
@@ -63,6 +106,14 @@ mutation IssueCreate($input: IssueCreateInput!) {
   issueCreate(input: $input) {
     success
     issue { id identifier url title }
+  }
+}
+"""
+
+_WORKFLOW_STATES = """
+query TeamStates($teamId: String!) {
+  team(id: $teamId) {
+    states { nodes { id name type } }
   }
 }
 """
@@ -280,3 +331,100 @@ def _create_issue_cli(*, title: str, description: str, team_key: str | None) -> 
             "title": data.get("title", title),
         }
     raise LinearAPIError(f"linear CLI returned unexpected payload: {data!r}")
+
+
+TERMINAL_STATE_TYPES = frozenset({"completed", "canceled"})
+
+
+def is_terminal_issue(issue: dict[str, Any]) -> bool:
+    """Return True when a Linear issue is Done/Canceled."""
+    state = issue.get("state") or {}
+    if state.get("type") in TERMINAL_STATE_TYPES:
+        return True
+    name = (state.get("name") or "").strip().lower()
+    return name in ("done", "canceled", "cancelled")
+
+
+def list_issues_updated_since(
+    since: datetime | str,
+    *,
+    team_id: str | None = None,
+    team_key: str | None = None,
+    first: int = 100,
+) -> list[dict[str, Any]]:
+    """List issues updated at or after ``since`` (GraphQL)."""
+    if isinstance(since, datetime):
+        since_iso = since.astimezone().isoformat()
+    else:
+        since_iso = since
+    issue_filter: dict[str, Any] = {"updatedAt": {"gte": since_iso}}
+    tid = None
+    if team_id or team_key:
+        tid = resolve_team_id(team_id=team_id, team_key=team_key)
+        issue_filter["team"] = {"id": {"eq": tid}}
+    data = graphql(_ISSUES_UPDATED, {"filter": issue_filter, "first": first})
+    return data.get("issues", {}).get("nodes") or []
+
+
+def update_issue(
+    issue_id: str,
+    *,
+    title: str | None = None,
+    description: str | None = None,
+    state_id: str | None = None,
+) -> dict[str, Any]:
+    """Update a Linear issue; returns the updated issue payload."""
+    issue_input: dict[str, Any] = {}
+    if title is not None:
+        issue_input["title"] = title[:255]
+    if description is not None:
+        issue_input["description"] = description
+    if state_id is not None:
+        issue_input["stateId"] = state_id
+    if not issue_input:
+        raise LinearAPIError("update_issue requires at least one field")
+    data = graphql(_ISSUE_UPDATE, {"id": issue_id, "input": issue_input})
+    payload = data.get("issueUpdate") or {}
+    if not payload.get("success"):
+        raise LinearAPIError("issueUpdate returned success=false")
+    return payload.get("issue") or {}
+
+
+def list_open_issues(
+    *,
+    team_id: str | None = None,
+    team_key: str | None = None,
+    first: int = 100,
+) -> list[dict[str, Any]]:
+    """List non-terminal issues for a team (GraphQL)."""
+    issue_filter: dict[str, Any] = {
+        "state": {"type": {"nin": list(TERMINAL_STATE_TYPES)}},
+    }
+    if team_id or team_key:
+        tid = resolve_team_id(team_id=team_id, team_key=team_key)
+        issue_filter["team"] = {"id": {"eq": tid}}
+    data = graphql(_ISSUES_OPEN, {"filter": issue_filter, "first": first})
+    return data.get("issues", {}).get("nodes") or []
+
+
+def list_workflow_states(*, team_id: str | None = None, team_key: str | None = None) -> list[dict]:
+    """Return workflow states for a team."""
+    tid = resolve_team_id(team_id=team_id, team_key=team_key)
+    data = graphql(_WORKFLOW_STATES, {"teamId": tid})
+    return data.get("team", {}).get("states", {}).get("nodes") or []
+
+
+def resolve_state_id(
+    state_name: str,
+    *,
+    team_id: str | None = None,
+    team_key: str | None = None,
+) -> str | None:
+    """Resolve a workflow state name to its UUID (case-insensitive)."""
+    target = (state_name or "").strip().lower()
+    if not target:
+        return None
+    for state in list_workflow_states(team_id=team_id, team_key=team_key):
+        if (state.get("name") or "").strip().lower() == target:
+            return state.get("id")
+    return None

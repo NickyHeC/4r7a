@@ -14,6 +14,7 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.linear import linear_client
+from company_brain.agents.engineering.linear.task_bindings import TaskBindingStore
 from company_brain.agents.engineering.shared.linear_config import (
     default_priority,
     team_id,
@@ -39,6 +40,7 @@ class TeamOnItAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.mailbox = mailbox or mailbox_id()
         self._store = RoutingStore()
+        self._bindings = TaskBindingStore()
 
     def should_run(self, **kwargs: Any) -> bool:
         return linear_client.linear_is_configured() and bool(
@@ -75,8 +77,18 @@ class TeamOnItAgent(BaseAgent):
                 )
                 ident = issue.get("identifier") or issue.get("id", "")
                 url = issue.get("url", "")
+                binding = self._bindings.create_gmail_binding(
+                    message_id=record.message_id,
+                    thread_id=record.thread_id,
+                    mailbox=self.mailbox,
+                    linear_issue=issue,
+                    title=f"[Team] {subject or 'Gmail delegation'}",
+                    task_class="team_on_it",
+                    sync_notion=False,
+                )
                 record.extracted["linear_issue_id"] = ident
                 record.extracted["linear_issue_url"] = url
+                record.extracted["task_id"] = binding.task_id
                 self._store.write(record)
 
                 text = (

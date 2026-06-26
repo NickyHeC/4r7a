@@ -11,9 +11,10 @@ Linear team defaults live in [`config/engineering.yaml`](../../config/engineerin
 
 ## Linear connection (`engineering/linear/`)
 
-Connection layer only — **no engineering Linear agents yet** (you will spec those next).
+Shared connection layer plus task-platform agents (see
+[`docs/plans/linear-task-platform.md`](../plans/linear-task-platform.md)).
 
-### `linear_client.py`
+### Connection — `linear_client.py`
 
 Not an agent — shared connection layer for GraphQL, MCP, and optional CLI:
 
@@ -23,12 +24,66 @@ Not an agent — shared connection layer for GraphQL, MCP, and optional CLI:
 | **Official MCP** | Claude Agent SDK agents | Same key → `https://mcp.linear.app/mcp` |
 | **Community CLI** | `LINEAR_USE_CLI=1` + `linear` on PATH | `linear auth login` (e.g. [joa23/linear-cli](https://github.com/joa23/linear-cli)) |
 
-**Read helpers:** `viewer()`, `list_teams()`, `list_issues()`, `get_issue()`.
+**Read helpers:** `viewer()`, `list_teams()`, `list_issues()`, `get_issue()`,
+`list_issues_updated_since()`.
 
-**Write (cross-department):** `create_issue()` — used today by operations Gmail agents
-(`inbox_task`, `team_on_it`).
+**Write:** `create_issue()`, `update_issue()` — used by Gmail task agents and completion flow.
 
 Docs index: https://linear.app/llms.txt
+
+### Task registry — `task_bindings.py`
+
+Cross-platform task identity in `config/task_bindings.json` with wiki mirror under
+`engineering/tasks/`. Gmail agents store `task_id` on routing records when creating
+Linear issues.
+
+### Manager — `linear_manager.py`
+
+| | |
+|---|---|
+| **State** | persistent |
+| **Schedule** | Poll Linear every **30 min**; stale audit **Monday 09:00** |
+| **Action** | Dispatch `linear_completed` on Done/Canceled; weekly `stale_audit` |
+
+### Specialists
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `slot_check.py` | Via manager / on demand | Propose-only team/project validation report |
+| `stale_audit.py` | Weekly (via manager) | Stale issues report; dispatches manual management |
+| `request_manual_management.py` | On demand | Wiki checklist → Slack → apply approved status changes |
+| `structure_organization.py` | Onboarding / on demand | Propose Linear workspace (`structure-proposal.md`) |
+| `linear_completed/dispatcher.py` | On terminal Linear state | Routes to platform completion handlers |
+| `linear_completed/archive_gmail.py` | Via dispatcher | Archive bound Gmail; system propagation ledger |
+| `linear_completed/slack_thread_respond.py` | Via dispatcher | Thread reply on Linear Done (Slack-sourced tasks) |
+| `linear_completed/` → `notion_task_sync` | Via dispatcher | Update Notion task row on Linear Done (meeting tasks) |
+
+### Onboarding — `linear_onboarding.py`
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **Schedule** | Once, on first Linear connection |
+
+1. Backfill Gmail routing records → `task_bindings`
+2. Run **`structure_organization`** (propose-only; does not block)
+3. Run **`slot_check`** once
+4. Start **`linear_manager`** and **`notion_task_scanner`** (when task DBs configured) via `get_runtime().start()` and exit
+
+**GitHub:** PR/issue status sync is Linear-native — agents do not mirror GitHub state.
+
+```mermaid
+flowchart TD
+  ON[linear_onboarding once] --> SO[structure_organization]
+  ON --> SC[slot_check]
+  ON -->|start| LM[linear_manager]
+  LM -->|30min| LC[linear_completed]
+  LM -->|Monday| SA[stale_audit]
+  SA --> RMM[request_manual_management]
+  LC --> AG[archive_gmail]
+  LC --> STR[slack_thread_respond]
+  LC --> NT[notion_task_sync]
+```
 
 ---
 

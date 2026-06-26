@@ -229,3 +229,5 @@ notepad.md
 /registry.json
 # Agent gate/runtime state (local markers)
 /config/state.json
+# Task binding registry (local runtime state; may contain company task data)
+/config/task_bindings.json

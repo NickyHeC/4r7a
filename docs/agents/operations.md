@@ -31,7 +31,7 @@ flowchart TD
     IT[inbox_triage every 30m workdays]
     TW[thread_watcher every 15m workdays]
     GM[gmail_manager 8/12/4 + 22:00 workdays]
-    GR[granola_ingest 18:00 workdays]
+    GR[granola_meeting_watch 15m poll]
   end
   IT -->|classify + label| RR[(routing record JSON)]
   TW -->|sent-mail enrich| RR
@@ -480,12 +480,24 @@ description — no separate `meeting_prep` agent. Config: `config/operations.yam
 
 ## Granola (`operations/granola/`)
 
-Single specialist — no manager. **`granola_ingest.py`** runs persistently and pulls
-meeting notes at end of day.
+```mermaid
+flowchart TD
+  GMW[granola_meeting_watch persistent] -->|meeting ended| GI[granola_ingest]
+  GMW -->|Friday| MC[granola_miss_check]
+  GI --> GT[granola_task]
+  GT --> Linear[(Linear + task_bindings)]
+```
+
+**`granola_meeting_watch.py`** is the persistent agent (polls calendar every 15 min).
+It dispatches **`granola_ingest`** after each meeting ends (+ buffer) and runs
+**`granola_miss_check`** weekly as the safety net for any missed meetings.
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `granola_ingest.py` | **18:00** workdays | Fetches today's Granola notes, writes raw entries + daily digest wiki page |
+| `granola_meeting_watch.py` | Persistent (15 min poll) | Post-meeting ingest + weekly miss check |
+| `granola_ingest.py` | Dispatched per meeting | Raw entries + daily digest wiki page |
+| `granola_task.py` | After ingest | Action items → Linear issue + `task_bindings` |
+| `granola_miss_check.py` | Weekly (via watch) | Calendar vs ingest gap report |
 
 ### Deployment modes
 
@@ -502,8 +514,9 @@ pulls all notes accessible to the company key in one pass.
 1. **Raw entries** — one `raw/entries/*.md` per meeting (tags: `granola`, `meeting`) for absorb.
 2. **Daily digest** — `operations/granola/daily/YYYY-MM-DD.md` (compiled snapshot, `update` mode).
 
-Config: `config/operations.yaml` → `granola.schedule.ingest_time` (default `18:00`),
-`granola.wiki.daily_digest`. Client: `granola/granola_client.py` (REST, read-only).
+Config: `config/operations.yaml` → `granola.schedule` (`watch_interval_minutes`,
+`post_meeting_buffer_minutes`, `miss_check_day`, `miss_check_time`). Client:
+`granola/granola_client.py` (REST, read-only). Requires Google Calendar for meeting watch.
 
 ### `granola_onboarding.py`
 
@@ -514,7 +527,51 @@ Config: `config/operations.yaml` → `granola.schedule.ingest_time` (default `18
 | **Source** | Granola (default **30-day** backfill) |
 
 1. Runs **`granola_ingest`** once per day across the backfill window (oldest first).
-2. Starts persistent **`granola_ingest`** via `get_runtime().start()` and exits.
+2. Starts persistent **`granola_meeting_watch`** via `get_runtime().start()` and exits.
+
+---
+
+## Slack (`operations/slack/`)
+
+Polls watched channels for threads with action-item language; creates Linear issues
+via `task_bindings`. Linear Done → thread completion reply (system propagation).
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `slack_thread_watcher.py` | Persistent (30 min poll) | Scan `slack_platform.watched_channels`; dispatch action-item specialist |
+| `slack_action_items.py` | Via watcher | Action thread → Linear issue + wiki binding |
+| `slack_client.py` | — | Slack Web API (not an agent) |
+
+Config: `config/operations.yaml` → `slack_platform` (`watched_channels`, `action_keywords`,
+`poll_interval_minutes`). Requires `SLACK_BOT_TOKEN` with channel history + `chat:write`.
+
+Completion replies: `engineering/linear/linear_completed/slack_thread_respond.py` (dispatched
+when a bound Slack task reaches Done in Linear).
+
+---
+
+## Notion (`operations/notion/`)
+
+Multi-database task registry: scans configured Notion task DBs for rows with a Linear ID
+column, links them into `task_bindings`, and propagates Linear status/title back to the
+correct database row on completion.
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `notion_task_scanner.py` | Persistent (30 min poll) | Query updated task DB rows; link by Linear ID (read-first) |
+| `notion_task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
+| `notion_db.py` | — | Database query/patch helpers (not an agent) |
+
+Config: `config/notion.yaml` → `task_databases` (per-DB `database_id` + column map),
+`task_routing` (department/project → database key). Poll interval:
+`config/operations.yaml` → `notion_platform.poll_interval_minutes`.
+
+Requires `ntn` CLI authenticated to the workspace. Populate `database_id` after init;
+column names must match your Notion schema (`Name`, `Status`, `Linear ID`, etc.).
+
+Started by **`linear_onboarding`** when at least one task database has a `database_id`.
+Granola **`meeting_action`** tasks fan out to Notion on create; Linear Done updates the row
+via `linear_completed` → `notion_task_sync`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Runs once on first Granola connection: backfills historical meeting notes by
 running ``granola_ingest`` for each day in the configured window, then starts
-the persistent ``granola_ingest`` loop at its next scheduled time (6pm).
+the persistent ``granola_meeting_watch`` loop (post-meeting ingest + weekly miss check).
 
 SDK: Neither (orchestration only).
 """
@@ -74,12 +74,16 @@ class GranolaOnboardingAgent(BaseAgent):
         }
 
     def _start_ingest(self) -> None:
+        from company_brain.agents.operations.granola.granola_meeting_watch import (
+            GranolaMeetingWatchAgent,
+        )
         from company_brain.runtime import get_runtime
 
         self.logger.info(
-            "Backfill complete — starting granola_ingest (idles until next 6pm check)",
+            "Backfill complete — starting granola_meeting_watch "
+            "(post-meeting ingest + weekly miss check)",
         )
         try:
-            get_runtime().start(GranolaIngestAgent, self.config)
+            get_runtime().start(GranolaMeetingWatchAgent, self.config)
         except Exception:
-            self.logger.exception("Failed to start granola_ingest")
+            self.logger.exception("Failed to start granola_meeting_watch")

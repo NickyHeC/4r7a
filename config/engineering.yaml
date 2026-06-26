@@ -7,3 +7,24 @@ linear:
   team_key: ENG
   team_id: ""
   default_priority: 2
+  poll_interval_minutes: 30
+  stale_audit:
+    day: monday
+    time: "09:00"
+    stale_days: 14
+  manual:
+    wait_for_completion: true
+    max_checks: 14
+    check_time: "12:00"
+  slack_channel: "#team-ops"
+  slot_check:
+    auto_move: false
+  task_classes:
+    inbox_action:
+      fan_out: [linear, gmail]
+    team_on_it:
+      fan_out: [linear, gmail]
+    meeting_action:
+      fan_out: [linear, notion]
+    slack_action:
+      fan_out: [linear, slack]

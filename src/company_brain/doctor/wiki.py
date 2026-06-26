@@ -9,6 +9,11 @@ from company_brain.config import PROJECT_ROOT
 from company_brain.doctor.types import CheckResult, DoctorReport
 
 AGENTS_ROOT = PROJECT_ROOT / "src" / "company_brain" / "agents"
+_NOTION_ALLOW = frozenset({
+    "operations/notion/notion_db.py",
+    "operations/notion/notion_task_sync.py",
+    "operations/notion/notion_task_scanner.py",
+})
 _WIKI_WRITE_RE = re.compile(
     r"(Path\([^)]*wiki|open\([^)]*wiki|\.write_text\([^)]*wiki|wiki_dir\s*/\s*)",
     re.IGNORECASE,
@@ -24,7 +29,8 @@ def run_wiki_doctor() -> DoctorReport:
 
     notion_in_agents: list[str] = []
     for path in _iter_agent_py_files():
-        if "shared/notion_pages.py" in path.as_posix():
+        rel = path.relative_to(AGENTS_ROOT).as_posix()
+        if "shared/notion_pages.py" in path.as_posix() or rel in _NOTION_ALLOW:
             continue
         text = path.read_text()
         if "NotionClient" in text or "from company_brain.notion" in text:

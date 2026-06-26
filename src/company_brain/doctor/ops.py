@@ -16,6 +16,7 @@ AGENTS_ROOT = PROJECT_ROOT / "src" / "company_brain" / "agents"
 _SLACK_ALLOW = frozenset(
     {
         "operations/shared/operations_slack.py",
+        "operations/slack/slack_client.py",
         "finance/shared/slack.py",
     }
 )

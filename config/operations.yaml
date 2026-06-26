@@ -229,14 +229,34 @@ gmail:
   investors_wiki: operations/gmail/investors-crm.md
   customers_wiki: operations/gmail/customer-crm.md
 
+# Slack platform (operations/slack/) — thread action items → Linear.
+slack_platform:
+  poll_interval_minutes: 30
+  workdays_only: true
+  watched_channels:
+    - "#team-ops"
+  action_keywords:
+    - action item
+    - todo
+    - follow up
+    - will do
+    - assigned to
+
+# Notion platform (operations/notion/) — task DB scanner + propagation.
+notion_platform:
+  poll_interval_minutes: 30
+
 # Granola meeting notes (operations/granola/).
 # Business: one API key per member (personal-notes scope) in GRANOLA_MEMBER_KEYS.
 # Enterprise: single GRANOLA_API_KEY with public-notes scope (Team space).
 granola:
   mode: business  # business | enterprise
   schedule:
-    ingest_time: "18:00"
     workdays_only: true
+    watch_interval_minutes: 15
+    post_meeting_buffer_minutes: 10
+    miss_check_day: friday
+    miss_check_time: "17:00"
   # Business mode roster — keys live in env (GRANOLA_MEMBER_KEYS or GRANOLA_API_KEY_<LABEL>).
   members: []
   # members:

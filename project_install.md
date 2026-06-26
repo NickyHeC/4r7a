@@ -139,9 +139,15 @@ Gmail workflows (`inbox_task`, `team_on_it`). Pick one auth path:
 Connection layer: `engineering/linear/linear_client.py`. Verify with `doctor` ("Linear …").
 See https://linear.app/llms.txt for the full doc index.
 
+**Onboarding (once):** after `LINEAR_API_KEY` and `config/engineering.yaml` are set, run
+`linear_onboarding` — it backfills Gmail task bindings, writes a **Linear Structure**
+proposal to the wiki (Notion mirror), runs slot_check, and starts the persistent
+`linear_manager`. It does not wait for structure approval.
+
 ### Granola (operations department) — read-only meeting notes
-Granola supplies AI meeting notes and transcripts. The **`granola_ingest`** agent pulls
-notes from meetings that happened that day and ingests them at **6pm** (workdays).
+Granola supplies AI meeting notes and transcripts. The persistent
+**`granola_meeting_watch`** agent polls the calendar and dispatches **`granola_ingest`**
+after each meeting ends, with a weekly **`granola_miss_check`** as the backstop.
 
 Pick a deployment mode (`granola.mode` in `config/operations.yaml`, or auto-detected from env):
 
@@ -154,8 +160,8 @@ Pick a deployment mode (`granola.mode` in `config/operations.yaml`, or auto-dete
 
 Docs: https://docs.granola.ai/introduction · Connection layer:
 `operations/granola/granola_client.py`. On first connect, run **`granola_onboarding`**
-(default **30-day** backfill via `granola.onboarding.backfill_days`, then starts
-`granola_ingest` at its next 6pm wake). Verify with `doctor` ("Granola meeting notes …").
+(default **30-day** backfill via `granola.onboarding.backfill_days`, then starts the
+persistent `granola_meeting_watch`). Verify with `doctor` ("Granola meeting notes …").
 
 ### Google Calendar (operations department) — read + book meetings
 Google Calendar uses the same OAuth setup pattern as Gmail. Enable

@@ -1,8 +1,8 @@
-"""Granola Ingest Agent — daily end-of-day meeting notes into the wiki.
+"""Granola Ingest Agent — meeting notes into the wiki.
 
-Persistent agent (no manager): every workday at 6pm, pulls Granola notes from
-meetings that happened that day, writes raw entries for absorb, and compiles a
-company-wide daily digest page.
+Specialist dispatched by ``granola_meeting_watch`` after a calendar meeting ends
+(once per meeting day). Pulls Granola notes, writes raw entries for absorb, and
+compiles a company-wide daily digest page.
 
 Supports two deployment modes:
 - **business** — one API key per member (personal-notes scope); roster in
@@ -15,18 +15,13 @@ SDK: Neither (deterministic REST extraction).
 
 from __future__ import annotations
 
-import asyncio
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import is_handled, mark_handled
 from company_brain.agents.operations.granola import granola_client as client
 from company_brain.agents.operations.shared import granola_config as cfg
-from company_brain.agents.operations.shared.scheduling import (
-    is_workday,
-    next_daily_times,
-)
 from company_brain.config import resolve_raw_dir
 from company_brain.ingestion.entry import RawEntry
 from company_brain.wiki.publish import write_wiki_page
@@ -38,46 +33,34 @@ class GranolaIngestAgent(BaseAgent):
     name = "granola_ingest"
     WRITE_MODE = "update"
 
-    def run(self, *, once: bool = False, target_date: date | None = None, **kwargs: Any) -> Any:
-        if once or target_date is not None:
-            return self.run_once(target_date=target_date)
-        asyncio.run(self._loop())
-
-    async def _loop(self) -> None:
-        scheduled = cfg.ingest_time()
-        self.logger.info(
-            "Granola ingest starting persistent loop (daily at %02d:%02d)",
-            scheduled.hour,
-            scheduled.minute,
-        )
-        while True:
-            now = datetime.now()
-            if self._should_run_today(now):
-                try:
-                    self.run_once()
-                except Exception:
-                    self.logger.exception("Granola ingest run failed")
-            nxt = next_daily_times(
-                datetime.now(),
-                [cfg.ingest_time()],
-                workdays_only=cfg.workdays_only(),
+    def run(
+        self,
+        *,
+        once: bool = False,
+        target_date: date | None = None,
+        event_title: str | None = None,
+        dispatch_task: bool = True,
+        **kwargs: Any,
+    ) -> Any:
+        if once or target_date is not None or event_title is not None:
+            return self.run_once(
+                target_date=target_date,
+                event_title=event_title,
+                dispatch_task=dispatch_task,
             )
-            wait = (nxt - datetime.now()).total_seconds()
-            self.logger.info("Next Granola ingest at %s (sleep %.0fs)", nxt.isoformat(), wait)
-            await asyncio.sleep(max(wait, 1))
-
-    def _should_run_today(self, now: datetime) -> bool:
-        if cfg.workdays_only() and not is_workday(now):
-            return False
-        scheduled = cfg.ingest_time()
-        today_at = now.replace(
-            hour=scheduled.hour, minute=scheduled.minute, second=0, microsecond=0,
+        from company_brain.agents.operations.granola.granola_meeting_watch import (
+            GranolaMeetingWatchAgent,
         )
-        if now < today_at:
-            return False
-        return not is_handled("granola_ingest", now.date().isoformat())
 
-    def run_once(self, *, target_date: date | None = None) -> dict[str, Any]:
+        return GranolaMeetingWatchAgent(self.config).run(**kwargs)
+
+    def run_once(
+        self,
+        *,
+        target_date: date | None = None,
+        event_title: str | None = None,
+        dispatch_task: bool = True,
+    ) -> dict[str, Any]:
         day = target_date or date.today()
         day_key = day.isoformat()
         if is_handled("granola_ingest", day_key):
@@ -88,12 +71,15 @@ class GranolaIngestAgent(BaseAgent):
             return {"status": "not_configured", "date": day_key}
 
         summaries = self._collect_day_summaries(day)
+        if event_title:
+            summaries = _filter_by_event_title(summaries, event_title)
         if not summaries:
             mark_handled("granola_ingest", day_key)
             return {"status": "empty", "date": day_key, "notes": 0}
 
         ingested = 0
         sections: list[str] = []
+        ingested_notes: list[dict[str, Any]] = []
         for summary in summaries:
             note_id = summary["note_id"]
             if is_handled(f"granola_note:{day_key}", note_id):
@@ -117,6 +103,7 @@ class GranolaIngestAgent(BaseAgent):
             _persist_raw_entry(entry)
             mark_handled(f"granola_note:{day_key}", note_id)
             ingested += 1
+            ingested_notes.append(summary)
             sections.append(format_digest_section(detail, member_label=summary.get("member_label")))
 
         digest_body = "\n\n".join(sections)
@@ -128,12 +115,27 @@ class GranolaIngestAgent(BaseAgent):
             mode=self.WRITE_MODE,
         )
         mark_handled("granola_ingest", day_key)
+        task_result = None
+        if dispatch_task and ingested_notes:
+            task_result = self._dispatch_tasks(ingested_notes, day_key)
         return {
             "status": "ok",
             "date": day_key,
             "notes": ingested,
             "wiki_path": wiki_path,
+            "task": task_result,
         }
+
+    def _dispatch_tasks(self, notes: list[dict[str, Any]], day_key: str) -> dict[str, Any]:
+        from company_brain.agents.operations.granola.granola_task import GranolaTaskAgent
+        from company_brain.runtime import get_runtime
+
+        return get_runtime().run(
+            GranolaTaskAgent,
+            self.config,
+            notes=notes,
+            meeting_date=day_key,
+        )
 
     def _collect_day_summaries(self, day: date) -> list[dict[str, Any]]:
         mode = cfg.granola_mode()
@@ -177,6 +179,25 @@ class GranolaIngestAgent(BaseAgent):
                 "detail": detail,
             })
         return summaries
+
+
+def _filter_by_event_title(
+    summaries: list[dict[str, Any]],
+    event_title: str,
+) -> list[dict[str, Any]]:
+    """Match Granola notes to a calendar event title (best-effort)."""
+    needle = event_title.strip().lower()
+    if not needle:
+        return summaries
+    matched: list[dict[str, Any]] = []
+    for summary in summaries:
+        detail = summary.get("detail") or {}
+        title = str(detail.get("title") or "").lower()
+        cal = detail.get("calendar_event") or {}
+        cal_title = str(cal.get("title") or "").lower()
+        if needle in title or needle in cal_title or title in needle:
+            matched.append(summary)
+    return matched or summaries
 
 
 def format_note_body(note: dict[str, Any], *, member_label: str | None = None) -> str:

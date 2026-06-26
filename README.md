@@ -72,7 +72,7 @@ for the detailed work, scope, sources, and destinations of every agent, see the
 ### Engineering
 
 - **GitHub** — open PR tracking, branch/environment status, weekly feature updates, and a user-facing product features list. Dispatched by `github_manager.py`.
-- **Linear** — GraphQL + official MCP + optional community CLI (`engineering/linear/linear_client.py`). Connection layer only; engineering agents forthcoming.
+- **Linear** — the cross-platform task hub. `linear_manager.py` polls for terminal issues and propagates completion to the originating platform; specialists handle slot checks, stale audits, manual management, and workspace structure proposals. A `task_bindings` registry gives every task one identity across Gmail, Granola, Slack, and Notion (`engineering/linear/`).
 
 ### Finance
 
@@ -90,7 +90,9 @@ department (Gmail, Slack ops, Notion ops, ...).
 
 - **Gmail** — MCP + REST executive assistant (Phases 0–5): triage, CRM, Linear task creation (via the engineering Linear client), receipt routing, meeting scheduling (`ext_meeting_scheduler` + GCal), and **service profiles** (EA / employee / service account). Posture: **read + labels + draft compose only — never send**.
 - **Google Calendar** — availability lookup, meeting booking (with Meet links), optional morning Slack agenda DM (off by default).
-- **Granola** — daily end-of-day meeting notes ingest at 6pm (business: per-member API keys; enterprise: single company-wide key). Read-only at the source.
+- **Granola** — meeting notes ingested after each meeting ends (calendar-driven), with a weekly miss check as backstop (business: per-member API keys; enterprise: single company-wide key); meeting action items become Linear tasks. Read-only at the source.
+- **Slack** — watches configured channels for action-item threads and turns them into Linear tasks; replies to the thread when the task is completed.
+- **Notion** — multi-database task registry: links existing task rows into `task_bindings` by Linear ID (read-first) and propagates Linear status back to the correct database row.
 
 ## Self-maintaining foundation
 

@@ -25,5 +25,32 @@ discovery:
   existing_page_count: 0
   adopted_page_ids: []
 
+# Multi-DB task registry for Linear task platform (Phase 5).
+# Populate database_id after connecting Notion; column names must match your DB schema.
+task_databases:
+  engineering:
+    database_id: ""
+    columns:
+      title: Name
+      status: Status
+      assignee: Owner
+      due: Due
+      linear: "Linear ID"
+  operations:
+    database_id: ""
+    columns:
+      title: Name
+      status: Status
+      assignee: Owner
+      due: Due
+      linear: "Linear ID"
+
+# Route bindings to a task database by department/project (longest match wins).
+task_routing:
+  - match: { department: engineering }
+    database: engineering
+  - match: { department: operations }
+    database: operations
+
 # Finance agent page/database bindings (discover-or-create, populated on first run).
 finance_pages: {}

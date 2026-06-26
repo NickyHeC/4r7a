@@ -11,6 +11,63 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-26 — Remove Granola 18:00 EOD backstop (working tree)
+
+- Granola pipeline is now purely calendar-driven: post-meeting ingest + weekly
+  `granola_miss_check` safety net. Removed `_maybe_eod_backstop` from
+  `granola_meeting_watch` (+ its `eod_backstop` return field and `is_workday` import).
+- Removed dead `_loop` / `_should_run_today` from `granola_ingest` and the now-unused
+  `cfg.ingest_time()` helper + `schedule.ingest_time` config key.
+- Updated docs (README, operations handbook diagrams/tables, project_install) and
+  `test_granola_task` to drop the backstop. Also refreshed README operations platform
+  map (Slack + Notion task platform) during the prior coherence pass.
+
+## 2026-06-26 — Linear task platform Phase 5 + Notion task DBs (working tree)
+
+- **`operations/notion/`**: `notion_task_config`, `notion_db`, `notion_task_scanner`, `notion_task_sync`.
+- **`config/notion.yaml`**: `task_databases` + `task_routing`; `notion_platform` poll in `operations.yaml`.
+- **`task_bindings`**: `find_by_notion_page`, `attach_notion_platform`; wiki index/detail show Notion links.
+- **`task_propagate`**: Linear status → Notion fan-out; **`linear_completed`** dispatches `notion_task_sync`.
+- **`granola_task`**: creates Notion row on ingest when `meeting_action` fan-out includes notion.
+- **`linear_onboarding`**: starts `notion_task_scanner` when task DBs configured.
+- Doctor allowlist for Notion task platform modules in `operations/notion/`.
+- Tests: `tests/test_notion_task_platform.py`.
+
+## 2026-06-26 — Linear task platform Phase 4 + Slack (working tree)
+
+- **`operations/slack/`**: `slack_client`, `slack_thread_watcher`, `slack_action_items`.
+- **`linear_completed/slack_thread_respond`**: Linear Done → thread reply.
+- **`task_bindings.create_slack_binding`**; wired in `linear_completed` dispatcher.
+- Config: `slack_platform` in `operations.yaml`; doctor allowlist for `slack_client`.
+- Tests: `tests/test_slack_action_items.py`.
+
+## 2026-06-26 — Linear task platform Phase 3 + Granola pipeline (working tree)
+
+- **`granola_meeting_watch`**, **`granola_task`**, **`granola_miss_check`**;
+  refactored **`granola_ingest`** as dispatched specialist (+ 18:00 backstop via watch).
+- **`granola_onboarding`** starts `granola_meeting_watch` instead of ingest loop.
+- **`task_bindings.create_granola_binding`** for meeting-sourced tasks.
+- Tests: `tests/test_granola_task.py`; updated `test_granola_onboarding.py`.
+
+## 2026-06-26 — Linear task platform Phase 2 (working tree)
+
+- **`structure_organization`**, **`linear_onboarding`**, **`stale_audit`**,
+  **`request_manual_management`** under `engineering/linear/`.
+- **`linear_manager`**: weekly Monday stale audit dispatch.
+- **`linear_client`**: `list_open_issues`, `list_workflow_states`, `resolve_state_id`.
+- Config: `linear.manual`, `linear.slack_channel`, `linear.stale_audit.stale_days`.
+- Tests: `tests/test_linear_phase2.py`, `tests/test_linear_manual.py`.
+
+## 2026-06-26 — Linear task platform Phase 0 + 1 (working tree)
+
+- **`engineering/linear/`**: `task_bindings`, `task_propagate`, `task_standards`,
+  `linear_manager` (30min poll), `linear_completed/` + `archive_gmail`, `slot_check`.
+- **`config/task_bindings.json`**, extended `config/engineering.yaml` (`task_classes`,
+  poll interval).
+- **`inbox_task`** / **`team_on_it`**: create wiki binding + `task_id` on Linear issue create.
+- Tests: `tests/test_task_bindings.py`, `test_task_propagate.py`, `test_task_standards.py`.
+- Build plan: `docs/plans/linear-task-platform.md` (Phase 2 next: onboarding, stale audit).
+
 ## 2026-06-25 — Revert Excalidraw diagrams (working tree)
 
 - Removed `docs/diagrams/`, excalidraw skill, PNG renders, playwright render tooling.

@@ -113,11 +113,33 @@ class DiscoveryState(BaseModel):
     adopted_page_ids: list[str] = Field(default_factory=list)
 
 
+class TaskDatabaseColumns(BaseModel):
+    """Notion property names for a task database (values vary per workspace)."""
+
+    title: str = "Name"
+    status: str = "Status"
+    assignee: str = "Owner"
+    due: str = "Due"
+    linear: str = "Linear ID"
+
+
+class TaskDatabaseSpec(BaseModel):
+    database_id: str = ""
+    columns: TaskDatabaseColumns = Field(default_factory=TaskDatabaseColumns)
+
+
+class TaskRoutingRule(BaseModel):
+    match: dict[str, str] = Field(default_factory=dict)
+    database: str = ""
+
+
 class NotionConfig(BaseModel):
     workspace_id: str | None = None
     root_page_id: str | None = None
     section_page_ids: dict[str, str] = Field(default_factory=dict)
     tracking_database_id: str | None = None
+    task_databases: dict[str, TaskDatabaseSpec] = Field(default_factory=dict)
+    task_routing: list[TaskRoutingRule] = Field(default_factory=list)
     discovery: DiscoveryState = Field(default_factory=DiscoveryState)
     # Member read access is delegated to Notion teamspaces (access levels are set
     # in Notion by the admin). ``teamspaces`` maps a teamspace key -> the parent

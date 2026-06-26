@@ -31,12 +31,6 @@ def granola_mode() -> str:
     return "business"
 
 
-def ingest_time() -> time:
-    raw = (granola_section().get("schedule") or {}).get("ingest_time", "18:00")
-    hour, minute = raw.split(":")
-    return time(int(hour), int(minute))
-
-
 def workdays_only() -> bool:
     return bool((granola_section().get("schedule") or {}).get("workdays_only", True))
 
@@ -116,3 +110,29 @@ def granola_is_configured() -> bool:
     if mode == "enterprise":
         return bool(enterprise_api_key())
     return bool(member_api_keys())
+
+
+def watch_interval_minutes() -> int:
+    raw = (granola_section().get("schedule") or {}).get("watch_interval_minutes", 15)
+    try:
+        return max(5, int(raw))
+    except (TypeError, ValueError):
+        return 15
+
+
+def post_meeting_buffer_minutes() -> int:
+    raw = (granola_section().get("schedule") or {}).get("post_meeting_buffer_minutes", 10)
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return 10
+
+
+def miss_check_day() -> str:
+    return str((granola_section().get("schedule") or {}).get("miss_check_day") or "friday").lower()
+
+
+def miss_check_time() -> time:
+    raw = (granola_section().get("schedule") or {}).get("miss_check_time", "17:00")
+    hour, minute = raw.split(":")
+    return time(int(hour), int(minute))
