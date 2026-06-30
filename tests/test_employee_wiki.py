@@ -124,7 +124,7 @@ def test_linear_materializer_appends_work_log(wiki_roots, monkeypatch):
     monkeypatch.setattr(agent, "_members", load_members_config(wiki_roots["config"]))
     result = agent.run(event=event)
     assert result["status"] == "ok"
-    body = read_employee_wiki_page(result["path"])
+    body = read_employee_wiki_page(result["paths"][0])
     assert "ENG-2" in body
     assert "Ship feature" in body
     updated = store.get(event.event_id)

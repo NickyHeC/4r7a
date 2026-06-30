@@ -121,8 +121,11 @@ class WorkEventStore:
         for event in self.list_all():
             mat = event.materialized or {}
             if target == "employee":
-                members = mat.get("employee") or []
-                if event.primary_member and event.primary_member not in members:
+                pending = [
+                    m for m in _event_target_members(event)
+                    if m not in (mat.get("employee") or [])
+                ]
+                if pending:
                     out.append(event)
             elif target == "company":
                 if not mat.get("company"):
@@ -164,3 +167,13 @@ class WorkEventStore:
         lines = [json.dumps(e.to_dict(), sort_keys=True) for e in events]
         tmp.write_text("\n".join(lines) + ("\n" if lines else ""))
         tmp.replace(self._path)
+
+
+def _event_target_members(event: WorkEvent) -> list[str]:
+    out: list[str] = []
+    if event.primary_member and event.primary_member not in ("", "unassigned"):
+        out.append(event.primary_member)
+    for c in event.contributors or []:
+        if c and c not in out and c != "unassigned":
+            out.append(c)
+    return out

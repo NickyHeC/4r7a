@@ -84,7 +84,9 @@ class SlackThreadWatcherAgent(BaseAgent):
             signature = f"{channel}:{thread_ts}:{message_ts}"
             if is_handled("slack_action_item", signature, store=self._state):
                 continue
-            result = self._dispatch_action_items(channel, thread_ts, message_ts, text)
+            result = self._dispatch_action_items(
+                channel, thread_ts, message_ts, text, str(msg.get("user") or ""),
+            )
             mark_handled("slack_action_item", signature, store=self._state)
             seen_threads.add(thread_ts)
             if result.get("status") == "created":
@@ -108,6 +110,7 @@ class SlackThreadWatcherAgent(BaseAgent):
         thread_ts: str,
         message_ts: str,
         text: str,
+        slack_user_id: str,
     ) -> dict[str, Any]:
         from company_brain.agents.operations.slack.slack_action_items import SlackActionItemsAgent
         from company_brain.runtime import get_runtime
@@ -119,4 +122,5 @@ class SlackThreadWatcherAgent(BaseAgent):
             thread_ts=thread_ts,
             message_ts=message_ts,
             text=text,
+            slack_user_id=slack_user_id,
         )

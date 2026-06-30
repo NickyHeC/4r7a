@@ -76,6 +76,15 @@ class MembersConfig(BaseModel):
                 return key
         return None
 
+    def find_by_slack_user_id(self, slack_user_id: str) -> str | None:
+        ref = (slack_user_id or "").strip()
+        if not ref:
+            return None
+        for key, spec in self.members.items():
+            if spec.bindings.slack_user_id == ref:
+                return key
+        return None
+
 
 def resolve_member_for_binding(binding: Any, cfg: MembersConfig | None = None) -> str | None:
     """Best-effort member key from a task binding's origin platform."""

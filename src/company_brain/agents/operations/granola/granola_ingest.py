@@ -105,6 +105,13 @@ class GranolaIngestAgent(BaseAgent):
             ingested += 1
             ingested_notes.append(summary)
             sections.append(format_digest_section(detail, member_label=summary.get("member_label")))
+            self._record_employee_work_event(
+                note_id=note_id,
+                meeting_date=day_key,
+                detail=detail,
+                member_label=summary.get("member_label"),
+                wiki_path=cfg.daily_wiki_path(day_key),
+            )
 
         digest_body = "\n\n".join(sections)
         wiki_path = cfg.daily_wiki_path(day_key)
@@ -136,6 +143,32 @@ class GranolaIngestAgent(BaseAgent):
             notes=notes,
             meeting_date=day_key,
         )
+
+    def _record_employee_work_event(
+        self,
+        *,
+        note_id: str,
+        meeting_date: str,
+        detail: dict[str, Any],
+        member_label: str | None,
+        wiki_path: str,
+    ) -> None:
+        from company_brain.agents.employee_wiki.work_event_materializer import record_granola_work_event
+        from company_brain.agents.operations.granola.granola_task import extract_action_items
+
+        title = str(detail.get("title") or f"Meeting {note_id}")
+        try:
+            record_granola_work_event(
+                note_id=note_id,
+                meeting_date=meeting_date,
+                title=title,
+                member_label=member_label,
+                detail=detail,
+                action_item_count=len(extract_action_items(detail)),
+                company_links=[wiki_path],
+            )
+        except Exception:
+            self.logger.exception("Employee wiki Granola work event failed for %s", note_id)
 
     def _collect_day_summaries(self, day: date) -> list[dict[str, Any]]:
         mode = cfg.granola_mode()

@@ -1,6 +1,6 @@
 # Employee Wiki — Build Plan
 
-**Status:** Phase A–D shipped (foundation, ledger, Notion sync, zip import). Phase E next.  
+**Status:** Phase A–E shipped (foundation through platform materializers). Phase F next.  
 **Scope:** MD wiki substrate — foundational layer, larger than any single platform integration.  
 **Converges with:** future project onboarding + company wiki generation from project definition.
 

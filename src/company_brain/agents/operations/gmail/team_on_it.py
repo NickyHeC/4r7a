@@ -101,7 +101,30 @@ class TeamOnItAgent(BaseAgent):
                 notifier.emit(Signal(text=text, severity=ACTIONABLE))
 
                 self._store.mark_handled(record, SPECIALIST_KEY)
+                self._record_employee_work_event(binding, issue, subject or "")
                 handled += 1
             except Exception:
                 self.logger.exception("team_on_it failed for %s", record.message_id)
         return {"handled": handled, "slack_channel": channel}
+
+    def _record_employee_work_event(self, binding, issue: dict[str, Any], subject: str) -> None:
+        from company_brain.agents.employee_wiki.work_event_materializer import record_gmail_work_event
+        from company_brain.members_config import load_members_config
+
+        member = load_members_config().find_by_gmail_mailbox(self.mailbox)
+        if not member:
+            return
+        try:
+            record_gmail_work_event(
+                primary_member=member,
+                message_id=binding.platforms.get("gmail", {}).get("message_id") or "",
+                subject=subject,
+                task_class=binding.task_class,
+                linear_identifier=str(issue.get("identifier") or ""),
+                url=str(issue.get("url") or ""),
+                company_links=[
+                    f"engineering/tasks/{binding.department}/{binding.project}/{binding.task_id}.md"
+                ],
+            )
+        except Exception:
+            self.logger.exception("Employee wiki Gmail work event failed for %s", binding.task_id)

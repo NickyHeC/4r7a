@@ -11,7 +11,16 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
-## 2026-06-29 — Employee wiki Phases C–D (working tree)
+## 2026-06-29 — Employee wiki Phase E (working tree)
+
+- **Platform materializers:** Granola meeting ingest, Gmail inbox/team-on-it, Slack action items
+  → `work_events.jsonl` via `record_*_work_event()` hooks; materializer handles all sources.
+- **Contributors:** Granola attendee emails resolve to contributor work_log lines.
+- **`_index.md` refresh:** materializer updates ## This quarter from recent work_log bullets.
+- **`find_by_slack_user_id`** in members_config; watcher passes Slack user id to action items.
+- Tests: `tests/test_employee_wiki_materializers.py`.
+
+## 2026-06-29 — Employee wiki Phases C–D (ea16a16)
 
 - **Phase C — Notion sync labels:** `notion/sync_routing.py`, `member_teamspace.py`,
   `wiki/employee_notion_sync.py`; `sync:` frontmatter on employee pages; onboarding syncs index.
