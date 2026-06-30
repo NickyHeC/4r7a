@@ -191,10 +191,101 @@ def cleanup() -> None:
     click.echo("Cleanup agents will be implemented in subsequent phases.")
 
 
+@main.command("migrate-names")
+@click.option("--apply", is_flag=True, help="Apply changes (default is dry-run preview).")
+@click.option("--company/--no-company", default=True, help="Scan the company wiki volume.")
+@click.option("--employee/--no-employee", default=True, help="Scan the employee wiki volume.")
+@click.option("--routing/--no-routing", default=True, help="Migrate Gmail routing handled keys.")
+@click.option(
+    "--gate-keys/--no-gate-keys",
+    default=True,
+    help="Migrate config/state.json handled + scanner keys after agent renames.",
+)
+@click.option(
+    "--rebuild-index",
+    is_flag=True,
+    help="Rebuild company wiki _index.md and _backlinks.json after apply.",
+)
+def migrate_names(
+    apply: bool,
+    company: bool,
+    employee: bool,
+    routing: bool,
+    gate_keys: bool,
+    rebuild_index: bool,
+) -> None:
+    """Rename legacy wiki paths/titles to naming-convention slugs.
+
+    Dry-run by default. Use on existing wiki trees or before syncing imported
+    Markdown that uses pre-migration paths (open-prs, expense-reports/, etc.).
+    """
+    from company_brain.config import resolve_employee_wiki_dir, resolve_wiki_dir
+    from company_brain.wiki.employee_store import LocalEmployeeWikiStore
+    from company_brain.wiki.name_migrate import apply_migration, plan_migration
+    from company_brain.wiki.store import LocalWikiStore
+
+    company_store = LocalWikiStore(root=resolve_wiki_dir()) if company else None
+    employee_store = LocalEmployeeWikiStore(root=resolve_employee_wiki_dir()) if employee else None
+
+    plan = plan_migration(
+        company_store=company_store,
+        employee_store=employee_store,
+        include_routing=routing,
+        rewrite_links=True,
+    )
+
+    if not plan.renames and not plan.routing_updates:
+        if gate_keys:
+            click.echo("No legacy wiki paths or routing keys; gate-key migration only.")
+        else:
+            click.echo("No legacy paths or routing keys to migrate.")
+            if plan.conflicts:
+                for msg in plan.conflicts:
+                    click.secho(f"  conflict: {msg}", fg="yellow")
+            return
+
+    click.secho("Migration plan", bold=True)
+    for rename in plan.renames:
+        click.echo(f"  [{rename.volume}] {rename.old_path} -> {rename.new_path}")
+    for upd in plan.routing_updates:
+        click.echo(f"  [routing] {upd.rel_path}: {upd.old_key} -> {upd.new_key}")
+    if plan.link_rewrites:
+        click.echo(f"  link/title touch: {len(plan.link_rewrites)} page(s)")
+    for msg in plan.conflicts:
+        click.secho(f"  conflict (skipped): {msg}", fg="yellow")
+
+    if not apply:
+        click.echo()
+        if gate_keys:
+            click.echo("  [gate-keys] config/state.json handled + scanner prefixes")
+        click.secho("Dry run — re-run with --apply to execute.", fg="yellow")
+        return
+
+    counts = {"renamed": 0, "titles": 0, "routing": 0}
+    if plan.renames or plan.routing_updates:
+        counts = apply_migration(
+            plan,
+            company_store=company_store,
+            employee_store=employee_store,
+            rebuild_index=rebuild_index,
+        )
+    gate_counts = {"handled": 0, "state": 0}
+    if gate_keys and apply:
+        from company_brain.agents.gates import migrate_gate_keys
+
+        gate_counts = migrate_gate_keys()
+    click.secho(
+        f"Applied: {counts['renamed']} renamed, {counts['titles']} page(s) updated, "
+        f"{counts['routing']} routing record(s) patched, "
+        f"{gate_counts['handled']} gate handled key(s), {gate_counts['state']} state key(s).",
+        fg="green",
+    )
+
+
 @main.command()
 def catalog() -> None:
-    """Rebuild the admin content table of contents (``admin/table-of-contents.md``)."""
-    from company_brain.agents.external_wiki.content_catalog_agent import ContentCatalogAgent
+    """Rebuild the admin content table of contents (``admin/content-catalog.md``)."""
+    from company_brain.agents.external_wiki.content_catalog import ContentCatalogAgent
 
     config = load_config()
     result = ContentCatalogAgent(config).run()
@@ -289,14 +380,28 @@ def doctor_ops(as_json: bool, min_score: int | None, no_history: bool) -> None:
     )
 
 
-@doctor.command("code")
+@doctor.command("naming")
 @_doctor_options
-def doctor_code(as_json: bool, min_score: int | None, no_history: bool) -> None:
-    """Deterministic code checks (agents, wiki, ops) — no env tokens required."""
+def doctor_naming(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Naming doctor — agent filenames, wiki slugs, legacy path drift."""
     from company_brain.doctor.runner import main_exit
 
     main_exit(
-        ["agents", "wiki", "ops"],
+        ["naming"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
+    )
+
+
+@doctor.command("code")
+@_doctor_options
+def doctor_code(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Deterministic code checks (agents, wiki, ops, naming) — no env tokens required."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["agents", "wiki", "ops", "naming"],
         as_json=as_json,
         min_score=min_score,
         record_history=not no_history,

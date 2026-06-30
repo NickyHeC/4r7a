@@ -20,15 +20,15 @@ ALL_GMAIL_AGENTS = frozenset({
     "inbox_sweep",
     "draft_reply",
     "decision_propagate",
-    "gmail_ingest",
+    "ingest",
     "ingest_queue_review",
     "attachment_router",
     "investor_tracker",
-    "gmail_customer_support",
+    "customer_support",
     "customer_crm",
     "growth_inbound",
     "vendor_tracker",
-    "gmail_crm",
+    "connection",
     "recruiting_inbound",
     "partnership_digest",
     "inbox_task",
@@ -44,14 +44,14 @@ MANAGER_DISPATCH_ORDER = [
     "team_on_it",
     "draft_reply",
     "ext_meeting_scheduler",
-    "gmail_ingest",
+    "ingest",
     "attachment_router",
     "investor_tracker",
-    "gmail_customer_support",
+    "customer_support",
     "customer_crm",
     "growth_inbound",
     "vendor_tracker",
-    "gmail_crm",
+    "connection",
     "recruiting_inbound",
     "ingest_queue_review",
     "partnership_digest",
@@ -66,12 +66,12 @@ WEEKLY_DISPATCH = {
 
 # CRM wiki seed keys (see wiki_crm.CRM_SEEDS).
 CRM_SEED_KEYS = frozenset({
-    "investors",
-    "investor_interests",
-    "customer_crm",
+    "investor",
+    "investor_interest",
+    "customer",
     "media_promotion",
-    "company_connections",
-    "inbound_candidates",
+    "connection",
+    "inbound_candidate",
 })
 
 
@@ -246,14 +246,14 @@ def crm_seed_keys_for_profile(mailbox: str | None = None) -> set[str]:
     spec = profile_spec(mailbox)
     keys: set[str] = set()
     if spec.agent_enabled("investor_tracker"):
-        keys.add("investors")
-        keys.add("investor_interests")
+        keys.add("investor")
+        keys.add("investor_interest")
     if spec.agent_enabled("customer_crm"):
-        keys.add("customer_crm")
+        keys.add("customer")
     if spec.agent_enabled("growth_inbound"):
         keys.add("media_promotion")
-    if spec.agent_enabled("gmail_crm"):
-        keys.add("company_connections")
+    if spec.agent_enabled("connection"):
+        keys.add("connection")
     if spec.agent_enabled("recruiting_inbound"):
-        keys.add("inbound_candidates")
+        keys.add("inbound_candidate")
     return keys

@@ -82,3 +82,47 @@ def mark_handled(key: str, signature: Any, *, store: StateStore | None = None) -
     """Record that ``signature`` has been handled for ``key`` (stand down on re-fire)."""
     store = store or StateStore()
     store.set(f"handled:{key}", signature)
+
+
+# Renamed with the 2026-06 agent filename pass (``migrate-names --gate-keys``).
+HANDLED_KEY_RENAMES: dict[str, str] = {
+    "granola_ingest": "ingest",
+    "granola_miss_check": "miss_check",
+}
+
+STATE_KEY_PREFIX_RENAMES: dict[str, str] = {
+    "notion_task_scanner:last_scan:": "task_scanner:last_scan:",
+}
+
+
+def migrate_gate_keys(*, store: StateStore | None = None) -> dict[str, int]:
+    """Rename ``config/state.json`` keys after agent renames. Returns counts."""
+    store = store or StateStore()
+    data = store._load()
+    if not data:
+        return {"handled": 0, "state": 0}
+
+    handled = 0
+    state = 0
+    updated: dict[str, Any] = {}
+
+    for key, value in data.items():
+        new_key = key
+        if key.startswith("handled:"):
+            bare = key.removeprefix("handled:")
+            if bare in HANDLED_KEY_RENAMES:
+                new_key = f"handled:{HANDLED_KEY_RENAMES[bare]}"
+                handled += 1
+        else:
+            for old_prefix, new_prefix in STATE_KEY_PREFIX_RENAMES.items():
+                if key.startswith(old_prefix):
+                    new_key = new_prefix + key[len(old_prefix):]
+                    state += 1
+                    break
+        if new_key in updated and updated[new_key] != value:
+            logger.warning("Gate key migration collision: %s and %s", new_key, key)
+        updated[new_key] = value
+
+    if handled or state:
+        store._save(updated)
+    return {"handled": handled, "state": state}

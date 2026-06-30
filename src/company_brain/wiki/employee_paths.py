@@ -24,7 +24,7 @@ def member_index_path(member_key: str) -> str:
 
 
 def member_work_log_path(member_key: str, *, when: date | datetime | None = None) -> str:
-    return f"{member_prefix(member_key)}work_log/{quarter_slug(when)}.md"
+    return f"{member_prefix(member_key)}work-log/{quarter_slug(when)}.md"
 
 
 def member_project_path(member_key: str, project_slug: str) -> str:

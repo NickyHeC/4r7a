@@ -31,7 +31,7 @@ SPECIALIST_KEY = "receipt_router"
 class ReceiptRouterAgent(BaseAgent):
     """Weekly receipt inbox routing for Ramp auto-attach."""
 
-    name = "gmail_receipt_router"
+    name = "receipt_router"
     WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):

@@ -16,24 +16,24 @@ manager questions via citation-only query. Platform ingest feeds them through a
 
 ---
 
-## How it runs
+## Employee Wiki — how it runs
+
+Platform specialists append an attributed event to the ledger when they create a task;
+the manager polls and dispatches the materializer, which writes the employee work log and
+refreshes the `_index.md` snapshot. Imports are quarantined, scanned, and de-duplicated
+before an admin approves promotion.
 
 ```mermaid
 flowchart TB
   PLAT[Granola / Gmail / Slack / Linear] -->|record_*_work_event| LEDGER[(config/work_events.jsonl)]
   MGR[employee_wiki_manager 5m poll] -->|dispatch| MAT[work_event_materializer]
   LEDGER --> MAT
-  MAT -->|work_log + _index| EW[(employee_wiki/member/**)]
+  MAT -->|work-log + _index| EW[(employee_wiki/member/**)]
   ZIP[zip of .md] --> IMP[employee_wiki_import]
   IMP -->|quarantine + scan + dup| REV[import_review]
   REV -->|admin Slack| ADMIN[admin channel]
   EW -->|sync: label| NS[NotionSync]
 ```
-
-Platform specialists append an attributed event to the ledger when they create a task;
-the manager polls and dispatches the materializer, which writes the employee work log and
-refreshes the `_index.md` snapshot. Imports are quarantined, scanned, and de-duplicated
-before an admin approves promotion.
 
 **Managers** (dispatch specialists based on gathered information):
 
@@ -48,7 +48,7 @@ managers.
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `work_event_materializer.py` | On demand (via manager) | Materializes ledger events (Linear, Granola, Gmail, Slack) into `work_log/YYYY-QN.md` + refreshes `_index.md`; honors per-member `ingest` scope and contributor attribution |
+| `work_event_materializer.py` | On demand (via manager) | Materializes ledger events (Linear, Granola, Gmail, Slack) into `work-log/YYYY-QN.md` + refreshes `_index.md`; honors per-member `ingest` scope and contributor attribution |
 | `employee_wiki_import.py` | On demand | Extracts a zip of `.md` files into `imports/_quarantine/`, runs security scan + duplicate detection, gates first import behind admin review |
 | `import_review.py` | On demand (via import) | Writes the admin import-review page and pings the admin Slack channel |
 | `employee_wiki_onboarding.py` | Once per member | Bootstraps `people/` stub + employee `_index.md`, discovers/creates the member's Notion teamspace, syncs the index |

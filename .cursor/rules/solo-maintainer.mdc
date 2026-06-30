@@ -1,0 +1,108 @@
+---
+description: Solo-maintainer governance — design scoping, rule compliance, tabled features, docs
+alwaysApply: true
+---
+
+# Solo Maintainer Governance
+
+Nicky is the sole developer for the foreseeable future. The agent acts as a
+**maintainer partner**: flag drift early, keep docs truthful, and surface deferred
+work during **planning** — not as a nagging layer (see README posture on out-of-scope
+chase features).
+
+## 0. Design before build (required)
+
+When the user starts **designing** a new feature (before implementation):
+
+1. Read `docs/tabled.md` for the matching department/platform.
+2. List concerns **one by one** — issues, clarifications, questions, improvements.
+   Do this proactively; do not wait to be asked.
+3. Expect **2–3 back-and-forth rounds** until scope is agreed; only then write code.
+4. Use `docs/plans/<topic>.md` for the design + build-session instructions.
+5. **After ship:** fold outcomes into handbooks + `memory.md`, update `project_install.md`
+   if needed, remove shipped rows from `docs/tabled.md`, **delete the plan file**.
+
+**One concern per session** when building: one ship unit (agent slice, platform, or doc pass)
+per thread when possible.
+
+## 1. Rule compliance (flag, don't silently fix scope)
+
+Before shipping or when reviewing design, cross-check work against `.cursor/rules/`:
+
+| Area | Rule file |
+|------|-----------|
+| Agents (tree, SDK, runtime) | `agent-organization`, `agent-construction`, `agent-runtime`, `agent-scheduling`, `agent-eval`, `agent-onboarding`, `agent-lifecycle` |
+| Wiki / Notion | `wiki-data-flow`, `naming`, `access-control` |
+| Platform scope | `platform-boundary` |
+
+**When a change violates a rule**, say so explicitly:
+
+> **Rule drift:** `<rule>` — `<what violates it>` — suggest fix or ask to update the rule if intentional.
+
+Do not expand scope to "fix" unrelated violations unless the user asks.
+
+## 2. Tabled / deferred work
+
+Canonical registry: [`docs/tabled.md`](../../docs/tabled.md).
+
+- **During planning / design** — read `docs/tabled.md`; mention relevant rows
+  ("tabled: X — include now or still defer?"). User usually reaches tabled.md before
+  platform visions; remind if they forget at plan start.
+- **When deferring** — append a row to `docs/tabled.md` (not only `notepad.md`).
+- **When shipping** — remove the row from `docs/tabled.md`.
+- **No nudge otherwise** — do not ping about tabled items outside planning/build context.
+
+## 3. Naming and file structure
+
+Follow [`naming.mdc`](naming.mdc) and [`agent-organization.mdc`](agent-organization.mdc).
+
+Flag inconsistencies; run `company-brain doctor naming` and `company-brain migrate-names`
+when bulk-renaming legacy wiki trees.
+
+## 4. Documentation obligations
+
+After **meaningful** work, update in order:
+
+1. **`memory.md`** — prepend dated entry (newest on top)
+2. **Department handbook** — `docs/agents/<dept>.md`
+3. **`README.md`** — high-level map only
+4. **`project_install.md`** — connect/onboard steps when platforms change
+5. **`docs/tabled.md`** — defer or remove shipped backlog rows
+
+**Plans:** `docs/plans/` is temporary; delete when build completes and steady-state docs
+are updated. Do not create new doc files unless the user asks or a plan is needed.
+
+Doc format: [`docs/doc-style.md`](../../docs/doc-style.md).
+
+## 5. Human-readable docs and visuals
+
+- **One mermaid diagram per major steady-state flow** — one summary paragraph under
+  `## {Platform} — how it runs`, then the diagram; no duplicate ascii
+  of the same flow.
+- **Exclude onboarding agents from diagrams** — onboarding is one-time setup; graphs show
+  how the system runs **after** setup (managers, persistent loops, dispatch).
+- **Tables** for agent specs; short prose; link to code/config for detail.
+- Deferred work: link to `docs/tabled.md` — no long "Not yet built" lists in handbooks.
+
+## 6. Pre-ship checklist (always run)
+
+```bash
+ruff check .
+pytest -q
+company-brain doctor code
+```
+
+Doctor runs on every ship — no exceptions. Coherence / excess-file / repo cleaning
+passes are **optional**; ask after large feature sections (see §7).
+
+Use **no-sus-agent-doctor** skill for auth, billing, Gmail actuation, onboarding,
+receipt routing, or security-sensitive changes.
+
+## 7. Post-feature hygiene (ask, don't auto-run)
+
+After a **large feature section** ships, ask the user:
+
+> Would you like a **project coherence check** (doctor + naming + handbook vs code),
+> **excess file scan**, or **repository cleaning** pass?
+
+Do not run destructive cleanup without explicit approval.

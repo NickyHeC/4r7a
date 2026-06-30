@@ -11,7 +11,7 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import inbound_candidates_path, mailbox_id
+from company_brain.agents.operations.shared.gmail_config import inbound_candidate_path, mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
 from company_brain.config import AppConfig
@@ -23,7 +23,7 @@ JOB_SEEKERS_TAG = "Cold Inbound/Job Seekers"
 class RecruitingInboundAgent(BaseAgent):
     """Append job seeker inbound to Inbound Candidates wiki."""
 
-    name = "gmail_recruiting_inbound"
+    name = "recruiting_inbound"
     WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
@@ -44,7 +44,7 @@ class RecruitingInboundAgent(BaseAgent):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 append_crm_entry(
-                    inbound_candidates_path(), "Inbound Candidates",
+                    inbound_candidate_path(), "Inbound Candidates",
                     format_mail_section(record, message),
                 )
                 self._store.mark_handled(record, SPECIALIST_KEY)

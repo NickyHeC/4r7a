@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from company_brain.agents.operations.granola import granola_client as client
-from company_brain.agents.operations.granola.granola_ingest import (
-    GranolaIngestAgent,
+from company_brain.agents.operations.granola.ingest import (
+    IngestAgent,
     format_digest_section,
     format_note_body,
 )
@@ -91,7 +91,7 @@ def test_granola_mode_detection(monkeypatch):
     ]
 
 
-_INGEST = "company_brain.agents.operations.granola.granola_ingest"
+_INGEST = "company_brain.agents.operations.granola.ingest"
 
 
 @patch(f"{_INGEST}.write_wiki_page")
@@ -117,7 +117,7 @@ def test_run_once_enterprise(
     mock_list.return_value = [{"id": SAMPLE_NOTE["id"]}]
     mock_get_note.return_value = SAMPLE_NOTE
 
-    agent = GranolaIngestAgent(MagicMock())
+    agent = IngestAgent(MagicMock())
     result = agent.run_once(target_date=date(2026, 6, 23))
 
     assert result["status"] == "ok"
@@ -154,7 +154,7 @@ def test_run_once_business_dedupes(
     mock_list.return_value = [{"id": SAMPLE_NOTE["id"]}]
     mock_get_note.return_value = SAMPLE_NOTE
 
-    agent = GranolaIngestAgent(MagicMock())
+    agent = IngestAgent(MagicMock())
     result = agent.run_once(target_date=date(2026, 6, 23))
 
     assert result["notes"] == 1

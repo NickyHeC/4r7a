@@ -22,7 +22,7 @@ from company_brain.agents.engineering.linear.task_propagate import (
     should_propagate_field,
 )
 from company_brain.agents.engineering.shared.linear_config import task_class_fan_out
-from company_brain.agents.operations.notion import notion_db, notion_task_config
+from company_brain.agents.operations.notion import db, task_config
 from company_brain.config import AppConfig
 from company_brain.notion.client import NotionClient
 
@@ -42,10 +42,10 @@ def linear_status_to_notion(status: str) -> str:
     return normalized
 
 
-class NotionTaskSyncAgent(BaseAgent):
+class TaskSyncAgent(BaseAgent):
     """Ensure a binding has a Notion row and sync title/status from Linear."""
 
-    name = "notion_task_sync"
+    name = "task_sync"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -53,8 +53,8 @@ class NotionTaskSyncAgent(BaseAgent):
         self._client = NotionClient()
 
     def should_run(self, **kwargs: Any) -> bool:
-        return notion_db.notion_is_available(self._client) and bool(
-            notion_task_config.configured_database_keys(notion=self.config.notion),
+        return db.notion_is_available(self._client) and bool(
+            task_config.configured_database_keys(notion=self.config.notion),
         )
 
     def run(
@@ -75,7 +75,7 @@ class NotionTaskSyncAgent(BaseAgent):
         if "notion" not in task_class_fan_out(binding.task_class):
             return {"status": "skipped", "reason": "fan_out"}
 
-        resolved = notion_task_config.resolve_database_spec(
+        resolved = task_config.resolve_database_spec(
             binding.department,
             binding.project,
             notion=self.config.notion,
@@ -88,7 +88,7 @@ class NotionTaskSyncAgent(BaseAgent):
         page_id = str(notion_meta.get("page_id") or "")
 
         if not page_id and create_if_missing:
-            page = notion_db.create_database_row(
+            page = db.create_database_row(
                 self._client,
                 spec.database_id,
                 spec=spec,
@@ -103,7 +103,7 @@ class NotionTaskSyncAgent(BaseAgent):
                 binding,
                 database_key=db_key,
                 page_id=page_id,
-                url=notion_db.page_url(page),
+                url=db.page_url(page),
             )
             self._bindings.upsert(binding, sync_notion=False)
             self._record_propagation(binding, linear_status)
@@ -117,7 +117,7 @@ class NotionTaskSyncAgent(BaseAgent):
         if notion_status and not should_propagate_field(binding, "notion", "status", notion_status):
             return {"status": "skipped", "reason": "already_propagated"}
 
-        notion_db.update_database_row(
+        db.update_database_row(
             self._client,
             page_id,
             spec=spec,

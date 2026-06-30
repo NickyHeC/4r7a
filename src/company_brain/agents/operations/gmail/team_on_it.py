@@ -34,7 +34,7 @@ SPECIALIST_KEY = "team_on_it"
 class TeamOnItAgent(BaseAgent):
     """Linear task + Slack handoff for Team On It attention mail."""
 
-    name = "gmail_team_on_it"
+    name = "team_on_it"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

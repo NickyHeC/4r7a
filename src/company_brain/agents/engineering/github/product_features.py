@@ -22,7 +22,7 @@ from company_brain.wiki.publish import APPEND, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
-WIKI_PATH = "engineering/github/product-features.md"
+WIKI_PATH = "engineering/github/product-feature.md"
 TITLE = "Product Features"
 
 

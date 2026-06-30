@@ -53,7 +53,7 @@ class ExternalMountReviewAgent(BaseAgent):
 
         when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         lines = [
-            f"# External mount review — {key} / {iid}",
+            f"# Mount Review — {key} / {iid}",
             "",
             f"- **Source:** `{key}`",
             f"- **Import id:** `{iid}`",
@@ -91,7 +91,7 @@ class ExternalMountReviewAgent(BaseAgent):
         rel_path = external_mount_review_path(iid)
         write_wiki_page(
             rel_path,
-            f"External mount — {key}",
+            f"Mount Review — {key}",
             "\n".join(lines).rstrip() + "\n",
             mode=UPDATE,
             section="admin",

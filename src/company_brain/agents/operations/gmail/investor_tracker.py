@@ -1,7 +1,7 @@
-"""Investor Tracker Agent — Investors CRM + Investor Interests.
+"""Investor Tracker Agent — Investors + Investor Interest.
 
 ``Investor`` (confirmed wiki list at triage) → append interaction to Investors
-CRM. ``Cold Inbound/Investor Interest`` → append to Investor Interests page.
+CRM. ``Cold Inbound/Investor Interest`` → append to Investor Interest page.
 
 SDK: Neither (deterministic wiki writes).
 """
@@ -13,8 +13,8 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import (
-    investor_interests_path,
-    investors_crm_path,
+    investor_interest_path,
+    investor_path,
     mailbox_id,
 )
 from company_brain.agents.operations.shared.routing import RoutingStore
@@ -28,7 +28,7 @@ INVESTOR_INTEREST_TAG = "Cold Inbound/Investor Interest"
 class InvestorTrackerAgent(BaseAgent):
     """Update investor CRM pages from routing records."""
 
-    name = "gmail_investor_tracker"
+    name = "investor_tracker"
     WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
@@ -51,10 +51,10 @@ class InvestorTrackerAgent(BaseAgent):
                     and INVESTOR_INTEREST_TAG not in record.domain_tags
                 )
                 if is_investor:
-                    append_crm_entry(investors_crm_path(), "Investors CRM", section)
+                    append_crm_entry(investor_path(), "Investors", section)
                     crm += 1
                 elif INVESTOR_INTEREST_TAG in record.domain_tags:
-                    append_crm_entry(investor_interests_path(), "Investor Interests", section)
+                    append_crm_entry(investor_interest_path(), "Investor Interest", section)
                     interests += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
             except Exception:

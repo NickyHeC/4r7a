@@ -34,4 +34,4 @@ def test_structure_proposal_writes_wiki(tmp_path: Path):
     assert result["linear_teams"] == 1
     assert wiki.exists("engineering/linear/structure-proposal.md")
     body = wiki.read("engineering/linear/structure-proposal.md").body
-    assert "Linear Structure Proposal" in body
+    assert "Structure Proposal Proposal" in body

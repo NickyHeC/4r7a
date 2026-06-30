@@ -1,6 +1,6 @@
-"""Customer CRM Agent — interaction log for active customers.
+"""Customers Agent — interaction log for active customers.
 
-Split from gmail_customer_support: this agent writes the wiki Customer CRM
+Split from customer_support: this agent writes the wiki Customers
 page (MD first → Notion). Only handles ``Customer``-tagged routing records.
 
 SDK: Neither (deterministic wiki writes).
@@ -21,9 +21,9 @@ SPECIALIST_KEY = "customer_crm"
 
 
 class CustomerCRMAgent(BaseAgent):
-    """Append customer interactions to the Customer CRM wiki page."""
+    """Append customer interactions to the Customers wiki page."""
 
-    name = "gmail_customer_crm"
+    name = "customer_crm"
     WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
@@ -44,11 +44,11 @@ class CustomerCRMAgent(BaseAgent):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 append_crm_entry(
-                    customers_wiki_path(), "Customer CRM",
+                    customers_wiki_path(), "Customers",
                     format_mail_section(record, message),
                 )
                 self._store.mark_handled(record, SPECIALIST_KEY)
                 updated += 1
             except Exception:
-                self.logger.exception("Customer CRM update failed for %s", record.message_id)
+                self.logger.exception("Customers update failed for %s", record.message_id)
         return {"updated": updated}

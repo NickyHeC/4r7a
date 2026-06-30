@@ -23,7 +23,7 @@ SPECIALIST_KEY = "duplicate_across_mailboxes"
 class DuplicateAcrossMailboxesAgent(BaseAgent):
     """Mark duplicate routing records across connected Gmail mailboxes."""
 
-    name = "gmail_duplicate_across_mailboxes"
+    name = "duplicate_across_mailboxes"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

@@ -7,11 +7,11 @@ from typing import Any
 
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import (
-    company_connections_path,
+    connection_path,
     customers_wiki_path,
-    inbound_candidates_path,
-    investor_interests_path,
-    investors_crm_path,
+    inbound_candidate_path,
+    investor_interest_path,
+    investor_path,
     media_promotion_path,
 )
 from company_brain.agents.operations.shared.mail_body import plain_text
@@ -22,26 +22,26 @@ from company_brain.wiki.store import LocalWikiStore
 
 CRM_SEEDS: list[tuple[str, str, str, str]] = [
     (
-        investors_crm_path(),
-        "Investors CRM",
-        "# Investors CRM\n\n"
+        investor_path(),
+        "Investors",
+        "# Investors\n\n"
         "Confirmed investors (email or domain, one per line):\n\n"
         "- example-vc.com\n",
-        "investors",
+        "investor",
     ),
     (
-        investor_interests_path(),
-        "Investor Interests",
-        "# Investor Interests\n\n"
+        investor_interest_path(),
+        "Investor Interest",
+        "# Investor Interest\n\n"
         "Cold inbound investor interest appended below (newest first).\n",
-        "investor_interests",
+        "investor_interest",
     ),
     (
         customers_wiki_path(),
-        "Customer CRM",
-        "# Customer CRM\n\n"
+        "Customers",
+        "# Customers\n\n"
         "Active customers (email or domain, one per line):\n\n",
-        "customer_crm",
+        "customer",
     ),
     (
         media_promotion_path(),
@@ -51,23 +51,23 @@ CRM_SEEDS: list[tuple[str, str, str, str]] = [
         "media_promotion",
     ),
     (
-        company_connections_path(),
-        "Company Connections",
-        "# Company Connections\n\n"
+        connection_path(),
+        "Connections",
+        "# Connections\n\n"
         "People and warm connections (newest first). Excludes investors.\n",
-        "company_connections",
+        "connection",
     ),
     (
-        inbound_candidates_path(),
+        inbound_candidate_path(),
         "Inbound Candidates",
         "# Inbound Candidates\n\n"
         "Job seeker inbound (newest first).\n",
-        "inbound_candidates",
+        "inbound_candidate",
     ),
 ]
 
 
-def ensure_gmail_crm_seeds(mailbox: str | None = None) -> int:
+def ensure_crm_seeds(mailbox: str | None = None) -> int:
     """Create empty CRM wiki pages if missing. Returns count created."""
     from company_brain.agents.operations.shared.profiles import crm_seed_keys_for_profile
 

@@ -11,14 +11,48 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
-## 2026-06-30 — External wiki mount + admin content catalog (working tree)
+## 2026-06-30 — Agent filename rename pass (working tree)
+
+- Drop redundant platform prefix inside platform folders:
+  `mercury/card_spend.py`, `ramp/card_spend.py`, `granola/{ingest,meeting_watch,miss_check,task}.py`,
+  `notion/{db,platform_config,task_config,task_scanner,task_sync}.py`.
+- Class names shortened where safe (`IngestAgent`, `TaskScannerAgent`, …); finance keeps
+  `MercuryCardSpendAgent` / `RampCardSpendAgent` (same stem in different folders).
+- `migrate-names --gate-keys` renames `config/state.json` handled keys (`granola_ingest` → `ingest`, etc.).
+
+## 2026-06-30 — Governance refinements (working tree)
+
+- **Design-before-build:** solo-maintainer rule — list concerns one-by-one, 2–3 rounds,
+  `docs/plans/` deleted after ship; tabled reminders at plan start only.
+- **`company-brain doctor naming`:** legacy path drift, WIKI_PATH slugs, agent suffix/prefix.
+- **Handbooks:** steady-state mermaid only (no onboarding nodes); operations deferred → `tabled.md`.
+- **Tabled:** platform connection order + quarterly doc pass under 4r7a onboarding.
+
+## 2026-06-30 — Solo maintainer governance (working tree)
+
+- **Rule:** `.cursor/rules/solo-maintainer.mdc` — flag rule drift, read `docs/tabled.md`
+  when building platforms, doc update obligations, naming consistency, pre-ship checklist.
+- **Docs:** `docs/tabled.md` (canonical deferrals from notepad + handbooks),
+  `docs/doc-style.md` (handbook/memory/README layers and templates).
+- Links added in `docs/development.md`, `docs/agents/README.md`.
+
+## 2026-06-30 — Naming convention migration (working tree)
+
+- Added `.cursor/rules/naming.mdc` (three-layer: agent snake_case → wiki kebab slug → article/Notion title).
+- Renamed agents: `content_catalog_agent` → `content_catalog`; `gmail_ingest` → `ingest`; `gmail_customer_support` → `customer_support`; `gmail_crm` → `connection`.
+- Stripped `gmail_` prefix from specialist `name` / dispatch keys (kept `gmail_manager`, `gmail_onboarding`).
+- Wiki paths: singular slugs (`open-pr`, `expense-report/`, `subscription`, `operations/decisions/timeline.md`, `admin/content-catalog.md`, `admin/import-review/`, `admin/mount-review/`, `work-log/`).
+- Titles aligned (e.g. Stale Audit, Jan 2026 Expenses, Mount Review — {source}).
+- **`company-brain migrate-names`** CLI + `wiki/name_migrate.py` for bulk renames on existing trees; import/promote pipelines call `migrate_rel_path()` / `migrate_title()`. 122 tests pass.
+
+---
 
 - **Phases A–D shipped:** `wiki/external_paths.py`, `external_sources_config.py`,
   `config/external_sources.yaml`, `external_wiki` block in `operations.yaml`,
   mount pipeline (`external_wiki_import`, `external_mount_review`, `external_promote`),
-  `detect_external_duplicates`, admin catalog (`content_catalog.py`, `content_catalog_agent`),
+  `detect_external_duplicates`, admin catalog (`content_catalog.py`, `content_catalog`),
   `company-brain catalog` CLI, `section_teamspace: admin → admin`.
-- Employee import reviews migrated to `admin/import-reviews/` (from `engineering/admin/`).
+- Employee import reviews migrated to `admin/import-review/` (from `engineering/admin/`).
 - `write_wiki_page` accepts `sync_label` + `extra_frontmatter` for provenance stamping.
 - Docs: `docs/agents/external_wiki.md`, README, project_install, access-control rule.
 - 115 tests pass.
@@ -88,22 +122,22 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 ## 2026-06-26 — Remove Granola 18:00 EOD backstop (working tree)
 
 - Granola pipeline is now purely calendar-driven: post-meeting ingest + weekly
-  `granola_miss_check` safety net. Removed `_maybe_eod_backstop` from
-  `granola_meeting_watch` (+ its `eod_backstop` return field and `is_workday` import).
-- Removed dead `_loop` / `_should_run_today` from `granola_ingest` and the now-unused
+  `miss_check` safety net. Removed `_maybe_eod_backstop` from
+  `meeting_watch` (+ its `eod_backstop` return field and `is_workday` import).
+- Removed dead `_loop` / `_should_run_today` from `ingest` and the now-unused
   `cfg.ingest_time()` helper + `schedule.ingest_time` config key.
 - Updated docs (README, operations handbook diagrams/tables, project_install) and
-  `test_granola_task` to drop the backstop. Also refreshed README operations platform
+  `test_task` to drop the backstop. Also refreshed README operations platform
   map (Slack + Notion task platform) during the prior coherence pass.
 
 ## 2026-06-26 — Linear task platform Phase 5 + Notion task DBs (working tree)
 
-- **`operations/notion/`**: `notion_task_config`, `notion_db`, `notion_task_scanner`, `notion_task_sync`.
+- **`operations/notion/`**: `task_config`, `notion_db`, `task_scanner`, `task_sync`.
 - **`config/notion.yaml`**: `task_databases` + `task_routing`; `notion_platform` poll in `operations.yaml`.
 - **`task_bindings`**: `find_by_notion_page`, `attach_notion_platform`; wiki index/detail show Notion links.
-- **`task_propagate`**: Linear status → Notion fan-out; **`linear_completed`** dispatches `notion_task_sync`.
-- **`granola_task`**: creates Notion row on ingest when `meeting_action` fan-out includes notion.
-- **`linear_onboarding`**: starts `notion_task_scanner` when task DBs configured.
+- **`task_propagate`**: Linear status → Notion fan-out; **`linear_completed`** dispatches `task_sync`.
+- **`task`**: creates Notion row on ingest when `meeting_action` fan-out includes notion.
+- **`linear_onboarding`**: starts `task_scanner` when task DBs configured.
 - Doctor allowlist for Notion task platform modules in `operations/notion/`.
 - Tests: `tests/test_notion_task_platform.py`.
 
@@ -117,11 +151,11 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ## 2026-06-26 — Linear task platform Phase 3 + Granola pipeline (working tree)
 
-- **`granola_meeting_watch`**, **`granola_task`**, **`granola_miss_check`**;
-  refactored **`granola_ingest`** as dispatched specialist (+ 18:00 backstop via watch).
-- **`granola_onboarding`** starts `granola_meeting_watch` instead of ingest loop.
+- **`meeting_watch`**, **`task`**, **`miss_check`**;
+  refactored **`ingest`** as dispatched specialist (+ 18:00 backstop via watch).
+- **`granola_onboarding`** starts `meeting_watch` instead of ingest loop.
 - **`task_bindings.create_granola_binding`** for meeting-sourced tasks.
-- Tests: `tests/test_granola_task.py`; updated `test_granola_onboarding.py`.
+- Tests: `tests/test_task.py`; updated `test_granola_onboarding.py`.
 
 ## 2026-06-26 — Linear task platform Phase 2 (working tree)
 
@@ -178,18 +212,18 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ## 2026-06-23 — Granola onboarding agent (working tree)
 
-- Added **`granola_onboarding.py`**: runs `granola_ingest` once per day across a
-  configurable backfill window (default 30 days), then `get_runtime().start(GranolaIngestAgent)`.
+- Added **`granola_onboarding.py`**: runs `ingest` once per day across a
+  configurable backfill window (default 30 days), then `get_runtime().start(IngestAgent)`.
 - `granola.onboarding.backfill_days` in `config/operations.yaml`; docs updated.
 
 ## 2026-06-23 — Granola meeting-notes ingest (working tree)
 
 - Added **`operations/granola/`** platform: `granola_client.py` (REST read-only against
-  `public-api.granola.ai`), `granola_ingest.py` (persistent daily 6pm ingest, no manager).
+  `public-api.granola.ai`), `ingest.py` (persistent daily 6pm ingest, no manager).
 - Supports **business** (per-member API keys + roster) and **enterprise** (single public-notes
   key) modes via `config/operations.yaml` → `granola` + `GRANOLA_*` env vars.
 - Writes raw entries for absorb plus a daily compiled wiki page at
-  `operations/granola/daily/{date}.md`. `doctor` checks Granola; `sfile` allow_hosts updated.
+  `operations/granola/meeting/{date}.md`. `doctor` checks Granola; `sfile` allow_hosts updated.
 
 ## 2026-06-21 — Linear connection under engineering (working tree)
 
@@ -216,7 +250,7 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
   (`ingest_notifier()`, `customer_support_notifier()`, `events_notifier()`,
   `growth_notifier()`, `partnership_digest_notifier()`, `channel_notifier()`); the
   Slack SDK is just transport. Converted `team_on_it`, `growth_inbound`,
-  `partnership_digest`, `ingest_queue_review`, `gmail_customer_support` to emit
+  `partnership_digest`, `ingest_queue_review`, `customer_support` to emit
   `Signal`s. `request_manual_accounting` no longer calls Slack directly (routed via
   `from_finance_config().emit(Signal(...))`); removed the now-dead
   `SlackNotifier.post_with_link`. Strengthened the `agent-eval` rule; updated README,
@@ -251,7 +285,7 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
   `scheduling`, `triage_apply`, expanded `config/operations.yaml`.
 - **Phase 1 core loop**: persistent `inbox_triage` + `thread_watcher`, `gmail_manager`,
   `inbox_sweep`, `gmail_onboarding`.
-- **Phase 2 writers**: `draft_reply`, `decision_propagate`, `gmail_ingest`,
+- **Phase 2 writers**: `draft_reply`, `decision_propagate`, `ingest`,
   `ingest_queue_review`, `attachment_router`.
 - **Phase 3 CRM/notifications**: investor/customer/growth/vendor/people/recruiting CRM
   agents, `partnership_digest`, Slack channels, wiki CRM seed pages.
@@ -275,7 +309,7 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
   anthropic, OpenAIChatCompletionsModel over AsyncOpenAI(base_url) for
   openai/glm). All SDK imports lazy.
 - **SDK split is now provider-aware**: Claude Agent SDK = MCP-native/big-context
-  agents (absorb, ramp_card_spend, budget_report, subscription_audit) — wired to
+  agents (absorb, card_spend, budget_report, subscription_audit) — wired to
   splat `llm.claude.model_kwargs()/options_env()` into `ClaudeAgentOptions`.
   OpenAI Agents SDK = the provider-flexible path (can target a self-hosted/remote
   open-source GLM-5 OpenAI-compatible endpoint at no external-token cost).
@@ -424,8 +458,8 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
 - Reorganized agents into department -> platform; GitHub moved under `engineering/`
   with a `github_manager`.
 - Added the finance department: Mercury (read-only CLI) and Ramp (read-only MCP)
-  platforms, specialists (asset_compile, bank_transaction, mercury_card_spend,
-  ramp_card_spend), persistent managers (monthly_expense, quarterly_calculation),
+  platforms, specialists (asset_compile, bank_transaction, card_spend,
+  card_spend), persistent managers (monthly_expense, quarterly_calculation),
   cross-platform agents (budget_report, subscription_audit, request_manual_accounting),
   and finance_onboarding.
 - Added agent rules: construction (SDK selection, integrations), organization,

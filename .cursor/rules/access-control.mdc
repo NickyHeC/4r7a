@@ -66,10 +66,10 @@ Admin initiates only; members cannot mount external wikis.
 
 - **Registry:** `config/external_sources.yaml` — source metadata + mount history (pointers only).
 - **Pipeline:** quarantine → security scan → duplicate detection → admin review
-  (`admin/external-mount-reviews/{id}.md`) → promote with provenance frontmatter.
+  (`admin/mount-review/{id}.md`) → promote with provenance frontmatter.
 - **Default sync:** promoted pages default to `company` teamspace (configurable per source);
   review pages and the content catalog use `admin_only` / admin teamspace.
-- **Admin catalog:** `admin/table-of-contents.md` lists company wiki, external mounts,
+- **Admin catalog:** `admin/content-catalog.md` lists company wiki, external mounts,
   employee building counts, and audit pages — view-only; regenerate via `company-brain catalog`.
 - **Section routing:** `section_teamspace` maps top-level `admin` → admin teamspace.
 

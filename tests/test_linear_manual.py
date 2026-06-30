@@ -71,7 +71,7 @@ def test_apply_approved_status(tmp_path: Path, monkeypatch):
     )
     wiki.write(
         "engineering/linear/manual-management.md",
-        MarkdownDoc(frontmatter={"title": "Linear Manual Management"}, body=checklist),
+        MarkdownDoc(frontmatter={"title": "Manual Management"}, body=checklist),
     )
 
     config = MagicMock()

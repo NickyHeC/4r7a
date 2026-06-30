@@ -1,0 +1,172 @@
+---
+description: Naming conventions for agents, wiki MD paths, and Notion page titles
+alwaysApply: true
+---
+
+# Naming Conventions
+
+Three layers, one job each:
+
+```
+Agent file (snake_case)  →  Wiki path slug (kebab-case)  →  Article title = Notion title
+        │                            │                              │
+   who runs it                  stable ID                    human label
+```
+
+Inspired by the nicky-wiki pattern (concise path slug, readable title) with one project
+difference: **agents use `_` for Python imports**; wiki **file** slugs use `-` because
+they are not import paths.
+
+---
+
+## A. Agents (`src/company_brain/agents/`)
+
+| Rule | Convention |
+|------|------------|
+| **File** | `snake_case.py` — never `-` (hyphen) |
+| **Length** | ~2 words: `{verb}_{noun}` or `{noun}_{role}` |
+| **No `agent` suffix** | `content_catalog.py`, not `content_catalog.py` |
+| **No platform prefix inside platform folder** | `gmail/customer_support.py`, not `gmail/customer_support.py` |
+| **Managers** | `{scope}_manager.py`, or a domain noun when the schedule *is* the name (`monthly_expense.py`) |
+| **Onboarding** | `{platform}_onboarding.py` or `{department}_onboarding.py` — always last in handbook |
+| **Class `name`** | matches filename stem (`open_pr`, not `OpenPRAgent`) |
+| **Helpers / clients** | `{platform}_client.py`, `{platform}_config.py` — not agents; no `BaseAgent` subclass |
+
+Examples:
+
+```
+engineering/github/open_pr.py
+engineering/linear/stale_audit.py
+operations/gmail/receipt_router.py
+finance/monthly_expense.py
+employee_wiki/import_review.py
+external_wiki/content_catalog.py
+```
+
+---
+
+## B. Wiki MD paths (`wiki/**`, `employee_wiki/**`)
+
+The **filename slug** is the concise stable ID (1–3 words). Path carries domain context;
+the slug does not repeat it.
+
+| Rule | Convention |
+|------|------------|
+| **Shape** | `{section}/{platform}/{topic-slug}.md` when platform-scoped; `{section}/{topic-slug}.md` otherwise |
+| **Slug** | `kebab-case`, **singular**, nouns not verbs: `open-pr`, `stale-audit`, `expense-report` |
+| **No plurals** | `open-pr.md` not `open-prs.md`; `expense-report/` folder for time-series, not `expense-reports/` |
+| **No platform in slug** when folder already names the platform | `engineering/github/open-pr.md`, not `github-open-pr.md` |
+| **Time-series** | `{topic}/{YYYY-MM}.md` or `{topic}/{YYYY-MM-DD}.md` under a singular topic folder |
+| **Indexes / control** | `_index.md`, `_backlinks.json`, `_absorb_log.json` only |
+| **Dynamic entities** | `{entity-type}/{slug}.md` — e.g. `vendor/ramp.md`, `people/nicky-he.md` |
+| **Review / audit pages** | clean slug in path; details in article title (see C) | `admin/import-review/{id}.md` |
+
+Canonical examples:
+
+```
+engineering/github/open-pr.md
+engineering/linear/stale-audit.md
+engineering/linear/manual-management.md
+finance/expense-report/2026-01.md
+finance/quarterly-metric.md
+operations/gmail/investor.md
+operations/gmail/customer.md
+operations/decisions/timeline.md
+operations/granola/meeting/2026-06-30.md
+operations/granola/missed-note.md
+admin/content-catalog.md
+admin/import-review/{import_id}.md
+admin/mount-review/{import_id}.md
+external/{source}/{topic-slug}.md
+employee_wiki/{member}/work-log/2026-Q2.md
+people/{member-slug}.md
+```
+
+Employee wiki volume uses the same slug rules; member prefix replaces department prefix.
+
+---
+
+## C. Article title and Notion title
+
+**`frontmatter.title` is canonical.** NotionSync mirrors it exactly. The MD `#` heading
+should match.
+
+The article title may be **longer and more descriptive** than the path slug. It does not
+need to be as short as the filename.
+
+| Rule | Convention |
+|------|------------|
+| **Notion = MD title** | always identical via `write_wiki_page(..., title=...)` |
+| **Default** | Title Case; expand slug words for clarity: `stale-audit` → **Stale Audit** |
+| **Drop redundant domain words** when path already scopes context | `operations/gmail/investor.md` → **Investors**, not "Investors" |
+| **Platform in title** | omit when path scopes the platform; **allow** when the agent acts cross-platform from that folder | e.g. `linear_completed/archive_gmail.py` → **Gmail Archive** or **Archive Gmail** |
+| **Time-series** | date token in title is fine | **Jan 2026 Expenses**, **Meetings 2026-06-30** |
+| **Review pages** | short slug in path; member/source/id in title | path `admin/import-review/abc123.md` → title **Import Review — nicky** |
+| **Vendor pages** | path `vendor/ramp.md` → title **Ramp** (subtitle/detail in body, not em-dash title) |
+
+Examples (path → title):
+
+| Path slug | Article title (= Notion) |
+|-----------|--------------------------|
+| `open-pr.md` | Open PRs |
+| `branch-status.md` | Branch Status |
+| `stale-audit.md` | Stale Audit |
+| `expense-report/2026-01.md` | Jan 2026 Expenses |
+| `quarterly-metric.md` | Quarterly Metric |
+| `subscription.md` | Subscriptions |
+| `investor.md` | Investors |
+| `customer.md` | Customers |
+| `timeline.md` | Company Timeline |
+| `missed-note.md` | Missed Notes |
+| `content-catalog.md` | Content Catalog |
+| `import-review/{id}.md` | Import Review — {member} |
+| `mount-review/{id}.md` | Mount Review — {source} |
+
+---
+
+## Agent → wiki mapping
+
+When an agent owns a page, define both constants in the agent module:
+
+```python
+WIKI_PATH = "engineering/github/open-pr.md"   # concise slug (B)
+TITLE = "Open PRs"                             # article + Notion title (C)
+```
+
+Slug and agent stem should align conceptually (`stale_audit` → `stale-audit.md`) but
+need not be identical words. **Do not** encode plurals in paths going forward.
+
+---
+
+## nicky-wiki vs company-brain
+
+| | nicky-wiki | company-brain |
+|--|------------|---------------|
+| Agent / code files | `-` (no Python imports) | `_` |
+| Wiki file slugs | `-` | `-` |
+| Title vs slug | title longer than slug | same rule |
+| Plural slugs | occasional | **avoid** (singular only) |
+
+When porting pages from nicky-wiki or external mounts, rename slugs to singular
+company-brain form on promote; preserve provenance in frontmatter, not in the slug.
+
+---
+
+## Adding new names (checklist)
+
+1. Pick agent filename (`snake_case`, no `agent`, no redundant platform prefix).
+2. Pick wiki path slug (`kebab-case`, singular, 1–3 words, path carries domain).
+3. Pick article title (readable, may include dates or review context; = Notion).
+4. Wire `WIKI_PATH` + `TITLE` in the agent; call `write_wiki_page(rel_path, title, ...)`.
+5. Update department handbook destination column if the agent writes a wiki page.
+6. Add legacy → canonical mappings to `wiki/name_migrate.py` when renaming shipped paths.
+
+## Migrating existing trees
+
+```bash
+company-brain migrate-names          # dry-run preview
+company-brain migrate-names --apply  # rename files + patch titles/links/routing keys
+```
+
+External wiki promote and import pipelines call `migrate_rel_path()` / `migrate_title()`
+automatically so pre-existing Markdown lands on canonical slugs.

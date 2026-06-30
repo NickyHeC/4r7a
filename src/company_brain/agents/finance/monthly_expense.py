@@ -116,8 +116,8 @@ class MonthlyExpenseManager(BaseAgent):
         from company_brain.runtime import get_runtime
 
         from .mercury.bank_transaction import BankTransactionAgent
-        from .mercury.mercury_card_spend import MercuryCardSpendAgent
-        from .ramp.ramp_card_spend import RampCardSpendAgent
+        from .mercury.card_spend import MercuryCardSpendAgent
+        from .ramp.card_spend import RampCardSpendAgent
 
         runtime = get_runtime()
         txns: list[dict] = []
@@ -148,7 +148,7 @@ class MonthlyExpenseManager(BaseAgent):
 
     def _build_report(self, month: str, grouped: dict[str, list[dict]], grand_total: float) -> str:
         label = transactions.month_label(month)
-        lines = [f"# {label} Expense Report", ""]
+        lines = [f"# {label} Expenses", ""]
         lines.append(f"*Generated: {datetime.now():%Y-%m-%d %H:%M}*")
         lines.append(f"*Total outbound spend: {transactions.fmt_money(grand_total)}*")
         lines.append("")
@@ -175,7 +175,7 @@ class MonthlyExpenseManager(BaseAgent):
         label = transactions.month_label(month)
         child_key = f"monthly_expense_{month}"
         page_id = notion_pages.ensure_page(
-            child_key, [f"{label} Expense Report"], f"{label} Expense Report",
+            child_key, [f"{label} Expenses"], f"{label} Expenses",
             parent_key=PARENT_KEY,
         )
         notion_pages.update_page_body(page_id, report)
@@ -194,7 +194,7 @@ class MonthlyExpenseManager(BaseAgent):
                     f"total outbound {transactions.fmt_money(grand_total)}."
                 ),
                 severity=severity,
-                link_label=f"{label} Expense Report",
+                link_label=f"{label} Expenses",
                 link_url=notion_pages.page_url(page_id) if page_id else None,
             ))
         except Exception:

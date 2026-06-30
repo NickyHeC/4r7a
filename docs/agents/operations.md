@@ -31,14 +31,13 @@ flowchart TD
     IT[inbox_triage every 30m workdays]
     TW[thread_watcher every 15m workdays]
     GM[gmail_manager 8/12/4 + 22:00 workdays]
-    GR[granola_meeting_watch 15m poll]
+    GR[meeting_watch 15m poll]
   end
   IT -->|classify + label| RR[(routing record JSON)]
   TW -->|sent-mail enrich| RR
   GM -->|read RR| SPEC[profile-enabled specialists]
   TW --> DP[decision_propagate]
-  TW --> GI[gmail_ingest]
-  ON[gmail_onboarding once] --> IT & TW & GM
+  TW --> GI[ingest]
   SPEC -->|Meeting Request| GCAL[calendar_availability · book_meeting]
   GR --> WIKI[raw entries + daily digest MD]
 ```
@@ -131,7 +130,7 @@ Prospect vs customer disambiguation lives in the routing record / CRM logic.
 
 ### Investor rule (EA profile only)
 
-Confirmed investor emails/domains in **`investors-crm.md`** → **`Investor`** label +
+Confirmed investor emails/domains in **`operations/gmail/investor.md`** → **`Investor`** label +
 `contact_type: investor`. Everything else cold → **`Cold Inbound/Investor Interest`**.
 
 Employee profile: no Investor label; investor detection skipped.
@@ -225,7 +224,7 @@ specialists. Respects active **service profile** for label set and classificatio
 
 Classifies sent mail: acknowledgment vs **decision** vs **ingest-worthy**. Applies
 `Decision` / `Ingest` labels when allowed by profile; enriches routing records; dispatches
-**`decision_propagate`** and **`gmail_ingest`** when those agents are enabled.
+**`decision_propagate`** and **`ingest`** when those agents are enabled.
 
 ---
 
@@ -262,13 +261,13 @@ Creates drafts for low-complexity Reply threads. Skips legal/multi-party/long th
 |---|---|
 | **State** | ephemeral |
 | **Schedule** | Dispatched by `thread_watcher` on real decisions |
-| **Destination** | `operations/gmail/company-timeline.md` |
+| **Destination** | `operations/decisions/timeline.md` |
 | **Notion** | Company Timeline |
 | **Write mode** | append |
 
 Appends decision section from sent mail. Skips thanks/pass acknowledgments.
 
-### `gmail_ingest.py`
+### `ingest.py`
 
 | | |
 |---|---|
@@ -314,10 +313,10 @@ only `actionable` / `alert` reach a channel — detect everything, notify select
 | | |
 |---|---|
 | **Tags** | `Investor`, `Cold Inbound/Investor Interest` |
-| **Destination** | `investors-crm.md`, `investor-interests.md` |
+| **Destination** | `operations/gmail/investor.md`, `operations/gmail/investor-interest.md` |
 | **Write mode** | append |
 
-### `gmail_customer_support.py`
+### `customer_support.py`
 
 | | |
 |---|---|
@@ -331,7 +330,7 @@ Posts summary with source mailbox per customer message.
 | | |
 |---|---|
 | **Tags** | `Customer` |
-| **Destination** | `customer-crm.md` |
+| **Destination** | `operations/gmail/customer.md` |
 | **Write mode** | append |
 
 Active customers only; wiki list also drives triage classification.
@@ -341,24 +340,24 @@ Active customers only; wiki list also drives triage classification.
 | | |
 |---|---|
 | **Tags** | `Cold Inbound/Press & Podcast`, `Cold Inbound/Event Invitations` |
-| **Destination** | `media-promotion.md` + Slack `#events` or `#growth` |
+| **Destination** | `operations/gmail/media-promotion.md` + Slack `#events` or `#growth` |
 
 ### `vendor_tracker.py`
 
 | | |
 |---|---|
 | **Tags** | `Vendor` |
-| **Destination** | `operations/gmail/vendors/<slug>.md` |
+| **Destination** | `operations/gmail/vendor/<slug>.md` |
 | **Write mode** | append |
 
 Ops comms per vendor. Finance costs in **`subscription_audit`**.
 
-### `gmail_crm.py`
+### `connection.py`
 
 | | |
 |---|---|
 | **Tags** | `People`, `Warm intro` (EA only) |
-| **Destination** | `company-connections.md` |
+| **Destination** | `operations/gmail/connection.md` |
 | **Write mode** | append |
 
 Excludes `contact_type: investor`.
@@ -368,7 +367,7 @@ Excludes `contact_type: investor`.
 | | |
 |---|---|
 | **Tags** | `Cold Inbound/Job Seekers` |
-| **Destination** | `inbound-candidates.md` |
+| **Destination** | `operations/gmail/inbound-candidate.md` |
 | **Write mode** | append |
 
 Logs candidates even when auto-archived at triage.
@@ -424,7 +423,7 @@ Marks secondary copies with `extracted.duplicate_of` so specialists don't double
 | **Tags** | `Receipts` + subscription sender list |
 | **Forwarding** | Copies missing receipts from other **company-domain** mailboxes via Gmail insert (no external send) |
 | **Destination** | `receipt_router.destination_mailbox` (default primary) |
-| **Wiki** | `receipt-routing.md` (append) |
+| **Wiki** | `operations/gmail/receipt-route.md` (append) |
 
 Ramp auto-attaches from the destination inbox. This agent only routes mail there;
 it does not cross-check Ramp transactions (Ramp owns documentation gaps).
@@ -478,26 +477,26 @@ description — no separate `meeting_prep` agent. Config: `config/operations.yam
 
 ---
 
-## Granola (`operations/granola/`)
+## Granola — how it runs
+
+**`meeting_watch.py`** is the persistent agent (polls calendar every 15 min).
+It dispatches **`ingest`** after each meeting ends (+ buffer) and runs
+**`miss_check`** weekly as the safety net for any missed meetings.
 
 ```mermaid
 flowchart TD
-  GMW[granola_meeting_watch persistent] -->|meeting ended| GI[granola_ingest]
-  GMW -->|Friday| MC[granola_miss_check]
-  GI --> GT[granola_task]
+  GMW[meeting_watch persistent] -->|meeting ended| GI[ingest]
+  GMW -->|Friday| MC[miss_check]
+  GI --> GT[task]
   GT --> Linear[(Linear + task_bindings)]
 ```
 
-**`granola_meeting_watch.py`** is the persistent agent (polls calendar every 15 min).
-It dispatches **`granola_ingest`** after each meeting ends (+ buffer) and runs
-**`granola_miss_check`** weekly as the safety net for any missed meetings.
-
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `granola_meeting_watch.py` | Persistent (15 min poll) | Post-meeting ingest + weekly miss check |
-| `granola_ingest.py` | Dispatched per meeting | Raw entries + daily digest wiki page |
-| `granola_task.py` | After ingest | Action items → Linear issue + `task_bindings` |
-| `granola_miss_check.py` | Weekly (via watch) | Calendar vs ingest gap report |
+| `meeting_watch.py` | Persistent (15 min poll) | Post-meeting ingest + weekly miss check |
+| `ingest.py` | Dispatched per meeting | Raw entries + daily digest wiki page |
+| `task.py` | After ingest | Action items → Linear issue + `task_bindings` |
+| `miss_check.py` | Weekly (via watch) | Calendar vs ingest gap report |
 
 ### Deployment modes
 
@@ -512,7 +511,7 @@ pulls all notes accessible to the company key in one pass.
 ### Output
 
 1. **Raw entries** — one `raw/entries/*.md` per meeting (tags: `granola`, `meeting`) for absorb.
-2. **Daily digest** — `operations/granola/daily/YYYY-MM-DD.md` (compiled snapshot, `update` mode).
+2. **Daily digest** — `operations/granola/meeting/YYYY-MM-DD.md` (compiled snapshot, `update` mode).
 
 Config: `config/operations.yaml` → `granola.schedule` (`watch_interval_minutes`,
 `post_meeting_buffer_minutes`, `miss_check_day`, `miss_check_time`). Client:
@@ -526,15 +525,24 @@ Config: `config/operations.yaml` → `granola.schedule` (`watch_interval_minutes
 | **Schedule** | Once, on first Granola connection |
 | **Source** | Granola (default **30-day** backfill) |
 
-1. Runs **`granola_ingest`** once per day across the backfill window (oldest first).
-2. Starts persistent **`granola_meeting_watch`** via `get_runtime().start()` and exits.
+1. Runs **`ingest`** once per day across the backfill window (oldest first).
+2. Starts persistent **`meeting_watch`** via `get_runtime().start()` and exits.
 
 ---
 
-## Slack (`operations/slack/`)
+## Slack — how it runs
 
 Polls watched channels for threads with action-item language; creates Linear issues
 via `task_bindings`. Linear Done → thread completion reply (system propagation).
+
+```mermaid
+flowchart TD
+  STW[slack_thread_watcher persistent] -->|30min poll| SAI[slack_action_items]
+  SAI --> TB[(task_bindings + Linear)]
+  LM[linear_manager] -->|Done| LC[linear_completed]
+  LC --> STR[slack_thread_respond]
+  STR --> TB
+```
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
@@ -550,17 +558,26 @@ when a bound Slack task reaches Done in Linear).
 
 ---
 
-## Notion (`operations/notion/`)
+## Notion — how it runs
 
 Multi-database task registry: scans configured Notion task DBs for rows with a Linear ID
 column, links them into `task_bindings`, and propagates Linear status/title back to the
 correct database row on completion.
 
+```mermaid
+flowchart TD
+  TS[task_scanner persistent] -->|30min poll| TB[(task_bindings)]
+  TS --> NDB[(Notion task DBs)]
+  GT[granola task] -->|create row| SYNC[task_sync]
+  LC[linear_completed] -->|status update| SYNC
+  SYNC --> NDB
+```
+
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `notion_task_scanner.py` | Persistent (30 min poll) | Query updated task DB rows; link by Linear ID (read-first) |
-| `notion_task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
-| `notion_db.py` | — | Database query/patch helpers (not an agent) |
+| `task_scanner.py` | Persistent (30 min poll) | Query updated task DB rows; link by Linear ID (read-first) |
+| `task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
+| `db.py` | — | Database query/patch helpers (not an agent) |
 
 Config: `config/notion.yaml` → `task_databases` (per-DB `database_id` + column map),
 `task_routing` (department/project → database key). Poll interval:
@@ -571,7 +588,7 @@ column names must match your Notion schema (`Name`, `Status`, `Linear ID`, etc.)
 
 Started by **`linear_onboarding`** when at least one task database has a `database_id`.
 Granola **`meeting_action`** tasks fan out to Notion on create; Linear Done updates the row
-via `linear_completed` → `notion_task_sync`.
+via `linear_completed` → `task_sync`.
 
 ---
 
@@ -593,11 +610,6 @@ via `linear_completed` → `notion_task_sync`.
 
 ---
 
-## Not yet built (Gmail)
+## Deferred work
 
-| Item | Notes |
-|------|-------|
-| Warm intro classifier | Confident cases only; heuristic TBD |
-| `inbox_task` archive on Linear done | Linear-side agent, not gmail sweep |
-| Full Ramp receipt cross-check | Not needed — Ramp flags needs-receipt/memo; router only delivers mail to Ramp inbox |
-| `security_triage` | Auth alerts, wire-transfer patterns |
+See [`docs/tabled.md`](../tabled.md) — Operations (Gmail, Slack, Notion, other).

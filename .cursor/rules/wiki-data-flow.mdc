@@ -25,7 +25,7 @@ Each agent must **know distinctively** whether it overwrites or appends, declare
 2. **Notion binding lives in frontmatter** — `notion_page_id` is written back by `NotionSync` and is the canonical binding; `registry.json` is a derived cache.
 3. **Two intake paths**:
    - Knowledge: `ingest` writes `raw/entries/*.md`; `absorb` (LLM writer) synthesizes them into `wiki/**/*.md` articles.
-   - Operational: department agents write their pages (e.g. open-prs, expense reports) directly via `write_wiki_page` and skip absorb.
+   - Operational: department agents write their pages (e.g. open-pr, expense reports) directly via `write_wiki_page` and skip absorb.
 4. **Reads come from the wiki store** — use `read_wiki_page(rel_path)`; never read raw entries during query/operations.
 
 ## Absorb writing standards (from the wiki-gen skill)

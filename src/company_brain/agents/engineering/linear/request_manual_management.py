@@ -25,7 +25,7 @@ from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.publish import read_wiki_page, write_wiki_page
 
 MANUAL_PATH = "engineering/linear/manual-management.md"
-MANUAL_TITLE = "Linear Manual Management"
+MANUAL_TITLE = "Manual Management"
 
 _CHECKBOX_RE = re.compile(r"^- \[( |x|X)\]\s*(.+)$")
 _PROPOSED_RE = re.compile(r"proposed:\s*([^|]+)", re.IGNORECASE)

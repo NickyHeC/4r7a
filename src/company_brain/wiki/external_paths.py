@@ -25,14 +25,14 @@ def external_landing_path(source_key: str) -> str:
 
 def external_mount_review_path(import_id: str) -> str:
     iid = (import_id or "").strip().strip("/")
-    return f"admin/external-mount-reviews/{iid}.md"
+    return f"admin/mount-review/{iid}.md"
 
 
 def import_review_wiki_path(import_id: str) -> str:
     """Employee zip import review page (top-level admin section)."""
     iid = (import_id or "").strip().strip("/")
-    return f"admin/import-reviews/{iid}.md"
+    return f"admin/import-review/{iid}.md"
 
 
 def admin_table_of_contents_path() -> str:
-    return "admin/table-of-contents.md"
+    return "admin/content-catalog.md"

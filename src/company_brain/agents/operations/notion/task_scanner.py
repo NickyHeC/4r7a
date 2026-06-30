@@ -17,18 +17,18 @@ from company_brain.agents.engineering.linear.task_bindings import (
     TaskBindingStore,
     attach_notion_platform,
 )
-from company_brain.agents.operations.notion import notion_db, notion_config, notion_task_config
+from company_brain.agents.operations.notion import db, platform_config, task_config
 from company_brain.agents.gates import StateStore
 from company_brain.config import AppConfig
 from company_brain.notion.client import NotionClient
 
-SCAN_STATE_PREFIX = "notion_task_scanner:last_scan:"
+SCAN_STATE_PREFIX = "task_scanner:last_scan:"
 
 
-class NotionTaskScannerAgent(BaseAgent):
+class TaskScannerAgent(BaseAgent):
     """Poll configured Notion task databases and link rows to existing bindings."""
 
-    name = "notion_task_scanner"
+    name = "task_scanner"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -37,8 +37,8 @@ class NotionTaskScannerAgent(BaseAgent):
         self._client = NotionClient()
 
     def should_run(self, **kwargs: Any) -> bool:
-        return notion_db.notion_is_available(self._client) and bool(
-            notion_task_config.configured_database_keys(notion=self.config.notion),
+        return db.notion_is_available(self._client) and bool(
+            task_config.configured_database_keys(notion=self.config.notion),
         )
 
     def run(self, *, once: bool = False, **kwargs: Any) -> Any:
@@ -47,7 +47,7 @@ class NotionTaskScannerAgent(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
-        interval = notion_config.poll_interval_minutes()
+        interval = platform_config.poll_interval_minutes()
         self.logger.info("Notion task scanner starting (poll every %d min)", interval)
         while True:
             try:
@@ -60,11 +60,11 @@ class NotionTaskScannerAgent(BaseAgent):
         now = datetime.now(timezone.utc)
         linked = 0
         scanned = 0
-        for db_key in notion_task_config.configured_database_keys(notion=self.config.notion):
+        for db_key in task_config.configured_database_keys(notion=self.config.notion):
             spec = self.config.notion.task_databases[db_key]
             since = self._since_timestamp(db_key, now)
             try:
-                rows = notion_db.query_database_updated_since(
+                rows = db.query_database_updated_since(
                     self._client,
                     spec.database_id,
                     since,
@@ -101,7 +101,7 @@ class NotionTaskScannerAgent(BaseAgent):
         if self._bindings.find_by_notion_page(page_id):
             return False
 
-        fields = notion_db.read_row_fields(row, spec)
+        fields = db.read_row_fields(row, spec)
         linear_ref = (fields.get("linear") or "").strip()
         if not linear_ref:
             return False
@@ -118,7 +118,7 @@ class NotionTaskScannerAgent(BaseAgent):
             binding,
             database_key=db_key,
             page_id=page_id,
-            url=notion_db.page_url(row),
+            url=db.page_url(row),
             title=fields.get("title") or binding.title,
         )
         self._bindings.upsert(updated, sync_notion=False)

@@ -17,13 +17,13 @@ from company_brain.agents.base import BaseAgent
 
 from . import mercury_client as mc
 
-AGENT_KEY = "mercury_card_spend"
+AGENT_KEY = "card_spend"
 
 
 class MercuryCardSpendAgent(BaseAgent):
     """Fetch and categorize Mercury IO card spend for a date range."""
 
-    name = "finance_mercury_card_spend"
+    name = "card_spend"
 
     def run(self, *, start: str, end: str, **kwargs: Any) -> dict[str, Any]:
         """Return normalised card transactions and a category breakdown."""

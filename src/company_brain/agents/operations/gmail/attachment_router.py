@@ -29,7 +29,7 @@ DOC_HINTS = (".doc", ".docx", ".txt", ".md", ".rtf")
 class AttachmentRouterAgent(BaseAgent):
     """Fetch attachments from triaged mail and store on the wiki volume."""
 
-    name = "gmail_attachment_router"
+    name = "attachment_router"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

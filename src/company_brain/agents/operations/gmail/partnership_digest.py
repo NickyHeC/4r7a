@@ -35,7 +35,7 @@ ARCHIVE_BELOW_SCORE = 2
 class PartnershipDigestAgent(BaseAgent):
     """Weekly ranked digest for partnership and founder networking inbound."""
 
-    name = "gmail_partnership_digest"
+    name = "partnership_digest"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

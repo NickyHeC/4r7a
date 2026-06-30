@@ -11,7 +11,11 @@ logged-only, `actionable` / `alert` are delivered. Detect everything, notify sel
 
 ---
 
-## How it runs
+## Finance — how it runs
+
+Two persistent **managers** span Mercury + Ramp. Cross-platform agents at the
+department level handle budget narrative, subscription audit, and the manual
+accounting feedback loop.
 
 ```mermaid
 flowchart TD
@@ -24,13 +28,7 @@ flowchart TD
   QC --> BR[budget_report]
   QC --> SA[subscription_audit]
   RMA -->|daily noon poll| ME
-  FO[finance_onboarding once] --> ME & QC
-  FO -->|start| ME & QC
 ```
-
-Two persistent **managers** span Mercury + Ramp. Cross-platform agents at the
-department level handle budget narrative, subscription audit, and the manual
-accounting feedback loop.
 
 ---
 
@@ -43,8 +41,8 @@ accounting feedback loop.
 | **State** | persistent |
 | **Schedule** | **1st of each month at 08:00** (`config/finance.yaml`) |
 | **Source** | Mercury bank + Mercury IO card + Ramp card (via specialists) |
-| **Destination** | `finance/expense-reports/<YYYY-MM>.md` |
-| **Notion** | `<Month> Expense Report` (under Monthly Expense Reports) |
+| **Destination** | `finance/expense-report/<YYYY-MM>.md` |
+| **Notion** | `{Month} Expenses` (under Monthly Expense Reports) |
 | **Write mode** | update (one page per month) |
 
 Dispatches transaction specialists for the **previous calendar month**, sorts outbound
@@ -92,8 +90,8 @@ Matches quarter spend to major company events; prepends a per-quarter budget sec
 | **State** | ephemeral |
 | **Schedule** | Started by `quarterly_calculation` |
 | **Source** | Mercury + Ramp transactions (3 months) + web search |
-| **Destination** | `finance/company-subscriptions.md` |
-| **Notion** | Company Subscriptions |
+| **Destination** | `finance/subscription.md` |
+| **Notion** | Subscriptions |
 | **Write mode** | update |
 
 Detects recurring vendors, verifies pricing via web search, flags overlaps, posts to
@@ -126,7 +124,7 @@ the source manager.
 | **State** | ephemeral |
 | **Schedule** | On demand (e.g. quarter-end snapshot) |
 | **Source** | Mercury bank + treasury balances/statements |
-| **Destination** | `finance/total-assets.md` |
+| **Destination** | `finance/total-asset.md` |
 | **Notion** | Total Assets |
 | **Write mode** | append |
 
@@ -144,7 +142,7 @@ Snapshots total assets for month-end, quarter-end, or current date.
 Normalized inbound/outbound bank transactions for a date range; excludes internal/treasury
 transfers.
 
-### `mercury_card_spend.py`
+### `card_spend.py`
 
 | | |
 |---|---|
@@ -159,7 +157,7 @@ Mercury IO card outflows, categorized by Mercury transaction categories.
 
 ## Ramp specialists (`finance/ramp/`)
 
-### `ramp_card_spend.py`
+### `card_spend.py`
 
 | | |
 |---|---|

@@ -7,10 +7,10 @@ from company_brain.agents.engineering.linear.linear_completed.dispatcher import 
     LinearCompletedAgent,
 )
 from company_brain.agents.engineering.linear.task_bindings import TaskBindingStore
-from company_brain.agents.operations.notion import notion_db, notion_task_config
-from company_brain.agents.operations.notion.notion_task_scanner import NotionTaskScannerAgent
-from company_brain.agents.operations.notion.notion_task_sync import (
-    NotionTaskSyncAgent,
+from company_brain.agents.operations.notion import db, task_config
+from company_brain.agents.operations.notion.task_scanner import TaskScannerAgent
+from company_brain.agents.operations.notion.task_sync import (
+    TaskSyncAgent,
     linear_status_to_notion,
 )
 from company_brain.config import NotionConfig, TaskDatabaseColumns, TaskDatabaseSpec, TaskRoutingRule
@@ -32,7 +32,7 @@ def _notion_config_with_db(db_id: str = "db-eng") -> NotionConfig:
 
 def test_resolve_database_key_by_routing():
     notion = _notion_config_with_db()
-    key = notion_task_config.resolve_database_key("operations", "general", notion=notion)
+    key = task_config.resolve_database_key("operations", "general", notion=notion)
     assert key == "engineering"
 
 
@@ -59,7 +59,7 @@ def test_scanner_links_existing_row(tmp_path, monkeypatch):
 
     config = MagicMock()
     config.notion = _notion_config_with_db()
-    agent = NotionTaskScannerAgent(config)
+    agent = TaskScannerAgent(config)
 
     row = {
         "id": "page-99",
@@ -72,10 +72,10 @@ def test_scanner_links_existing_row(tmp_path, monkeypatch):
     }
 
     with patch.object(agent, "_client"), patch(
-        "company_brain.agents.operations.notion.notion_task_scanner.notion_db.notion_is_available",
+        "company_brain.agents.operations.notion.task_scanner.db.notion_is_available",
         return_value=True,
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_scanner.notion_db.query_database_updated_since",
+        "company_brain.agents.operations.notion.task_scanner.db.query_database_updated_since",
         return_value=[row],
     ):
         result = agent.run_once()
@@ -110,7 +110,7 @@ def test_scanner_does_not_duplicate_link(tmp_path, monkeypatch):
 
     config = MagicMock()
     config.notion = _notion_config_with_db()
-    agent = NotionTaskScannerAgent(config)
+    agent = TaskScannerAgent(config)
     row = {
         "id": "page-43",
         "properties": {
@@ -119,10 +119,10 @@ def test_scanner_does_not_duplicate_link(tmp_path, monkeypatch):
     }
 
     with patch(
-        "company_brain.agents.operations.notion.notion_task_scanner.notion_db.notion_is_available",
+        "company_brain.agents.operations.notion.task_scanner.db.notion_is_available",
         return_value=True,
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_scanner.notion_db.query_database_updated_since",
+        "company_brain.agents.operations.notion.task_scanner.db.query_database_updated_since",
         return_value=[row],
     ):
         result = agent.run_once()
@@ -154,16 +154,16 @@ def test_notion_sync_updates_status(tmp_path, monkeypatch):
 
     config = MagicMock()
     config.notion = _notion_config_with_db()
-    agent = NotionTaskSyncAgent(config)
+    agent = TaskSyncAgent(config)
 
     with patch(
-        "company_brain.agents.operations.notion.notion_task_sync.notion_db.notion_is_available",
+        "company_brain.agents.operations.notion.task_sync.db.notion_is_available",
         return_value=True,
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_sync.task_class_fan_out",
+        "company_brain.agents.operations.notion.task_sync.task_class_fan_out",
         return_value=["linear", "notion"],
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_sync.notion_db.update_database_row",
+        "company_brain.agents.operations.notion.task_sync.db.update_database_row",
         return_value={"id": "page-44"},
     ) as update_mock:
         result = agent.run(binding=binding, linear_status="Done")
@@ -191,16 +191,16 @@ def test_notion_sync_creates_row_when_missing(tmp_path, monkeypatch):
 
     config = MagicMock()
     config.notion = _notion_config_with_db()
-    agent = NotionTaskSyncAgent(config)
+    agent = TaskSyncAgent(config)
 
     with patch(
-        "company_brain.agents.operations.notion.notion_task_sync.notion_db.notion_is_available",
+        "company_brain.agents.operations.notion.task_sync.db.notion_is_available",
         return_value=True,
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_sync.task_class_fan_out",
+        "company_brain.agents.operations.notion.task_sync.task_class_fan_out",
         return_value=["linear", "notion"],
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_sync.notion_db.create_database_row",
+        "company_brain.agents.operations.notion.task_sync.db.create_database_row",
         return_value={"id": "page-new", "url": "https://notion.so/page-new"},
     ):
         result = agent.run(binding=binding, title="Create row", create_if_missing=True)
@@ -236,7 +236,7 @@ def test_linear_completed_dispatches_notion(tmp_path, monkeypatch):
         "company_brain.agents.engineering.linear.linear_completed.dispatcher.task_class_fan_out",
         return_value=["linear", "notion"],
     ), patch(
-        "company_brain.agents.operations.notion.notion_task_sync.NotionTaskSyncAgent.run",
+        "company_brain.agents.operations.notion.task_sync.TaskSyncAgent.run",
         return_value={"status": "updated"},
     ) as sync_run:
         result = agent.run(
@@ -250,5 +250,5 @@ def test_linear_completed_dispatches_notion(tmp_path, monkeypatch):
 
 def test_build_property_patch_status():
     schema = {"Status": "status", "Name": "title"}
-    prop = notion_db.build_property_patch("Status", "Done", schema=schema)
+    prop = db.build_property_patch("Status", "Done", schema=schema)
     assert prop["Status"]["status"]["name"] == "Done"

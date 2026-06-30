@@ -43,7 +43,7 @@ def backfill_days() -> int:
 def daily_wiki_path(day: str) -> str:
     """Wiki rel path for the compiled end-of-day digest (``YYYY-MM-DD``)."""
     template = (granola_section().get("wiki") or {}).get(
-        "daily_digest", "operations/granola/daily/{date}.md"
+        "daily_digest", "operations/granola/meeting/{date}.md"
     )
     return template.format(date=day)
 

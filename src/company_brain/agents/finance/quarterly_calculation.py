@@ -126,8 +126,8 @@ class QuarterlyCalculationManager(BaseAgent):
         from company_brain.runtime import get_runtime
 
         from .mercury.bank_transaction import BankTransactionAgent
-        from .mercury.mercury_card_spend import MercuryCardSpendAgent
-        from .ramp.ramp_card_spend import RampCardSpendAgent
+        from .mercury.card_spend import MercuryCardSpendAgent
+        from .ramp.card_spend import RampCardSpendAgent
 
         start, end = transactions.month_range(month)
         runtime = get_runtime()

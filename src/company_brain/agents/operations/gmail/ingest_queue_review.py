@@ -26,7 +26,7 @@ SPECIALIST_KEY = "ingest_queue_review"
 class IngestQueueReviewAgent(BaseAgent):
     """Maintain the ingest queue page and weekly Slack reminder."""
 
-    name = "gmail_ingest_queue_review"
+    name = "ingest_queue_review"
     WRITE_MODE = APPEND
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):

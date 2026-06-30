@@ -140,14 +140,14 @@ Connection layer: `engineering/linear/linear_client.py`. Verify with `doctor` ("
 See https://linear.app/llms.txt for the full doc index.
 
 **Onboarding (once):** after `LINEAR_API_KEY` and `config/engineering.yaml` are set, run
-`linear_onboarding` — it backfills Gmail task bindings, writes a **Linear Structure**
+`linear_onboarding` — it backfills Gmail task bindings, writes a **Structure Proposal**
 proposal to the wiki (Notion mirror), runs slot_check, and starts the persistent
 `linear_manager`. It does not wait for structure approval.
 
 ### Granola (operations department) — read-only meeting notes
 Granola supplies AI meeting notes and transcripts. The persistent
-**`granola_meeting_watch`** agent polls the calendar and dispatches **`granola_ingest`**
-after each meeting ends, with a weekly **`granola_miss_check`** as the backstop.
+**`meeting_watch`** agent polls the calendar and dispatches **`ingest`**
+after each meeting ends, with a weekly **`miss_check`** as the backstop.
 
 Pick a deployment mode (`granola.mode` in `config/operations.yaml`, or auto-detected from env):
 
@@ -161,7 +161,7 @@ Pick a deployment mode (`granola.mode` in `config/operations.yaml`, or auto-dete
 Docs: https://docs.granola.ai/introduction · Connection layer:
 `operations/granola/granola_client.py`. On first connect, run **`granola_onboarding`**
 (default **30-day** backfill via `granola.onboarding.backfill_days`, then starts the
-persistent `granola_meeting_watch`). Verify with `doctor` ("Granola meeting notes …").
+persistent `meeting_watch`). Verify with `doctor` ("Granola meeting notes …").
 
 ### Google Calendar (operations department) — read + book meetings
 Google Calendar uses the same OAuth setup pattern as Gmail. Enable
@@ -227,9 +227,9 @@ connected (these seed the wiki + Notion):
   (quarantined, scanned, and admin-reviewed before promotion).
 - External wiki (admin): mount a one-shot external Markdown wiki (zip of `.md`) via
   `external_wiki_import` into `wiki/external/{source}/`. Register the source in
-  `config/external_sources.yaml`, review at `admin/external-mount-reviews/{id}.md`,
+  `config/external_sources.yaml`, review at `admin/mount-review/{id}.md`,
   approve with `ExternalWikiImportAgent.approve(...)`. Rebuild the fleet catalog with
-  `company-brain catalog` (`admin/table-of-contents.md` → admin Notion teamspace).
+  `company-brain catalog` (`admin/content-catalog.md` → admin Notion teamspace).
 
 ## Step 4 — Operate and verify
 

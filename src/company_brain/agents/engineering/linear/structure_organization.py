@@ -1,7 +1,7 @@
 """Structure Organization Agent — propose Linear workspace layout from wiki + platforms.
 
 Propose-only: writes ``engineering/linear/structure-proposal.md`` (wiki first,
-Notion mirror title **Linear Structure**), then pings Slack for review.
+Notion mirror title **Structure Proposal**), then pings Slack for review.
 Does not mutate Linear until a human approves (future Slack confirm path).
 
 SDK: Neither (deterministic scan).
@@ -21,7 +21,7 @@ from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.publish import write_wiki_page
 
 PROPOSAL_PATH = "engineering/linear/structure-proposal.md"
-PROPOSAL_TITLE = "Linear Structure"
+PROPOSAL_TITLE = "Structure Proposal"
 
 DEPARTMENT_DIRS = ("engineering", "operations", "finance", "product", "growth")
 
@@ -103,7 +103,7 @@ class StructureOrganizationAgent(BaseAgent):
     ) -> str:
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         lines = [
-            "# Linear Structure Proposal",
+            "# Structure Proposal Proposal",
             "",
             f"_Generated {now}. Review and approve before applying to Linear._",
             "",
@@ -161,7 +161,7 @@ class StructureOrganizationAgent(BaseAgent):
         text = (
             "Linear structure proposal ready for review "
             f"({missing_count} team gap(s) detected). "
-            "Edit the wiki page / Notion mirror **Linear Structure**."
+            "Edit the wiki page / Notion mirror **Structure Proposal**."
         )
         try:
             linear_notifier().emit(Signal(text=text, severity=ACTIONABLE))

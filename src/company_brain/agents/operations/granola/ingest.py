@@ -1,6 +1,6 @@
 """Granola Ingest Agent — meeting notes into the wiki.
 
-Specialist dispatched by ``granola_meeting_watch`` after a calendar meeting ends
+Specialist dispatched by ``meeting_watch`` after a calendar meeting ends
 (once per meeting day). Pulls Granola notes, writes raw entries for absorb, and
 compiles a company-wide daily digest page.
 
@@ -27,10 +27,10 @@ from company_brain.ingestion.entry import RawEntry
 from company_brain.wiki.publish import write_wiki_page
 
 
-class GranolaIngestAgent(BaseAgent):
+class IngestAgent(BaseAgent):
     """Pull today's Granola notes and ingest at end of day."""
 
-    name = "granola_ingest"
+    name = "ingest"
     WRITE_MODE = "update"
 
     def run(
@@ -48,11 +48,11 @@ class GranolaIngestAgent(BaseAgent):
                 event_title=event_title,
                 dispatch_task=dispatch_task,
             )
-        from company_brain.agents.operations.granola.granola_meeting_watch import (
-            GranolaMeetingWatchAgent,
+        from company_brain.agents.operations.granola.meeting_watch import (
+            MeetingWatchAgent,
         )
 
-        return GranolaMeetingWatchAgent(self.config).run(**kwargs)
+        return MeetingWatchAgent(self.config).run(**kwargs)
 
     def run_once(
         self,
@@ -63,7 +63,7 @@ class GranolaIngestAgent(BaseAgent):
     ) -> dict[str, Any]:
         day = target_date or date.today()
         day_key = day.isoformat()
-        if is_handled("granola_ingest", day_key):
+        if is_handled("ingest", day_key):
             return {"status": "already_handled", "date": day_key}
 
         if not cfg.granola_is_configured():
@@ -74,7 +74,7 @@ class GranolaIngestAgent(BaseAgent):
         if event_title:
             summaries = _filter_by_event_title(summaries, event_title)
         if not summaries:
-            mark_handled("granola_ingest", day_key)
+            mark_handled("ingest", day_key)
             return {"status": "empty", "date": day_key, "notes": 0}
 
         ingested = 0
@@ -117,11 +117,11 @@ class GranolaIngestAgent(BaseAgent):
         wiki_path = cfg.daily_wiki_path(day_key)
         write_wiki_page(
             wiki_path,
-            f"Meeting notes — {day_key}",
+            f"Meetings {day_key}",
             digest_body,
             mode=self.WRITE_MODE,
         )
-        mark_handled("granola_ingest", day_key)
+        mark_handled("ingest", day_key)
         task_result = None
         if dispatch_task and ingested_notes:
             task_result = self._dispatch_tasks(ingested_notes, day_key)
@@ -134,11 +134,11 @@ class GranolaIngestAgent(BaseAgent):
         }
 
     def _dispatch_tasks(self, notes: list[dict[str, Any]], day_key: str) -> dict[str, Any]:
-        from company_brain.agents.operations.granola.granola_task import GranolaTaskAgent
+        from company_brain.agents.operations.granola.task import TaskAgent
         from company_brain.runtime import get_runtime
 
         return get_runtime().run(
-            GranolaTaskAgent,
+            TaskAgent,
             self.config,
             notes=notes,
             meeting_date=day_key,
@@ -154,7 +154,7 @@ class GranolaIngestAgent(BaseAgent):
         wiki_path: str,
     ) -> None:
         from company_brain.agents.employee_wiki.work_event_materializer import record_granola_work_event
-        from company_brain.agents.operations.granola.granola_task import extract_action_items
+        from company_brain.agents.operations.granola.task import extract_action_items
 
         title = str(detail.get("title") or f"Meeting {note_id}")
         try:

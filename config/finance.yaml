@@ -25,7 +25,7 @@ notion_titles:
   quarterly_metric: "Quarterly Metric"
   budget_summary: "Budget Summary"
   company_timeline: "Company Timeline"
-  company_subscriptions: "Company Subscriptions"
+  subscription: "Subscriptions"
   manual_accounting: "Manual Accounting"
 
 # One-time onboarding backfill. Leave start_month empty to auto-detect the

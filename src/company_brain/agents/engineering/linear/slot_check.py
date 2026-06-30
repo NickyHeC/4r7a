@@ -13,7 +13,7 @@ from company_brain.agents.engineering.shared.linear_config import slot_check_cfg
 from company_brain.wiki.publish import write_wiki_page
 
 REPORT_PATH = "engineering/linear/slot-check.md"
-REPORT_TITLE = "Linear Slot Check"
+REPORT_TITLE = "Slot Check"
 
 
 class SlotCheckAgent(BaseAgent):
@@ -66,7 +66,7 @@ class SlotCheckAgent(BaseAgent):
     @staticmethod
     def _render_body(findings: list[str], *, auto_move: bool) -> str:
         lines = [
-            "# Linear Slot Check",
+            "# Slot Check",
             "",
             f"_Auto-move: {'enabled' if auto_move else 'disabled (propose-only)'}_",
             "",

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from company_brain.agents.external_wiki.content_catalog_agent import ContentCatalogAgent
+from company_brain.agents.external_wiki.content_catalog import ContentCatalogAgent
 from company_brain.agents.external_wiki.external_wiki_import import ExternalWikiImportAgent
 from company_brain.config import load_config
 from company_brain.external_sources_config import load_external_sources
@@ -87,7 +87,7 @@ def test_external_import_quarantine_and_review(wiki_env, monkeypatch):
 
     def fake_run(cls, config, **kwargs):
         review_calls.append(kwargs)
-        return {"status": "ok", "review_page": "admin/external-mount-reviews/x.md"}
+        return {"status": "ok", "review_page": "admin/mount-review/x.md"}
 
     monkeypatch.setattr(
         "company_brain.agents.external_wiki.external_wiki_import.get_runtime",
@@ -168,7 +168,7 @@ def test_content_catalog_sections(wiki_env):
         MarkdownDoc(frontmatter={"title": "B", "external_source": "friend_ops"}, body="# B\n"),
     )
     store.write(
-        "admin/table-of-contents.md",
+        "admin/content-catalog.md",
         MarkdownDoc(frontmatter={"title": "TOC"}, body="# TOC\n"),
     )
 
@@ -176,7 +176,7 @@ def test_content_catalog_sections(wiki_env):
     assert catalog.company_page_count >= 1
     assert "friend_ops" in catalog.external_mounts
     md = render_catalog_markdown(catalog)
-    assert "4r7a Content Catalog" in md
+    assert "Content Catalog" in md
     assert "external/friend_ops" in md or "friend_ops" in md
 
 
@@ -185,7 +185,7 @@ def test_catalog_agent_writes_admin_page(wiki_env, monkeypatch):
     store.write("operations/x.md", MarkdownDoc(frontmatter={"title": "X"}, body="# X\n"))
 
     monkeypatch.setattr(
-        "company_brain.agents.external_wiki.content_catalog_agent.write_wiki_page",
+        "company_brain.agents.external_wiki.content_catalog.write_wiki_page",
         lambda rel, title, body, **kw: store.write(
             rel, MarkdownDoc(frontmatter={"title": title, "section": kw.get("section")}, body=body)
         ),
@@ -193,4 +193,4 @@ def test_catalog_agent_writes_admin_page(wiki_env, monkeypatch):
 
     result = ContentCatalogAgent(load_config()).run()
     assert result["status"] == "ok"
-    assert result["path"] == "admin/table-of-contents.md"
+    assert result["path"] == "admin/content-catalog.md"

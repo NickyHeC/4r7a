@@ -1,8 +1,8 @@
 """Granola Onboarding Agent.
 
 Runs once on first Granola connection: backfills historical meeting notes by
-running ``granola_ingest`` for each day in the configured window, then starts
-the persistent ``granola_meeting_watch`` loop (post-meeting ingest + weekly miss check).
+running ``ingest`` for each day in the configured window, then starts
+the persistent ``meeting_watch`` loop (post-meeting ingest + weekly miss check).
 
 SDK: Neither (orchestration only).
 """
@@ -13,7 +13,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.operations.granola.granola_ingest import GranolaIngestAgent
+from company_brain.agents.operations.granola.ingest import IngestAgent
 from company_brain.agents.operations.shared.granola_config import (
     backfill_days,
     granola_is_configured,
@@ -41,7 +41,7 @@ class GranolaOnboardingAgent(BaseAgent):
         days = backfill_days_override if backfill_days_override is not None else backfill_days()
         self.logger.info("Starting Granola onboarding (%d-day backfill)", days)
 
-        ingest = GranolaIngestAgent(self.config)
+        ingest = IngestAgent(self.config)
         today = date.today()
         day_results: list[dict[str, Any]] = []
         total_notes = 0
@@ -74,16 +74,16 @@ class GranolaOnboardingAgent(BaseAgent):
         }
 
     def _start_ingest(self) -> None:
-        from company_brain.agents.operations.granola.granola_meeting_watch import (
-            GranolaMeetingWatchAgent,
+        from company_brain.agents.operations.granola.meeting_watch import (
+            MeetingWatchAgent,
         )
         from company_brain.runtime import get_runtime
 
         self.logger.info(
-            "Backfill complete — starting granola_meeting_watch "
+            "Backfill complete — starting meeting_watch "
             "(post-meeting ingest + weekly miss check)",
         )
         try:
-            get_runtime().start(GranolaMeetingWatchAgent, self.config)
+            get_runtime().start(MeetingWatchAgent, self.config)
         except Exception:
-            self.logger.exception("Failed to start granola_meeting_watch")
+            self.logger.exception("Failed to start meeting_watch")

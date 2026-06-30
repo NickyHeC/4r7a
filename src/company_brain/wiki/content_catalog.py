@@ -91,7 +91,7 @@ def build_content_catalog(
 
 def render_catalog_markdown(catalog: ContentCatalog) -> str:
     lines = [
-        "# 4r7a Content Catalog",
+        "# Content Catalog",
         "",
         f"_Last rebuilt: {catalog.rebuilt_at}. View-only — edit content in the wiki MD volume._",
         "",

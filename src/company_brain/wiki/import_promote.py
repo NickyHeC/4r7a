@@ -12,6 +12,7 @@ from company_brain.wiki.duplicate_detect import FileDuplicateVerdict, parse_dupl
 from company_brain.wiki.employee_paths import _slug, member_prefix
 from company_brain.wiki.employee_publish import write_employee_wiki_page
 from company_brain.wiki.employee_store import LocalEmployeeWikiStore
+from company_brain.wiki.name_migrate import migrate_rel_path, migrate_title
 from company_brain.wiki.store import WikiStore
 
 WIKILINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
@@ -117,12 +118,13 @@ def _default_action(verdict: FileDuplicateVerdict) -> str:
 
 
 def _propose_dest(member_key: str, quarantine_path: str) -> str:
-    slug = _slug(PurePosixPath(quarantine_path).stem)
-    lower = quarantine_path.lower()
+    rel = migrate_rel_path(quarantine_path.lstrip("/"), volume="employee")
+    slug = _slug(PurePosixPath(rel).stem)
+    lower = rel.lower()
     if "project" in lower:
         return f"{member_prefix(member_key)}projects/{slug}.md"
     if "work" in lower or "log" in lower or "standup" in lower:
-        return f"{member_prefix(member_key)}work_log/{slug}.md"
+        return f"{member_prefix(member_key)}work-log/{slug}.md"
     return f"{member_prefix(member_key)}knowledge/{slug}.md"
 
 
@@ -138,8 +140,9 @@ def _read_quarantine_file(store: WikiStore, quarantine: str, rel: str) -> str:
 def _title_from_import(rel_path: str, body: str) -> str:
     for line in body.splitlines():
         if line.startswith("# "):
-            return line[2:].strip()
-    return PurePosixPath(rel_path).stem.replace("-", " ").replace("_", " ")
+            return migrate_title(line[2:].strip(), rel_path=rel_path)
+    stem_title = PurePosixPath(rel_path).stem.replace("-", " ").replace("_", " ")
+    return migrate_title(stem_title, rel_path=rel_path)
 
 
 def _write_link_stub(

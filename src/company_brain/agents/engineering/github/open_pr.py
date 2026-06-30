@@ -19,7 +19,7 @@ from company_brain.wiki.publish import UPDATE, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
-WIKI_PATH = "engineering/github/open-prs.md"
+WIKI_PATH = "engineering/github/open-pr.md"
 TITLE = "Open PRs"
 
 

@@ -1,8 +1,8 @@
 """Granola Meeting Watch — ingest notes after calendar meetings end.
 
 Persistent agent: polls Google Calendar for recently ended meetings, dispatches
-``granola_ingest`` per meeting (no LLM until the meeting ends), then
-``granola_task``. A weekly ``granola_miss_check`` is the safety net for any
+``ingest`` per meeting (no LLM until the meeting ends), then
+``task``. A weekly ``miss_check`` is the safety net for any
 meetings the calendar-driven ingest missed.
 
 SDK: Neither (calendar poll + orchestration).
@@ -22,10 +22,10 @@ from company_brain.config import AppConfig
 MEETING_HANDLED_PREFIX = "granola_meeting:"
 
 
-class GranolaMeetingWatchAgent(BaseAgent):
+class MeetingWatchAgent(BaseAgent):
     """Wake after meetings end; dispatch ingest + task extraction."""
 
-    name = "granola_meeting_watch"
+    name = "meeting_watch"
 
     def run(self, *, once: bool = False, **kwargs: Any) -> Any:
         if once:
@@ -91,11 +91,11 @@ class GranolaMeetingWatchAgent(BaseAgent):
         return ended
 
     def _dispatch_ingest(self, day: date, *, event_title: str) -> dict[str, Any]:
-        from company_brain.agents.operations.granola.granola_ingest import GranolaIngestAgent
+        from company_brain.agents.operations.granola.ingest import IngestAgent
         from company_brain.runtime import get_runtime
 
         return get_runtime().run(
-            GranolaIngestAgent,
+            IngestAgent,
             self.config,
             target_date=day,
             event_title=event_title,
@@ -110,13 +110,13 @@ class GranolaMeetingWatchAgent(BaseAgent):
         if now < scheduled:
             return None
         week_key = now.strftime("%G-W%V")
-        if is_handled("granola_miss_check", week_key):
+        if is_handled("miss_check", week_key):
             return None
-        from company_brain.agents.operations.granola.granola_miss_check import GranolaMissCheckAgent
+        from company_brain.agents.operations.granola.miss_check import MissCheckAgent
         from company_brain.runtime import get_runtime
 
-        mark_handled("granola_miss_check", week_key)
-        return get_runtime().run(GranolaMissCheckAgent, self.config)
+        mark_handled("miss_check", week_key)
+        return get_runtime().run(MissCheckAgent, self.config)
 
     @staticmethod
     def _event_day(event: dict[str, Any]) -> date:

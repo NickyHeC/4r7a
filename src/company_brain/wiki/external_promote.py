@@ -23,6 +23,7 @@ from company_brain.wiki.external_paths import (
     external_quarantine_rel,
     source_slug,
 )
+from company_brain.wiki.name_migrate import migrate_rel_path, migrate_title
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore, WikiStore
 
@@ -106,7 +107,7 @@ def promote_external_mount(
         dest = _propose_dest(key, verdict.path)
         body = _read_quarantine_file(store, quarantine, verdict.path)
         rewritten = _rewrite_wikilinks(body, layout_map)
-        title = _title_from_import(verdict.path, rewritten)
+        title = migrate_title(_title_from_import(verdict.path, rewritten), rel_path=dest)
         write_wiki_page(
             dest,
             title,
@@ -175,7 +176,7 @@ def _default_action(verdict: FileDuplicateVerdict) -> str:
 
 
 def _propose_dest(source_key: str, quarantine_path: str) -> str:
-    rel = quarantine_path.lstrip("/")
+    rel = migrate_rel_path(quarantine_path.lstrip("/"))
     return f"{external_promote_prefix(source_key)}{rel}"
 
 
@@ -323,7 +324,7 @@ def _record_mount(
 
 
 def _rebuild_catalog() -> None:
-    from company_brain.agents.external_wiki.content_catalog_agent import ContentCatalogAgent
+    from company_brain.agents.external_wiki.content_catalog import ContentCatalogAgent
     from company_brain.config import load_config
 
     try:

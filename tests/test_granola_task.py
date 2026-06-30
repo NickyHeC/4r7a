@@ -3,11 +3,11 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
-from company_brain.agents.operations.granola.granola_meeting_watch import (
-    GranolaMeetingWatchAgent,
+from company_brain.agents.operations.granola.meeting_watch import (
+    MeetingWatchAgent,
     _event_end,
 )
-from company_brain.agents.operations.granola.granola_task import extract_action_items
+from company_brain.agents.operations.granola.task import extract_action_items
 
 
 def test_extract_action_items_from_section():
@@ -46,20 +46,20 @@ def test_meeting_watch_dispatches_ended_event():
         "end": {"dateTime": end.isoformat().replace("+00:00", "Z")},
         "start": {"dateTime": (end - timedelta(hours=1)).isoformat().replace("+00:00", "Z")},
     }
-    agent = GranolaMeetingWatchAgent(MagicMock())
+    agent = MeetingWatchAgent(MagicMock())
 
     with patch(
-        "company_brain.agents.operations.granola.granola_meeting_watch.cfg.granola_is_configured",
+        "company_brain.agents.operations.granola.meeting_watch.cfg.granola_is_configured",
         return_value=True,
     ), patch.object(agent, "_ended_meetings", return_value=[event]), patch.object(
         agent, "_dispatch_ingest", return_value={"status": "ok"},
     ) as mock_ingest, patch.object(
         agent, "_maybe_miss_check", return_value=None,
     ), patch(
-        "company_brain.agents.operations.granola.granola_meeting_watch.is_handled",
+        "company_brain.agents.operations.granola.meeting_watch.is_handled",
         return_value=False,
     ), patch(
-        "company_brain.agents.operations.granola.granola_meeting_watch.mark_handled",
+        "company_brain.agents.operations.granola.meeting_watch.mark_handled",
     ):
         result = agent.run_once()
 

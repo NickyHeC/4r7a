@@ -19,11 +19,11 @@ logger = logging.getLogger(__name__)
 
 # Stable finance key -> wiki rel_path.
 _KEY_PATHS = {
-    "monthly_expense_reports": "finance/expense-reports.md",
+    "monthly_expense_reports": "finance/expense-report.md",
     "quarterly_metric": "finance/quarterly-metric.md",
     "budget_summary": "finance/budget-summary.md",
-    "company_timeline": "finance/company-timeline.md",
-    "company_subscriptions": "finance/company-subscriptions.md",
+    "timeline": "operations/decisions/timeline.md",
+    "subscription": "finance/subscription.md",
     "manual_accounting": "finance/manual-accounting.md",
 }
 
@@ -32,7 +32,7 @@ def wiki_path(key: str) -> str:
     """Map a finance key (including dynamic ``monthly_expense_<YYYY-MM>``) to a path."""
     if key.startswith("monthly_expense_") and key != "monthly_expense_reports":
         month = key[len("monthly_expense_"):]
-        return f"finance/expense-reports/{month}.md"
+        return f"finance/expense-report/{month}.md"
     return _KEY_PATHS.get(key, f"finance/{key.replace('_', '-')}.md")
 
 

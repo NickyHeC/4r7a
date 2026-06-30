@@ -57,10 +57,10 @@ agents/
       mercury_client.py
       asset_compile.py
       bank_transaction.py
-      mercury_card_spend.py
+      card_spend.py
     ramp/
       ramp_client.py
-      ramp_card_spend.py
+      card_spend.py
 ```
 
 ## Placement Rules

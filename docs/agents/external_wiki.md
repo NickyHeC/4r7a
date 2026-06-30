@@ -10,7 +10,12 @@ duplicate detection patterns; targets, provenance, and sync defaults differ.
 
 ---
 
-## How it runs
+## External Wiki — how it runs
+
+Every mount requires admin approval in v1. Promoted pages carry provenance frontmatter
+(`external_source`, `import_id`, `sync:`). The admin content catalog at
+`admin/content-catalog.md` is regenerated after each mount (when
+`external_wiki.catalog.rebuild_on_mount` is true).
 
 ```mermaid
 flowchart TB
@@ -22,13 +27,8 @@ flowchart TB
   REV -->|approve| PROM[external_promote]
   PROM --> EW[wiki/external/source/**]
   EW --> NS[NotionSync]
-  PROM --> TOC[content_catalog → admin/table-of-contents.md]
+  PROM --> TOC[content_catalog → admin/content-catalog.md]
 ```
-
-Every mount requires admin approval in v1. Promoted pages carry provenance frontmatter
-(`external_source`, `import_id`, `sync:`). The admin content catalog at
-`admin/table-of-contents.md` is regenerated after each mount (when
-`external_wiki.catalog.rebuild_on_mount` is true).
 
 ---
 
@@ -37,8 +37,8 @@ Every mount requires admin approval in v1. Promoted pages carry provenance front
 | Agent | Schedule | Description |
 |-------|----------|-------------|
 | `external_wiki_import.py` | On demand (admin) | Extracts zip into quarantine, security scan + duplicate detection, always dispatches admin review |
-| `external_mount_review.py` | On demand (via import) | Writes `admin/external-mount-reviews/{id}.md` and pings admin Slack |
-| `content_catalog_agent.py` | On demand / after mount | Regenerates `admin/table-of-contents.md` (view-only fleet catalog) |
+| `external_mount_review.py` | On demand (via import) | Writes `admin/mount-review/{id}.md` and pings admin Slack |
+| `content_catalog.py` | On demand / after mount | Regenerates `admin/content-catalog.md` (view-only fleet catalog) |
 
 **Helpers:** `external_wiki_config.py`, `external_wiki_slack.py`. Wiki-layer helpers:
 `external_paths.py`, `external_promote.py`, `content_catalog.py`, `import_zip.py`,
@@ -50,11 +50,11 @@ plus reused `import_scan.py` and `duplicate_detect.py` (`detect_external_duplica
 
 1. Register or confirm the source key in `config/external_sources.yaml`.
 2. Run `ExternalWikiImportAgent` with `source_key` and a zip of `.md` files.
-3. Review the admin page at `admin/external-mount-reviews/{import_id}.md` and the Slack ping.
+3. Review the admin page at `admin/mount-review/{import_id}.md` and the Slack ping.
 4. Approve via `ExternalWikiImportAgent.approve(source_key=..., import_id=...)`.
 5. Optionally rebuild the catalog manually: `company-brain catalog`.
 
-Employee zip import reviews live under `admin/import-reviews/` (top-level `admin` section).
+Employee zip import reviews live under `admin/import-review/` (top-level `admin` section).
 
 ---
 

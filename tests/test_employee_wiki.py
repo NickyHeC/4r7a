@@ -64,7 +64,7 @@ def test_write_employee_wiki_page_defaults(wiki_roots):
 
 def test_quarter_slug():
     assert quarter_slug(date(2026, 6, 15)) == "2026-Q2"
-    assert member_work_log_path("alice", when=date(2026, 1, 5)) == "alice/work_log/2026-Q1.md"
+    assert member_work_log_path("alice", when=date(2026, 1, 5)) == "alice/work-log/2026-Q1.md"
 
 
 def test_ensure_people_stub(wiki_roots):

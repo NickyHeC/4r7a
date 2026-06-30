@@ -23,7 +23,7 @@ from .shared import notion_pages
 
 BUDGET_KEY = "budget_summary"
 BUDGET_TERMS = ["Budget Summary"]
-TIMELINE_KEY = "company_timeline"
+TIMELINE_KEY = "timeline"
 TIMELINE_TERMS = ["Company Timeline"]
 QUARTERLY_KEY = "quarterly_metric"
 

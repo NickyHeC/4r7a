@@ -10,9 +10,9 @@ from company_brain.doctor.types import CheckResult, DoctorReport
 
 AGENTS_ROOT = PROJECT_ROOT / "src" / "company_brain" / "agents"
 _NOTION_ALLOW = frozenset({
-    "operations/notion/notion_db.py",
-    "operations/notion/notion_task_sync.py",
-    "operations/notion/notion_task_scanner.py",
+    "operations/notion/db.py",
+    "operations/notion/task_sync.py",
+    "operations/notion/task_scanner.py",
     "employee_wiki/employee_wiki_onboarding.py",
 })
 _WIKI_WRITE_RE = re.compile(

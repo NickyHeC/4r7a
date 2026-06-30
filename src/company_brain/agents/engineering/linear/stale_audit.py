@@ -1,6 +1,6 @@
 """Stale Audit Agent — weekly report of stale Linear projects and issues.
 
-Writes ``engineering/linear/stale-projects.md`` and dispatches
+Writes ``engineering/linear/stale-audit.md`` and dispatches
 ``request_manual_management`` when proposals need human input.
 
 SDK: Neither (deterministic heuristics).
@@ -18,8 +18,8 @@ from company_brain.agents.engineering.shared.linear_config import stale_audit_cf
 from company_brain.config import AppConfig
 from company_brain.wiki.publish import write_wiki_page
 
-REPORT_PATH = "engineering/linear/stale-projects.md"
-REPORT_TITLE = "Linear Stale Projects and Issues"
+REPORT_PATH = "engineering/linear/stale-audit.md"
+REPORT_TITLE = "Stale Audit"
 
 
 class StaleAuditAgent(BaseAgent):
@@ -134,7 +134,7 @@ class StaleAuditAgent(BaseAgent):
     def _render_report(proposals: list[dict[str, Any]], *, stale_days: int) -> str:
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         lines = [
-            "# Linear Stale Projects and Issues",
+            "# Stale Audit",
             "",
             f"_Audit {now}. Stale threshold: **{stale_days}** days without update._",
             "",

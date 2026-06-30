@@ -118,18 +118,18 @@ class LinearOnboardingAgent(BaseAgent):
         self._start_notion_scanner()
 
     def _start_notion_scanner(self) -> None:
-        from company_brain.agents.operations.notion.notion_task_config import (
+        from company_brain.agents.operations.notion.task_config import (
             configured_database_keys,
         )
-        from company_brain.agents.operations.notion.notion_task_scanner import (
-            NotionTaskScannerAgent,
+        from company_brain.agents.operations.notion.task_scanner import (
+            TaskScannerAgent,
         )
         from company_brain.runtime import get_runtime
 
         if not configured_database_keys(notion=self.config.notion):
             return
-        self.logger.info("Starting notion_task_scanner (persistent poll loop)")
+        self.logger.info("Starting task_scanner (persistent poll loop)")
         try:
-            get_runtime().start(NotionTaskScannerAgent, self.config)
+            get_runtime().start(TaskScannerAgent, self.config)
         except Exception:
-            self.logger.exception("Failed to start notion_task_scanner")
+            self.logger.exception("Failed to start task_scanner")

@@ -20,7 +20,7 @@ from company_brain.config import AppConfig
 class InboxSweepAgent(BaseAgent):
     """Archive messages whose lifecycle conditions are met."""
 
-    name = "gmail_inbox_sweep"
+    name = "inbox_sweep"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

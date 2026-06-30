@@ -19,6 +19,7 @@ from company_brain.doctor.connect import run_connect_doctor
 from company_brain.doctor.ops import run_ops_doctor
 from company_brain.doctor.scoring import append_history, history_entry, new_fail_regressions
 from company_brain.doctor.types import DoctorReport
+from company_brain.doctor.naming import run_naming_doctor
 from company_brain.doctor.wiki import run_wiki_doctor
 
 DoctorFn = Callable[[], DoctorReport]
@@ -28,6 +29,7 @@ DOCTORS: dict[str, DoctorFn] = {
     "agents": run_agents_doctor,
     "wiki": run_wiki_doctor,
     "ops": run_ops_doctor,
+    "naming": run_naming_doctor,
 }
 
 

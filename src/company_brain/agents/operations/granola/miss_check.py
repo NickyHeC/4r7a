@@ -11,14 +11,14 @@ from company_brain.agents.operations.shared import granola_config as cfg
 from company_brain.config import AppConfig
 from company_brain.wiki.publish import write_wiki_page
 
-REPORT_PATH = "operations/granola/missed-notes.md"
-REPORT_TITLE = "Granola Missed Notes"
+REPORT_PATH = "operations/granola/missed-note.md"
+REPORT_TITLE = "Missed Notes"
 
 
-class GranolaMissCheckAgent(BaseAgent):
+class MissCheckAgent(BaseAgent):
     """Report calendar meetings without a post-meeting Granola ingest."""
 
-    name = "granola_miss_check"
+    name = "miss_check"
     WRITE_MODE = "update"
 
     def run(self, *, sync: bool = True, **kwargs: Any) -> dict[str, Any]:
@@ -62,7 +62,7 @@ class GranolaMissCheckAgent(BaseAgent):
     @staticmethod
     def _render_body(missing: list[str], *, week_start: datetime, now: datetime) -> str:
         lines = [
-            "# Granola Missed Notes",
+            "# Missed Notes",
             "",
             f"_Week {week_start.date().isoformat()} → {now.date().isoformat()}_",
             "",

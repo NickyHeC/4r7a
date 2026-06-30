@@ -13,7 +13,7 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import company_timeline_path, mailbox_id
+from company_brain.agents.operations.shared.gmail_config import timeline_path, mailbox_id
 from company_brain.agents.operations.shared.mail_body import plain_text
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
@@ -25,7 +25,7 @@ SPECIALIST_KEY = "decision_propagate"
 class DecisionPropagateAgent(BaseAgent):
     """Append a decision entry to the company timeline wiki page."""
 
-    name = "gmail_decision_propagate"
+    name = "decision_propagate"
     WRITE_MODE = APPEND
 
     def __init__(
@@ -63,7 +63,7 @@ class DecisionPropagateAgent(BaseAgent):
             f"**Thread:** `{thread_id}`\n\n"
             f"{body.strip()}\n"
         )
-        rel_path = company_timeline_path()
+        rel_path = timeline_path()
         write_wiki_page(
             rel_path,
             "Company Timeline",

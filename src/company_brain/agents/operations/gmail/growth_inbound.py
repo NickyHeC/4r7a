@@ -29,7 +29,7 @@ SPONSOR_HINTS = ("sponsor", "co-host", "cohost", "booth", "exhibit", "partnershi
 class GrowthInboundAgent(BaseAgent):
     """Route growth-related cold inbound to wiki and Slack."""
 
-    name = "gmail_growth_inbound"
+    name = "growth_inbound"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

@@ -19,13 +19,13 @@ from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Signal
 
-SPECIALIST_KEY = "gmail_customer_support"
+SPECIALIST_KEY = "customer_support"
 
 
-class GmailCustomerSupportAgent(BaseAgent):
+class CustomerSupportAgent(BaseAgent):
     """Notify #customer-support about customer-tagged mail."""
 
-    name = "gmail_customer_support"
+    name = "customer_support"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

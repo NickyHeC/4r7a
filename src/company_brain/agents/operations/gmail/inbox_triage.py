@@ -33,7 +33,7 @@ from company_brain.config import AppConfig
 class InboxTriageAgent(BaseAgent):
     """Persistent triage loop — classify new inbound mail every 30 minutes."""
 
-    name = "gmail_inbox_triage"
+    name = "inbox_triage"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

@@ -9,10 +9,22 @@ Linear team defaults live in [`config/engineering.yaml`](../../config/engineerin
 
 ---
 
-## Linear connection (`engineering/linear/`)
+## Linear — how it runs
 
-Shared connection layer plus task-platform agents (see
-[`docs/plans/linear-task-platform.md`](../plans/linear-task-platform.md)).
+**`linear_manager`** is the only persistent Linear agent. It polls for terminal issue
+states every 30 minutes and dispatches **`linear_completed`** handlers; weekly **`stale_audit`**
+feeds **`request_manual_management`**. PR/issue status sync is Linear-native — agents do
+not mirror GitHub state.
+
+```mermaid
+flowchart TD
+  LM[linear_manager persistent] -->|30min poll| LC[linear_completed]
+  LM -->|Monday| SA[stale_audit]
+  SA --> RMM[request_manual_management]
+  LC --> AG[archive_gmail]
+  LC --> STR[slack_thread_respond]
+  LC --> NT[task_sync]
+```
 
 ### Connection — `linear_client.py`
 
@@ -56,7 +68,7 @@ Linear issues.
 | `linear_completed/dispatcher.py` | On terminal Linear state | Routes to platform completion handlers |
 | `linear_completed/archive_gmail.py` | Via dispatcher | Archive bound Gmail; system propagation ledger |
 | `linear_completed/slack_thread_respond.py` | Via dispatcher | Thread reply on Linear Done (Slack-sourced tasks) |
-| `linear_completed/` → `notion_task_sync` | Via dispatcher | Update Notion task row on Linear Done (meeting tasks) |
+| `linear_completed/` → `task_sync` | Via dispatcher | Update Notion task row on Linear Done (meeting tasks) |
 
 ### Onboarding — `linear_onboarding.py`
 
@@ -68,26 +80,17 @@ Linear issues.
 1. Backfill Gmail routing records → `task_bindings`
 2. Run **`structure_organization`** (propose-only; does not block)
 3. Run **`slot_check`** once
-4. Start **`linear_manager`** and **`notion_task_scanner`** (when task DBs configured) via `get_runtime().start()` and exit
+4. Start **`linear_manager`** and **`task_scanner`** (when task DBs configured) via `get_runtime().start()` and exit
 
-**GitHub:** PR/issue status sync is Linear-native — agents do not mirror GitHub state.
-
-```mermaid
-flowchart TD
-  ON[linear_onboarding once] --> SO[structure_organization]
-  ON --> SC[slot_check]
-  ON -->|start| LM[linear_manager]
-  LM -->|30min| LC[linear_completed]
-  LM -->|Monday| SA[stale_audit]
-  SA --> RMM[request_manual_management]
-  LC --> AG[archive_gmail]
-  LC --> STR[slack_thread_respond]
-  LC --> NT[notion_task_sync]
-```
+Plan reference: [`docs/plans/linear-task-platform.md`](../plans/linear-task-platform.md).
 
 ---
 
 ## GitHub — how it runs
+
+The manager is the only persistent agent. It checks GitHub each workday morning,
+refreshes branch status unconditionally, and dispatches specialists only when their
+cost gate passes (open PRs exist, weekly activity, new commits).
 
 ```mermaid
 flowchart TD
@@ -95,13 +98,7 @@ flowchart TD
   GM -->|open PRs exist| OP[open_pr]
   GM -->|Monday + weekly commits| FU[feature_update]
   GM -->|commits since last run| PF[product_features]
-  ON[github_onboarding once] -->|backfill| OP & BM & FU & PF
-  ON -->|start| GM
 ```
-
-The manager is the only persistent agent. It checks GitHub each workday morning,
-refreshes branch status unconditionally, and dispatches specialists only when their
-cost gate passes (open PRs exist, weekly activity, new commits).
 
 ---
 
@@ -136,7 +133,7 @@ Idles between checks. Specialists are started via `get_runtime().run()`.
 | **State** | ephemeral |
 | **Schedule** | Dispatched by `github_manager` when open PRs exist |
 | **Source** | GitHub open PRs |
-| **Destination** | `engineering/github/open-prs.md` |
+| **Destination** | `engineering/github/open-pr.md` |
 | **Notion** | Open PRs |
 | **Write mode** | update |
 
@@ -164,7 +161,7 @@ and **Branches/PRs** table (target env, ahead/behind, last activity, risk verdic
 | **State** | ephemeral |
 | **Schedule** | Dispatched by `github_manager` on Mondays when weekly commit activity exists |
 | **Source** | GitHub commits (last 7 days) |
-| **Destination** | `engineering/github/feature-updates.md` |
+| **Destination** | `engineering/github/feature-update.md` |
 | **Notion** | Feature Updates |
 | **Write mode** | append |
 
@@ -178,7 +175,7 @@ weekly section of major implementations (newest on top).
 | **State** | ephemeral |
 | **Schedule** | Dispatched when commits advanced since last run |
 | **Source** | GitHub commits (recent window) |
-| **Destination** | `engineering/github/product-features.md` |
+| **Destination** | `engineering/github/product-feature.md` |
 | **Notion** | Product Features |
 | **Write mode** | append |
 

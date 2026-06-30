@@ -3,7 +3,7 @@
 Persistent agent: every 15 minutes on workdays, watches Gmail history for new
 sent mail. Classifies each sent message (decision vs ack vs ingest-worthy),
 updates routing records, applies the Decision label, and dispatches
-decision_propagate / gmail_ingest as needed.
+decision_propagate / ingest as needed.
 
 SDK: Neither for classification (deterministic heuristics).
 """
@@ -36,7 +36,7 @@ INGEST_LABEL = "Ingest"
 class ThreadWatcherAgent(BaseAgent):
     """Watch sent-folder changes and enrich routing records."""
 
-    name = "gmail_thread_watcher"
+    name = "thread_watcher"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -128,8 +128,8 @@ class ThreadWatcherAgent(BaseAgent):
 
         if kind == "decision" and agent_enabled("decision_propagate", self.mailbox):
             self._dispatch_decision_propagate(thread_id, message_id)
-        if kind == "ingest" and agent_enabled("gmail_ingest", self.mailbox):
-            self._dispatch_gmail_ingest(thread_id)
+        if kind == "ingest" and agent_enabled("ingest", self.mailbox):
+            self._dispatch_ingest(thread_id)
 
         return {
             "message_id": message_id,
@@ -150,14 +150,14 @@ class ThreadWatcherAgent(BaseAgent):
         except Exception:
             self.logger.exception("decision_propagate dispatch failed")
 
-    def _dispatch_gmail_ingest(self, thread_id: str) -> None:
-        from company_brain.agents.operations.gmail.gmail_ingest import GmailIngestAgent
+    def _dispatch_ingest(self, thread_id: str) -> None:
+        from company_brain.agents.operations.gmail.ingest import IngestAgent
         from company_brain.runtime import get_runtime
 
         try:
             get_runtime().run(
-                GmailIngestAgent, self.config,
+                IngestAgent, self.config,
                 mailbox=self.mailbox, thread_id=thread_id,
             )
         except Exception:
-            self.logger.exception("gmail_ingest dispatch failed")
+            self.logger.exception("ingest dispatch failed")

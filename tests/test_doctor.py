@@ -6,6 +6,7 @@ from company_brain.doctor.agents import run_agents_doctor
 from company_brain.doctor.ops import run_ops_doctor
 from company_brain.doctor.scoring import compute_score, new_fail_regressions
 from company_brain.doctor.types import CheckResult, DoctorReport
+from company_brain.doctor.naming import run_naming_doctor
 from company_brain.doctor.wiki import run_wiki_doctor
 
 
@@ -55,3 +56,10 @@ def test_agents_doctor_no_hyphen_filenames() -> None:
     report = run_agents_doctor()
     hyphens = next(c for c in report.checks if c.check == "agent_hyphen_filenames")
     assert hyphens.status == "pass"
+
+
+def test_naming_doctor_passes() -> None:
+    report = run_naming_doctor()
+    assert report.score >= 85
+    fails = [c for c in report.checks if c.status == "fail"]
+    assert not fails, [c.check for c in fails]

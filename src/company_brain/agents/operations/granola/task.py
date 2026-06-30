@@ -37,10 +37,10 @@ ACTION_KEYWORDS = (
 )
 
 
-class GranolaTaskAgent(BaseAgent):
+class TaskAgent(BaseAgent):
     """Create Linear tasks from Granola meeting action items."""
 
-    name = "granola_task"
+    name = "task"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -75,7 +75,7 @@ class GranolaTaskAgent(BaseAgent):
                     self._create_task(note_id, meeting_date, detail, item)
                     created += 1
                 except Exception:
-                    self.logger.exception("granola_task failed for note %s", note_id)
+                    self.logger.exception("task failed for note %s", note_id)
 
         return {"created": created, "notes": len(notes)}
 
@@ -109,9 +109,9 @@ class GranolaTaskAgent(BaseAgent):
             sync_notion=False,
         )
         if "notion" in task_class_fan_out("meeting_action"):
-            from company_brain.agents.operations.notion.notion_task_sync import NotionTaskSyncAgent
+            from company_brain.agents.operations.notion.task_sync import TaskSyncAgent
 
-            NotionTaskSyncAgent(self.config).run(
+            TaskSyncAgent(self.config).run(
                 binding=binding,
                 title=title,
                 create_if_missing=True,

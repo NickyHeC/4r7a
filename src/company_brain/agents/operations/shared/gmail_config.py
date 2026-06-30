@@ -73,44 +73,49 @@ def ingest_queue_path() -> str:
     return wiki_paths().get("ingest_queue", "operations/gmail/ingest-queue.md")
 
 
-def company_timeline_path() -> str:
-    return wiki_paths().get("company_timeline", "operations/gmail/company-timeline.md")
+def timeline_path() -> str:
+    return wiki_paths().get("timeline", "operations/decisions/timeline.md")
 
 
 def attachments_dir() -> str:
     return wiki_paths().get("attachments_dir", "operations/gmail/attachments")
 
 
-def investors_crm_path() -> str:
+def investor_path() -> str:
     return gmail_cfg().get("investors_wiki") or wiki_paths().get(
-        "investors_crm", "operations/gmail/investors-crm.md",
+        "investor", "operations/gmail/investor.md",
+    )
+
+
+def customer_path() -> str:
+    return gmail_cfg().get("customer_wiki") or wiki_paths().get(
+        "customer", "operations/gmail/customer.md",
     )
 
 
 def customers_wiki_path() -> str:
-    return gmail_cfg().get("customers_wiki") or wiki_paths().get(
-        "customer_crm", "operations/gmail/customer-crm.md",
-    )
+    """Alias for :func:`customer_path` (legacy call sites)."""
+    return customer_path()
 
 
-def investor_interests_path() -> str:
-    return wiki_paths().get("investor_interests", "operations/gmail/investor-interests.md")
+def investor_interest_path() -> str:
+    return wiki_paths().get("investor_interest", "operations/gmail/investor-interest.md")
 
 
 def media_promotion_path() -> str:
     return wiki_paths().get("media_promotion", "operations/gmail/media-promotion.md")
 
 
-def company_connections_path() -> str:
-    return wiki_paths().get("company_connections", "operations/gmail/company-connections.md")
+def connection_path() -> str:
+    return wiki_paths().get("connection", "operations/gmail/connection.md")
 
 
-def inbound_candidates_path() -> str:
-    return wiki_paths().get("inbound_candidates", "operations/gmail/inbound-candidates.md")
+def inbound_candidate_path() -> str:
+    return wiki_paths().get("inbound_candidate", "operations/gmail/inbound-candidate.md")
 
 
-def vendors_dir() -> str:
-    return wiki_paths().get("vendors_dir", "operations/gmail/vendors")
+def vendor_dir() -> str:
+    return wiki_paths().get("vendor_dir", "operations/gmail/vendor")
 
 
 def partnership_digest_day() -> str:
@@ -176,7 +181,7 @@ def receipt_router_time() -> time:
 
 def receipt_router_wiki_path() -> str:
     rr = gmail_cfg().get("receipt_router") or {}
-    return rr.get("wiki_path", "operations/gmail/receipt-routing.md")
+    return rr.get("wiki_path", "operations/gmail/receipt-route.md")
 
 
 def subscription_sender_domains() -> list[str]:

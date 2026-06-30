@@ -1,4 +1,4 @@
-"""Content Catalog Agent — regenerate ``admin/table-of-contents.md``.
+"""Content Catalog Agent — regenerate ``admin/content-catalog.md``.
 
 SDK: Neither (deterministic catalog walker + wiki write).
 """
@@ -31,7 +31,7 @@ class ContentCatalogAgent(BaseAgent):
         rel_path = catalog_wiki_path()
         write_wiki_page(
             rel_path,
-            "4r7a Content Catalog",
+            "Content Catalog",
             body,
             mode=UPDATE,
             section="admin",

@@ -30,7 +30,7 @@ _RESULT_MARKER = "DRAFT_CREATED"
 class DraftReplyAgent(BaseAgent):
     """Create Gmail drafts for low-complexity Reply threads."""
 
-    name = "gmail_draft_reply"
+    name = "draft_reply"
     WRITE_MODE = "update"
 
     def __init__(

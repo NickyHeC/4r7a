@@ -144,11 +144,11 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.ext_meeting_scheduler import (
         ExtMeetingSchedulerAgent,
     )
-    from company_brain.agents.operations.gmail.gmail_crm import GmailCRMAgent
-    from company_brain.agents.operations.gmail.gmail_customer_support import (
-        GmailCustomerSupportAgent,
+    from company_brain.agents.operations.gmail.connection import ConnectionAgent
+    from company_brain.agents.operations.gmail.customer_support import (
+        CustomerSupportAgent,
     )
-    from company_brain.agents.operations.gmail.gmail_ingest import GmailIngestAgent
+    from company_brain.agents.operations.gmail.ingest import IngestAgent
     from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent
     from company_brain.agents.operations.gmail.inbox_task import InboxTaskAgent
     from company_brain.agents.operations.gmail.ingest_queue_review import IngestQueueReviewAgent
@@ -165,14 +165,14 @@ def _dispatch_agent_classes() -> dict[str, type]:
         "team_on_it": TeamOnItAgent,
         "draft_reply": DraftReplyAgent,
         "ext_meeting_scheduler": ExtMeetingSchedulerAgent,
-        "gmail_ingest": GmailIngestAgent,
+        "ingest": IngestAgent,
         "attachment_router": AttachmentRouterAgent,
         "investor_tracker": InvestorTrackerAgent,
-        "gmail_customer_support": GmailCustomerSupportAgent,
+        "customer_support": CustomerSupportAgent,
         "customer_crm": CustomerCRMAgent,
         "growth_inbound": GrowthInboundAgent,
         "vendor_tracker": VendorTrackerAgent,
-        "gmail_crm": GmailCRMAgent,
+        "connection": ConnectionAgent,
         "recruiting_inbound": RecruitingInboundAgent,
         "ingest_queue_review": IngestQueueReviewAgent,
         "partnership_digest": PartnershipDigestAgent,

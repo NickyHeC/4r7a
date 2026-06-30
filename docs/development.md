@@ -2,6 +2,9 @@
 
 How to change company-brain safely: lint, test, and the doctor registry.
 
+**Solo maintainer:** deferred features → [`tabled.md`](tabled.md); doc format →
+[`doc-style.md`](doc-style.md); agent governance → [`.cursor/rules/solo-maintainer.mdc`](../.cursor/rules/solo-maintainer.mdc).
+
 ## Fix loop
 
 After agent or platform work:
@@ -33,8 +36,9 @@ score = 100 − 1.5 × fails − 0.75 × warns
 | `agents` | Filename conventions, docstrings, handbook coverage, `sfile` allow_hosts |
 | `wiki` | MD-first flow — no direct Notion imports in agents |
 | `ops` | Notifier transport, receipt forward policy, Gmail send surface |
+| `naming` | Agent/wiki slug conventions, legacy path drift vs `name_migrate.py` |
 | `all` | Every doctor (default when you run `company-brain doctor`) |
-| `code` | `agents` + `wiki` + `ops` only (CI; no tokens) |
+| `code` | `agents` + `wiki` + `ops` + `naming` (CI; no tokens) |
 
 Options:
 
@@ -70,5 +74,5 @@ Hooks: `ruff check` and `pytest -q`.
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs ruff, pytest, and
-`company-brain doctor agents wiki ops --min-score 85`. Connectivity checks are
+`company-brain doctor code --min-score 85`. Connectivity checks are
 local-only (they need your tokens).

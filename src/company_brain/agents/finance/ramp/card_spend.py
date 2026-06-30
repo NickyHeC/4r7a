@@ -24,7 +24,7 @@ from . import ramp_client
 
 logger = logging.getLogger(__name__)
 
-AGENT_KEY = "ramp_card_spend"
+AGENT_KEY = "card_spend"
 
 _RESULT_START = "<<<RAMP_JSON>>>"
 _RESULT_END = "<<<END_RAMP_JSON>>>"
@@ -33,7 +33,7 @@ _RESULT_END = "<<<END_RAMP_JSON>>>"
 class RampCardSpendAgent(BaseAgent):
     """Categorize Ramp card spend by QuickBooks category for a date range."""
 
-    name = "finance_ramp_card_spend"
+    name = "card_spend"
 
     def __init__(self, config: AppConfig, model: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

@@ -79,10 +79,10 @@ def record_status_change(
 def _fan_out_notion(binding: TaskBinding, linear_status: str) -> None:
     """Push Linear status to the bound Notion task row when fan-out includes notion."""
     try:
-        from company_brain.agents.operations.notion.notion_task_sync import NotionTaskSyncAgent
+        from company_brain.agents.operations.notion.task_sync import TaskSyncAgent
         from company_brain.config import load_config
 
-        NotionTaskSyncAgent(load_config()).run(
+        TaskSyncAgent(load_config()).run(
             binding=binding,
             linear_status=linear_status,
             create_if_missing=False,

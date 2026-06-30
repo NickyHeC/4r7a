@@ -64,9 +64,9 @@ class LinearCompletedAgent(BaseAgent):
             )
 
         if "notion" in fan_out:
-            from company_brain.agents.operations.notion.notion_task_sync import NotionTaskSyncAgent
+            from company_brain.agents.operations.notion.task_sync import TaskSyncAgent
 
-            results["platforms"]["notion"] = NotionTaskSyncAgent(self.config).run(
+            results["platforms"]["notion"] = TaskSyncAgent(self.config).run(
                 binding=binding,
                 linear_status=linear_status,
                 create_if_missing=True,

@@ -24,8 +24,8 @@ from company_brain.config import AppConfig
 from .shared import notion_pages, transactions
 from .shared.config import load_finance_config
 
-SUBSCRIPTIONS_KEY = "company_subscriptions"
-SUBSCRIPTIONS_TERMS = ["Company Subscriptions", "Subscriptions"]
+SUBSCRIPTIONS_KEY = "subscription"
+SUBSCRIPTIONS_TERMS = ["Subscriptions"]
 
 _RESULT_START = "<<<AUDIT_MD>>>"
 _RESULT_END = "<<<END_AUDIT_MD>>>"
@@ -69,7 +69,7 @@ class SubscriptionAuditAgent(BaseAgent):
         report = self._build_report(recurring)
 
         page_id = notion_pages.ensure_page(
-            SUBSCRIPTIONS_KEY, SUBSCRIPTIONS_TERMS, "Company Subscriptions"
+            SUBSCRIPTIONS_KEY, SUBSCRIPTIONS_TERMS, "Subscriptions"
         )
         if page_id:
             notion_pages.update_page_body(page_id, report)
@@ -99,8 +99,8 @@ class SubscriptionAuditAgent(BaseAgent):
         from company_brain.runtime import get_runtime
 
         from .mercury.bank_transaction import BankTransactionAgent
-        from .mercury.mercury_card_spend import MercuryCardSpendAgent
-        from .ramp.ramp_card_spend import RampCardSpendAgent
+        from .mercury.card_spend import MercuryCardSpendAgent
+        from .ramp.card_spend import RampCardSpendAgent
 
         runtime = get_runtime()
         all_txns: list[dict] = []
@@ -227,7 +227,7 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
                 text=(f"Subscription audit complete: {len(recurring)} recurring vendors, "
                       f"~{transactions.fmt_money(total)} over the review window."),
                 severity=severity,
-                link_label="Company Subscriptions",
+                link_label="Subscriptions",
                 link_url=notion_pages.page_url(page_id) if page_id else None,
             ))
         except Exception:

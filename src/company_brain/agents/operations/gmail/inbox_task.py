@@ -32,7 +32,7 @@ SPECIALIST_KEY = "inbox_task"
 class InboxTaskAgent(BaseAgent):
     """Create Linear issues for action items and complex reply threads."""
 
-    name = "gmail_inbox_task"
+    name = "inbox_task"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

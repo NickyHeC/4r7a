@@ -19,14 +19,14 @@ from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig, resolve_raw_dir
 from company_brain.ingestion.entry import RawEntry
 
-SPECIALIST_KEY = "gmail_ingest"
+SPECIALIST_KEY = "ingest"
 MIN_CLEAR_WORDS = 25
 
 
-class GmailIngestAgent(BaseAgent):
+class IngestAgent(BaseAgent):
     """Persist ingest-worthy Gmail content as raw entries."""
 
-    name = "gmail_ingest"
+    name = "ingest"
 
     def __init__(
         self,

@@ -11,7 +11,7 @@ from company_brain.agents.operations.shared.contact_lists import load_contacts, 
 from company_brain.agents.operations.shared.gmail_config import (
     auto_archive_cold_tags,
     customers_wiki_path,
-    investors_crm_path,
+    investor_path,
     label_defs,
 )
 from company_brain.agents.operations.shared.profiles import (
@@ -183,7 +183,7 @@ def _classify_cold(from_hdr: str, subject: str, snippet: str) -> str | None:
 
 
 def _is_confirmed_investor(from_hdr: str) -> bool:
-    emails, domains = load_contacts(investors_crm_path())
+    emails, domains = load_contacts(investor_path())
     return matches_contact(from_hdr, emails, domains)
 
 

@@ -53,14 +53,14 @@ gmail:
         - inbox_sweep
         - draft_reply
         - decision_propagate
-        - gmail_ingest
+        - ingest
         - ingest_queue_review
         - attachment_router
-        - gmail_customer_support
+        - customer_support
         - customer_crm
         - growth_inbound
         - vendor_tracker
-        - gmail_crm
+        - connection
         - recruiting_inbound
         - inbox_task
         - team_on_it
@@ -89,7 +89,7 @@ gmail:
         - thread_watcher
         - inbox_sweep
         - attachment_router
-        - gmail_ingest
+        - ingest
         - vendor_tracker
 
   # Per-mailbox profile overrides (optional).
@@ -123,7 +123,7 @@ gmail:
   receipt_router:
     day: friday
     time: "08:00"
-    wiki_path: operations/gmail/receipt-routing.md
+    wiki_path: operations/gmail/receipt-route.md
     # Inbox Ramp watches for auto-attaching receipts (Gmail API user id or email).
     destination_mailbox: me
     # Only copy receipts between mailboxes on this domain (no external forward).
@@ -149,15 +149,15 @@ gmail:
 
   wiki:
     ingest_queue: operations/gmail/ingest-queue.md
-    company_timeline: operations/gmail/company-timeline.md
+    timeline: operations/decisions/timeline.md
     attachments_dir: operations/gmail/attachments
-    investors_crm: operations/gmail/investors-crm.md
-    investor_interests: operations/gmail/investor-interests.md
-    customer_crm: operations/gmail/customer-crm.md
+    investor: operations/gmail/investor.md
+    investor_interest: operations/gmail/investor-interest.md
+    customer: operations/gmail/customer.md
     media_promotion: operations/gmail/media-promotion.md
-    company_connections: operations/gmail/company-connections.md
-    inbound_candidates: operations/gmail/inbound-candidates.md
-    vendors_dir: operations/gmail/vendors
+    connection: operations/gmail/connection.md
+    inbound_candidate: operations/gmail/inbound-candidate.md
+    vendor_dir: operations/gmail/vendor
 
   slack:
     ingest_channel: "#ingest"
@@ -226,8 +226,8 @@ gmail:
     newsletters_parent: Newsletters
 
   # Wiki paths for confirmed investors / customers (parsed for triage + CRM agents).
-  investors_wiki: operations/gmail/investors-crm.md
-  customers_wiki: operations/gmail/customer-crm.md
+  investors_wiki: operations/gmail/investor.md
+  customer_wiki: operations/gmail/customer.md
 
 # Slack platform (operations/slack/) — thread action items → Linear.
 slack_platform:
@@ -290,7 +290,7 @@ granola:
   #   - label: bob
   #     email: bob@company.com
   wiki:
-    daily_digest: operations/granola/daily/{date}.md
+    daily_digest: operations/granola/meeting/{date}.md
   onboarding:
     backfill_days: 30
 

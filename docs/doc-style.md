@@ -1,0 +1,93 @@
+# Documentation Style
+
+How human-facing docs in this repo stay consistent. Agents update docs per
+[`.cursor/rules/solo-maintainer.mdc`](../.cursor/rules/solo-maintainer.mdc).
+
+## Doc layers
+
+| Layer | Path | Audience | Content |
+|-------|------|----------|---------|
+| Pitch + map | `README.md` | Anyone | Why, data-flow diagram, department one-liners |
+| Runbooks | `docs/agents/*.md` | You + future hires | Per-agent tables, schedules, wiki paths |
+| Handbook index | `docs/agents/README.md` | Navigation | Department table, shared conventions |
+| Install | `project_install.md` | Admin connecting platforms | OAuth, env, onboarding commands |
+| Plans | `docs/plans/*.md` | Design + build session only | **Delete after ship** when handbooks updated |
+| Backlog | `docs/tabled.md` | Planning phase | Deferred features; remove row when shipped |
+| Dev loop | `docs/development.md` | Contributors | ruff, pytest, doctor |
+| Memory | `memory.md` | AI + you | Reverse-chronological decision log |
+| Rules | `.cursor/rules/*.mdc` | AI | Invariants agents must enforce |
+
+**Rule:** Steady-state truth lives in handbooks + `memory.md`. Plans are **temporary** —
+delete after build completes and outcomes are folded into handbooks.
+
+## Design sessions
+
+Before building a new feature, the agent lists concerns one-by-one (issues,
+clarifications, questions, improvements). Expect 2–3 rounds until scope is agreed.
+Read `docs/tabled.md` at plan start for the matching department/platform.
+
+## Handbook page template
+
+Each `docs/agents/<department>.md` file:
+
+1. **Title + one-line scope**
+2. **Config links** (`config/*.yaml`, key env vars)
+3. **How it runs** — heading `## {Platform} — how it runs`, then one short summary
+   paragraph, then the mermaid diagram; onboarding agents stay out of the diagram
+4. **Manager(s)** — short table or bullet list
+5. **Specialists** — table:
+
+   | Agent | Schedule | Description |
+
+   Per-agent detail blocks (when non-obvious):
+
+   | | |
+   |---|---|
+   | **State** | persistent / ephemeral |
+   | **Schedule** | … |
+   | **Source** | … |
+   | **Destination** | `wiki/path.md` |
+   | **Notion** | Page title (= MD title) |
+   | **Write mode** | update / append |
+
+6. **Onboarding** — last in platform section (prose only; not in flow diagrams)
+7. **Deferred work** — one link to `docs/tabled.md` (no local backlog tables)
+
+## Naming in docs
+
+- Agent filenames: `` `open_pr.py` `` (code)
+- Wiki paths: `` `engineering/github/open-pr.md` `` (kebab slug)
+- Notion titles: **Open PRs** (Title Case, may be longer than slug)
+- See [`.cursor/rules/naming.mdc`](../.cursor/rules/naming.mdc)
+
+## Diagrams
+
+- Use **mermaid** for steady-state flows with 3+ nodes or branches
+- **One diagram per major section** — summary paragraph first under `## … — how it runs`,
+  then mermaid; no duplicate ascii + mermaid of the same flow
+- **Exclude onboarding agents** — graphs show regular operation after setup (managers,
+  persistent loops, dispatch). Onboarding is documented in prose below the diagram.
+- Label edges with dispatch triggers (`08:00`, `on demand`, `via manager`)
+- Use **ascii** only for simple linear pipelines in README if mermaid is overkill
+
+## `memory.md` entries
+
+```markdown
+## YYYY-MM-DD — Short title (working tree | commit)
+
+- **What:** one-line summary
+- **Key changes:** bullet list (paths, agents, config)
+- **Tests:** N passing / doctor status if relevant
+```
+
+Newest on top. Read `memory.md` first when starting a session.
+
+## When to update what
+
+| Change | memory | handbook | README | project_install | tabled |
+|--------|--------|----------|--------|-----------------|--------|
+| New agent | ✓ | ✓ | if new dept/platform | if connect step | |
+| Rename paths | ✓ | ✓ | | | |
+| Defer feature | ✓ | | | | ✓ |
+| Ship tabled item | ✓ | ✓ | maybe | maybe | remove row |
+| Convention / rule | ✓ | | | | |

@@ -70,7 +70,7 @@ class AssetCompileAgent(BaseAgent):
         if self.publish:
             from company_brain.wiki.publish import write_wiki_page
             page_id = write_wiki_page(
-                "finance/total-assets.md", "Total Assets", report,
+                "finance/total-asset.md", "Total Assets", report,
                 mode=self.WRITE_MODE, section="finance", type_="report",
             )
 
