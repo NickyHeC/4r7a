@@ -9,6 +9,7 @@ per department with architecture, schedules, labeling schemas, and per-agent run
 | Finance | [docs/agents/finance.md](docs/agents/finance.md) |
 | Operations | [docs/agents/operations.md](docs/agents/operations.md) |
 | Employee Wiki | [docs/agents/employee_wiki.md](docs/agents/employee_wiki.md) |
+| External Wiki | [docs/agents/external_wiki.md](docs/agents/external_wiki.md) |
 
 For the high-level platform map, see [`README.md`](README.md). For connect/onboard steps,
 see [`project_install.md`](project_install.md).

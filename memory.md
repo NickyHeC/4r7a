@@ -11,6 +11,18 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-30 — External wiki mount + admin content catalog (working tree)
+
+- **Phases A–D shipped:** `wiki/external_paths.py`, `external_sources_config.py`,
+  `config/external_sources.yaml`, `external_wiki` block in `operations.yaml`,
+  mount pipeline (`external_wiki_import`, `external_mount_review`, `external_promote`),
+  `detect_external_duplicates`, admin catalog (`content_catalog.py`, `content_catalog_agent`),
+  `company-brain catalog` CLI, `section_teamspace: admin → admin`.
+- Employee import reviews migrated to `admin/import-reviews/` (from `engineering/admin/`).
+- `write_wiki_page` accepts `sync_label` + `extra_frontmatter` for provenance stamping.
+- Docs: `docs/agents/external_wiki.md`, README, project_install, access-control rule.
+- 115 tests pass.
+
 ## 2026-06-29 — Employee wiki cleanliness audit (working tree)
 
 - Removed dead duplicate `member_quarantine_path` (employee_paths) — `member_quarantine_rel`

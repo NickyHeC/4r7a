@@ -21,7 +21,8 @@ section_page_ids: {}
 teamspaces:
   admin: ""
   company: ""
-section_teamspace: {}
+section_teamspace:
+  admin: admin
 
 # Tracking database ID for article metadata.
 tracking_database_id: null

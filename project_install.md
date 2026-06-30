@@ -225,6 +225,11 @@ connected (these seed the wiki + Notion):
   materialize work events (Linear/Granola/Gmail/Slack) into per-member work logs.
   Members import existing notes as a zip of `.md` files via `employee_wiki_import`
   (quarantined, scanned, and admin-reviewed before promotion).
+- External wiki (admin): mount a one-shot external Markdown wiki (zip of `.md`) via
+  `external_wiki_import` into `wiki/external/{source}/`. Register the source in
+  `config/external_sources.yaml`, review at `admin/external-mount-reviews/{id}.md`,
+  approve with `ExternalWikiImportAgent.approve(...)`. Rebuild the fleet catalog with
+  `company-brain catalog` (`admin/table-of-contents.md` → admin Notion teamspace).
 
 ## Step 4 — Operate and verify
 

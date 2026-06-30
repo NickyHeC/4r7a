@@ -37,10 +37,6 @@ def people_page_path(member_key: str) -> str:
     return f"people/{_slug(member_key)}.md"
 
 
-def import_review_wiki_path(import_id: str) -> str:
-    return f"engineering/admin/import-reviews/{import_id}.md"
-
-
 def _slug(value: str) -> str:
     out = "".join(c if c.isalnum() or c in "-_" else "-" for c in value.lower())
     while "--" in out:

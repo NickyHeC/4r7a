@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
-from typing import Sequence
+from typing import Any, Sequence
 
 from company_brain.notion.sync import NotionSync
 from company_brain.wiki.store import LocalWikiStore, MarkdownDoc, WikiStore
@@ -35,6 +35,8 @@ def write_wiki_page(
     related: Sequence[str] | None = None,
     store: WikiStore | None = None,
     sync: bool = True,
+    sync_label: str | None = None,
+    extra_frontmatter: dict[str, Any] | None = None,
 ) -> str | None:
     """Write a wiki page to the store and (optionally) sync it to Notion.
 
@@ -76,6 +78,10 @@ def write_wiki_page(
         fm["sources"] = list(sources)
     else:
         fm.setdefault("sources", [])
+    if sync_label is not None:
+        fm["sync"] = sync_label
+    if extra_frontmatter:
+        fm.update(extra_frontmatter)
 
     store.write(rel_path, MarkdownDoc(frontmatter=fm, body=body))
     logger.info("Wrote wiki page %s (mode=%s)", rel_path, mode)

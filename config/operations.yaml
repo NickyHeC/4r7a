@@ -246,6 +246,20 @@ slack_platform:
 notion_platform:
   poll_interval_minutes: 30
 
+# External wiki mount (admin one-shot import into wiki/external/{source}/).
+external_wiki:
+  import:
+    max_zip_bytes: 52428800       # 50 MB
+    max_file_bytes: 1048576       # 1 MB per .md file
+    max_files: 500
+    require_admin_approval: true
+    admin_channel: ""             # falls back to employee_wiki.import.admin_channel
+  catalog:
+    rebuild_on_mount: true
+    rebuild_on_sync: false
+    include_employee_wiki: true
+    include_raw_entries: false
+
 # Employee wiki (cross-cutting) — work_events materialization + zip import.
 employee_wiki:
   poll_interval_minutes: 5

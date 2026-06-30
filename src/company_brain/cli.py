@@ -191,6 +191,19 @@ def cleanup() -> None:
     click.echo("Cleanup agents will be implemented in subsequent phases.")
 
 
+@main.command()
+def catalog() -> None:
+    """Rebuild the admin content table of contents (``admin/table-of-contents.md``)."""
+    from company_brain.agents.external_wiki.content_catalog_agent import ContentCatalogAgent
+
+    config = load_config()
+    result = ContentCatalogAgent(config).run()
+    click.echo(
+        f"Catalog rebuilt at {result['path']} "
+        f"({result['company_pages']} company, {result['external_pages']} external pages)."
+    )
+
+
 @main.group(invoke_without_command=True)
 @click.pass_context
 @click.option("--json", "as_json", is_flag=True, help="Emit JSON report.")

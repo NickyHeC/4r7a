@@ -108,6 +108,14 @@ A cross-cutting substrate giving each employee a **work building** (`employee_wi
 - **Zip import** — `employee_wiki_import.py` quarantines a zip of `.md` files, runs a deterministic security scan + duplicate detection, and gates the first import behind admin review (`import_review.py`).
 - **Notion sync labels** — each page's `sync:` frontmatter (`private` / `company` / `admin_only` / `location:` / `not_synced`) routes it to the right teamspace; `members.yaml` holds the per-member index and ingest/read scopes.
 
+### External Wiki
+
+Admin-only one-shot import of shared external Markdown wikis into `wiki/external/{source}/` (e.g. a friend's startup ops playbook). Reuses the zip quarantine + security scan + duplicate detection pipeline; every mount requires admin approval.
+
+- **Mount pipeline** — `external_wiki_import.py` → quarantine → `external_mount_review.py` → `external_promote.py` with provenance frontmatter (`external_source`, `import_id`, `sync:`).
+- **Registry** — `config/external_sources.yaml` tracks mounted sources and history.
+- **Admin catalog** — `content_catalog_agent.py` regenerates `admin/table-of-contents.md` (view-only fleet TOC mirrored to the admin Notion teamspace). Manual rebuild: `company-brain catalog`.
+
 ## Self-maintaining foundation
 
 Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (cheap cost gate) -> `run` -> `verify` (triage: ok / rework / noise), up to `max_iterations`.

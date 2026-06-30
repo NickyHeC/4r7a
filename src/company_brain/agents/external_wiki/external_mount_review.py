@@ -1,4 +1,4 @@
-"""Import Review — admin wiki page + Slack notify for employee zip imports.
+"""External Mount Review — admin wiki page + Slack notify.
 
 SDK: Neither (wiki write + Notifier).
 """
@@ -10,38 +10,37 @@ from datetime import datetime, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.employee_wiki.employee_wiki_slack import employee_wiki_admin_notifier
+from company_brain.agents.external_wiki.external_wiki_slack import external_wiki_admin_notifier
 from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.duplicate_detect import parse_duplicate_report
-from company_brain.wiki.external_paths import import_review_wiki_path
-from company_brain.wiki.employee_store import LocalEmployeeWikiStore
-from company_brain.wiki.import_promote import member_quarantine_rel
+from company_brain.wiki.external_paths import external_mount_review_path, external_quarantine_rel
 from company_brain.wiki.publish import UPDATE, write_wiki_page
+from company_brain.wiki.store import LocalWikiStore
 
 
-class ImportReviewAgent(BaseAgent):
-    """Write admin import review page and ping admin Slack."""
+class ExternalMountReviewAgent(BaseAgent):
+    """Write admin external mount review page and ping admin Slack."""
 
-    name = "employee_wiki_import_review"
+    name = "external_wiki_mount_review"
     WRITE_MODE = UPDATE
 
     def run(
         self,
         *,
-        member_key: str,
+        source_key: str,
         import_id: str,
         scan_blocked: bool = False,
         ping_slack: bool = True,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        key = (member_key or "").strip()
+        key = (source_key or "").strip()
         iid = (import_id or "").strip()
         if not key or not iid:
-            return {"status": "error", "reason": "member_key and import_id required"}
+            return {"status": "error", "reason": "source_key and import_id required"}
 
-        store = LocalEmployeeWikiStore()
-        quarantine = member_quarantine_rel(key, iid)
+        store = LocalWikiStore()
+        quarantine = external_quarantine_rel(key, iid)
         report_path = f"{quarantine}duplicate_report.json"
         dup = parse_duplicate_report(store.read_text(report_path)) if store.exists(report_path) else None
 
@@ -54,9 +53,9 @@ class ImportReviewAgent(BaseAgent):
 
         when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         lines = [
-            f"# Import review — {key} / {iid}",
+            f"# External mount review — {key} / {iid}",
             "",
-            f"- **Member:** `{key}`",
+            f"- **Source:** `{key}`",
             f"- **Import id:** `{iid}`",
             f"- **Quarantine:** `{quarantine}`",
             f"- **Submitted:** {when}",
@@ -84,15 +83,15 @@ class ImportReviewAgent(BaseAgent):
         lines += [
             "## Admin actions",
             "",
-            "Approve via `EmployeeWikiImportAgent.approve(member_key=..., import_id=...)` "
+            "Approve via `ExternalWikiImportAgent.approve(source_key=..., import_id=...)` "
             "with optional per-file decisions (`link` | `import` | `drop`).",
             "",
         ]
 
-        rel_path = import_review_wiki_path(iid)
+        rel_path = external_mount_review_path(iid)
         write_wiki_page(
             rel_path,
-            f"Import review — {key}",
+            f"External mount — {key}",
             "\n".join(lines).rstrip() + "\n",
             mode=UPDATE,
             section="admin",
@@ -110,16 +109,16 @@ class ImportReviewAgent(BaseAgent):
             "scan_blocked": scan_blocked,
         }
 
-    def _ping_admin(self, member: str, import_id: str, rel_path: str, blocked: bool, dup) -> bool:
+    def _ping_admin(self, source: str, import_id: str, rel_path: str, blocked: bool, dup) -> bool:
         link_count = sum(1 for f in (dup.files if dup else []) if f.verdict == "link")
         review_count = sum(1 for f in (dup.files if dup else []) if f.verdict == "review")
         status = "BLOCKED — needs review" if blocked else "ready for review"
         text = (
-            f"Employee wiki import `{import_id}` from `{member}` — {status}. "
+            f"External wiki mount `{import_id}` from `{source}` — {status}. "
             f"{link_count} auto-link, {review_count} need review. See wiki `{rel_path}`."
         )
         try:
-            return employee_wiki_admin_notifier().emit(Signal(text=text, severity=ACTIONABLE))
+            return external_wiki_admin_notifier().emit(Signal(text=text, severity=ACTIONABLE))
         except Exception:
-            self.logger.exception("Import review Slack ping failed")
+            self.logger.exception("External mount review Slack ping failed")
             return False

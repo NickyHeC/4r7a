@@ -59,6 +59,20 @@ of section routing:
   duplicate-checked; the first import per member requires admin approval before
   promotion (`agents/employee_wiki/`).
 
+## External wiki mounts (admin-only)
+
+One-shot import of shared external Markdown wikis into `wiki/external/{source}/`.
+Admin initiates only; members cannot mount external wikis.
+
+- **Registry:** `config/external_sources.yaml` — source metadata + mount history (pointers only).
+- **Pipeline:** quarantine → security scan → duplicate detection → admin review
+  (`admin/external-mount-reviews/{id}.md`) → promote with provenance frontmatter.
+- **Default sync:** promoted pages default to `company` teamspace (configurable per source);
+  review pages and the content catalog use `admin_only` / admin teamspace.
+- **Admin catalog:** `admin/table-of-contents.md` lists company wiki, external mounts,
+  employee building counts, and audit pages — view-only; regenerate via `company-brain catalog`.
+- **Section routing:** `section_teamspace` maps top-level `admin` → admin teamspace.
+
 ## Read vs write asymmetry (the default posture)
 
 - **Reading is least-privilege**, enforced by Notion teamspace permissions; the

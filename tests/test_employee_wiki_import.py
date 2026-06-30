@@ -90,7 +90,7 @@ def test_import_agent_quarantine_and_review(wiki_roots, monkeypatch):
 
     def fake_run(cls, config, **kwargs):
         review_calls.append(kwargs)
-        return {"status": "ok", "review_page": "engineering/admin/import-reviews/x.md"}
+        return {"status": "ok", "review_page": "admin/import-reviews/x.md"}
 
     monkeypatch.setattr(
         "company_brain.agents.employee_wiki.employee_wiki_import.get_runtime",

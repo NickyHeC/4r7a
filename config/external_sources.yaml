@@ -1,0 +1,9 @@
+# Registry of mounted external wikis (pointers only — no zip bytes).
+sources: {}
+# Example:
+#   nicky_startup_ops:
+#     label: "Nicky — Startup Ops"
+#     contact: nicky@example.com
+#     description: "Shared operations playbook"
+#     default_sync: company
+#     mounts: []

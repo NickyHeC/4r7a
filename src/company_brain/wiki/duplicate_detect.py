@@ -38,16 +38,21 @@ class FileDuplicateVerdict:
 
 @dataclass
 class DuplicateReport:
-    member: str
     import_id: str
     files: list[FileDuplicateVerdict] = field(default_factory=list)
+    member: str = ""
+    source: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "member": self.member,
+        out: dict[str, Any] = {
             "import_id": self.import_id,
             "files": [f.to_dict() for f in self.files],
         }
+        if self.member:
+            out["member"] = self.member
+        if self.source:
+            out["source"] = self.source
+        return out
 
     def serialize(self) -> str:
         return json.dumps(self.to_dict(), indent=2, sort_keys=True)
@@ -86,6 +91,53 @@ def detect_duplicates(
                 company_index=company_index,
                 member_index=member_index,
                 other_index=other_index,
+                bindings=bindings,
+            )
+        )
+    return report
+
+
+def detect_external_duplicates(
+    import_files: dict[str, str],
+    *,
+    source_key: str,
+    import_id: str,
+    company_store: WikiStore,
+    bindings: TaskBindingStore | None = None,
+) -> DuplicateReport:
+    """Duplicate detection for external wiki mounts (company store only)."""
+    bindings = bindings or TaskBindingStore()
+    paths = [
+        p
+        for p in company_store.list()
+        if "/_quarantine/" not in p and not p.startswith("external/_quarantine/")
+    ]
+    company_index = _build_index(paths, company_store, scope="company")
+    source_prefix = f"external/{source_key}/"
+    same_source_index = _build_index(
+        [p for p in paths if p.startswith(source_prefix)],
+        company_store,
+        scope="member",
+    )
+    other_external_index = _build_index(
+        [
+            p
+            for p in paths
+            if p.startswith("external/") and not p.startswith(source_prefix)
+        ],
+        company_store,
+        scope="other",
+    )
+
+    report = DuplicateReport(import_id=import_id, source=source_key)
+    for rel_path, raw in import_files.items():
+        report.files.append(
+            _classify_file(
+                rel_path,
+                raw,
+                company_index=company_index,
+                member_index=same_source_index,
+                other_index=other_external_index,
                 bindings=bindings,
             )
         )
@@ -183,7 +235,7 @@ def _build_index(paths: Iterable[str], store: WikiStore, *, scope: str) -> dict[
     del scope  # reserved for future scope-specific rules
     index: dict[str, _PageIndexEntry] = {}
     for rel in paths:
-        if rel.endswith("/_index.md") or "/imports/" in rel:
+        if rel.endswith("/_index.md") or "/imports/" in rel or "/_quarantine/" in rel:
             continue
         try:
             doc = store.read(rel)
@@ -269,9 +321,10 @@ def parse_duplicate_report(text: str) -> DuplicateReport:
         for f in data.get("files") or []
     ]
     return DuplicateReport(
-        member=str(data.get("member") or ""),
         import_id=str(data.get("import_id") or ""),
         files=files,
+        member=str(data.get("member") or ""),
+        source=str(data.get("source") or ""),
     )
 
 
