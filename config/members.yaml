@@ -1,0 +1,19 @@
+# Member index for employee wikis (pointers to platform bindings elsewhere).
+# Secrets stay in .env — never store API keys here.
+
+members: {}
+# Example:
+#   alice:
+#     email: alice@company.com
+#     status: active              # active | departed
+#     notion_teamspace: member_alice
+#     bindings:
+#       granola_label: alice
+#       gmail_mailbox: alice@company.com
+#       slack_user_id: U0123ABC
+#       linear_user_id: ""
+#     ingest:
+#       granola: full             # full | action_items_only | off
+#       gmail: work_related
+#       slack: watched_channels_only
+#     query_grants: {}            # member_key -> [path prefixes under their tree]

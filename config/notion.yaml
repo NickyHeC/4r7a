@@ -12,7 +12,15 @@ section_page_ids: {}
 # Notion). teamspaces: teamspace key -> the parent page ID that pages sync under.
 # section_teamspace: wiki section (exact or path prefix) -> teamspace key, or
 # "admin_only" to keep that section MD-only (never mirrored to Notion).
-teamspaces: {}
+#
+# Employee wiki pages use frontmatter ``sync:`` (not section_teamspace):
+#   private -> member_{key} or members.yaml notion_teamspace
+#   company -> company
+#   admin_only -> admin (admin teamspace mirror)
+#   not_synced -> no Notion mirror
+teamspaces:
+  admin: ""
+  company: ""
 section_teamspace: {}
 
 # Tracking database ID for article metadata.

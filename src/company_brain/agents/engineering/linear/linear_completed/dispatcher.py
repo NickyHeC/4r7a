@@ -72,4 +72,37 @@ class LinearCompletedAgent(BaseAgent):
                 create_if_missing=True,
             )
 
+        results["employee_wiki"] = self._record_employee_work_event(
+            binding, linear_issue or {}, linear_status,
+        )
+
         return results
+
+    def _record_employee_work_event(
+        self,
+        binding: Any,
+        linear_issue: dict[str, Any],
+        linear_status: str,
+    ) -> dict[str, Any]:
+        from company_brain.agents.employee_wiki.work_event_materializer import (
+            record_linear_work_event,
+        )
+        from company_brain.members_config import resolve_member_for_binding
+
+        member = resolve_member_for_binding(binding)
+        if not member:
+            return {"status": "skipped", "reason": "no_member"}
+
+        issue = linear_issue or {}
+        linear = binding.linear or {}
+        event = record_linear_work_event(
+            primary_member=member,
+            issue_id=str(issue.get("id") or linear.get("issue_id") or ""),
+            identifier=str(issue.get("identifier") or linear.get("identifier") or ""),
+            title=str(binding.title or issue.get("title") or ""),
+            status=linear_status,
+            url=str(issue.get("url") or linear.get("url") or ""),
+            event_type="linear_completed",
+            company_links=[f"engineering/tasks/{binding.department}/{binding.project}/{binding.task_id}.md"],
+        )
+        return {"status": "recorded", "event_id": event.event_id, "member": member}

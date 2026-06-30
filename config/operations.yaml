@@ -246,6 +246,17 @@ slack_platform:
 notion_platform:
   poll_interval_minutes: 30
 
+# Employee wiki (cross-cutting) — work_events materialization + zip import.
+employee_wiki:
+  poll_interval_minutes: 5
+  import:
+    max_zip_bytes: 52428800       # 50 MB
+    max_file_bytes: 1048576       # 1 MB per .md file
+    max_files: 500
+    require_admin_first_import: true
+    auto_approve_subsequent: false
+    admin_channel: ""             # falls back to gmail slack ingest_channel
+
 # Granola meeting notes (operations/granola/).
 # Business: one API key per member (personal-notes scope) in GRANOLA_MEMBER_KEYS.
 # Enterprise: single GRANOLA_API_KEY with public-notes scope (Team space).

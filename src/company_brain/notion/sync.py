@@ -19,6 +19,7 @@ from typing import Any
 
 from company_brain.config import AppConfig, load_config
 from company_brain.notion.client import NotionClient
+from company_brain.notion.sync_routing import resolve_sync_parent, should_skip_notion_mirror
 from company_brain.wiki.registry import PageRegistry
 from company_brain.wiki.store import LocalWikiStore, WikiStore
 
@@ -68,10 +69,11 @@ class NotionSync:
         current_hash = doc.content_hash
         page_id = fm.get("notion_page_id")
 
-        # Admin-only sections stay MD-only (never mirrored to Notion).
-        if self.config.notion.teamspace_for_section(fm.get("section", "")) == "admin_only":
-            logger.info("MD-only (admin-only section), not mirrored: %s", rel_path)
+        if should_skip_notion_mirror(fm, self.config):
+            logger.info("Notion mirror skip: %s", rel_path)
             return None
+
+        sync_parent = resolve_sync_parent(fm, self.config) if fm.get("sync") else None
 
         if page_id and not force and fm.get("synced_hash") == current_hash:
             logger.debug("Notion sync skip (unchanged): %s", rel_path)
@@ -83,7 +85,7 @@ class NotionSync:
         if page_id:
             self.client.update_page(page_id, doc.body)
         else:
-            page_id = self._create(doc, fm, title, parent_id)
+            page_id = self._create(doc, fm, title, sync_parent or parent_id)
             if not page_id:
                 return None
 
@@ -106,7 +108,8 @@ class NotionSync:
     # -- internals ---------------------------------------------------------
 
     def _create(self, doc: Any, fm: dict, title: str, parent_id: str | None) -> str | None:
-        parent = parent_id or self._resolve_parent(fm.get("section", ""))
+        sync_parent = resolve_sync_parent(fm, self.config) if fm.get("sync") else None
+        parent = parent_id or sync_parent or self._resolve_parent(fm.get("section", ""))
         if not parent:
             logger.warning(
                 "No Notion parent for '%s' (section=%s); cannot create page. "

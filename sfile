@@ -44,7 +44,8 @@ allow_hosts = [
 init = ["pip install -e ."]
 # The shared wiki volume (the smol cloud volume in production). COMPANY_BRAIN_WIKI_DIR
 # should point here so all agents read/write the same Markdown source of truth.
-volumes = ["./wiki:/workspace/wiki"]
+# Employee wikis live in a sibling mount (COMPANY_BRAIN_EMPLOYEE_WIKI_DIR).
+volumes = ["./wiki:/workspace/wiki", "./employee_wiki:/workspace/employee_wiki"]
 
 [auth]
 ssh_agent = true

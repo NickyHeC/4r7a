@@ -222,6 +222,7 @@ notepad.md
 
 # Wiki content (source of truth lives in the smol cloud volume; may contain company data)
 /wiki/
+/employee_wiki/
 /raw/
 /data/
 # Local wiki manifests (derived/local-only)
@@ -231,3 +232,5 @@ notepad.md
 /config/state.json
 # Task binding registry (local runtime state; may contain company task data)
 /config/task_bindings.json
+# Employee work event ledger (local runtime state)
+/config/work_events.jsonl

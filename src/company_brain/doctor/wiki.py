@@ -13,6 +13,7 @@ _NOTION_ALLOW = frozenset({
     "operations/notion/notion_db.py",
     "operations/notion/notion_task_sync.py",
     "operations/notion/notion_task_scanner.py",
+    "employee_wiki/employee_wiki_onboarding.py",
 })
 _WIKI_WRITE_RE = re.compile(
     r"(Path\([^)]*wiki|open\([^)]*wiki|\.write_text\([^)]*wiki|wiki_dir\s*/\s*)",

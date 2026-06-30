@@ -11,6 +11,35 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-29 — Employee wiki Phases C–D (working tree)
+
+- **Phase C — Notion sync labels:** `notion/sync_routing.py`, `member_teamspace.py`,
+  `wiki/employee_notion_sync.py`; `sync:` frontmatter on employee pages; onboarding syncs index.
+- **Phase D — Zip import:** `import_scan.py`, `duplicate_detect.py`, `import_promote.py`;
+  agents `employee_wiki_import`, `import_review`; first-import admin gate via `StateStore`;
+  duplicate tiers 1–4 with link stubs on approve.
+- Config: `employee_wiki.import` block in `operations.yaml`.
+- Tests: `test_employee_notion_sync.py`, `test_employee_wiki_import.py` (105 total passing).
+
+## 2026-06-26 — Employee wiki Phases A–B (working tree)
+
+- **Foundation:** `resolve_employee_wiki_dir()`, `config/members.yaml`, `members_config.py`,
+  `LocalEmployeeWikiStore`, `write_employee_wiki_page`, `ensure_people_stub`, `ensure_member_wiki`.
+- **Ledger:** `wiki/work_events.py` + `record_linear_work_event()`.
+- **Agents:** `agents/employee_wiki/` — `employee_wiki_manager`, `work_event_materializer`.
+- **Config:** `employee_wiki.poll_interval_minutes` in `operations.yaml`; gitignore
+  `/employee_wiki/`, `/config/work_events.jsonl`; sfile sibling mount.
+- Tests: `tests/test_employee_wiki.py` (9 cases). Platform → ledger hook not wired yet.
+
+## 2026-06-26 — Employee wiki architecture plan drafted (working tree)
+
+- **`docs/plans/employee-wiki.md`**: full build plan (Phases A–I) for
+  `employee_wiki/{member}/` substrate — ledger + materializers, Notion `sync:` labels
+  (incl. admin_only → admin teamspace), zip import + duplicate detection (#6), manager
+  citation-only query, offboarding, deferred Notion↔MD pull (Phase I).
+- Converges with future project onboarding + company wiki generation; MD-first scope
+  larger than any single platform integration.
+
 ## 2026-06-26 — Remove Granola 18:00 EOD backstop (working tree)
 
 - Granola pipeline is now purely calendar-driven: post-meeting ingest + weekly

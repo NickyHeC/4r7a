@@ -23,6 +23,21 @@ def resolve_wiki_dir() -> Path:
     return Path(env) if env else PROJECT_ROOT / "wiki"
 
 
+def resolve_employee_wiki_dir() -> Path:
+    """Directory holding per-member employee wikis (sibling to company wiki).
+
+    Override with ``COMPANY_BRAIN_EMPLOYEE_WIKI_DIR`` (e.g.
+    ``/workspace/employee_wiki``). Defaults to ``<wiki_parent>/employee_wiki``.
+    """
+    env = os.getenv("COMPANY_BRAIN_EMPLOYEE_WIKI_DIR")
+    if env:
+        return Path(env)
+    wiki = resolve_wiki_dir()
+    if wiki.name == "wiki":
+        return wiki.parent / "employee_wiki"
+    return wiki / "employee_wiki"
+
+
 def resolve_raw_dir() -> Path:
     """Directory holding raw ingested Markdown entries."""
     env = os.getenv("COMPANY_BRAIN_RAW_DIR")
