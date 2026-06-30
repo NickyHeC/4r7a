@@ -9,6 +9,7 @@ SDK: Neither (deterministic file pipeline).
 from __future__ import annotations
 
 import io
+import json
 import uuid
 import zipfile
 from pathlib import PurePosixPath
@@ -54,7 +55,8 @@ class EmployeeWikiImportAgent(BaseAgent):
         if raw_bytes is None:
             if not zip_path:
                 return {"status": "error", "reason": "zip_path or zip_bytes required"}
-            raw_bytes = open(zip_path, "rb").read()
+            with open(zip_path, "rb") as fh:
+                raw_bytes = fh.read()
 
         cfg = import_config()
         import_id = (import_id or uuid.uuid4().hex[:12]).strip()
@@ -192,8 +194,6 @@ def _safe_rel_path(name: str) -> str:
 
 
 def _scan_json(scan) -> str:
-    import json
-
     return json.dumps(
         {"ok": scan.ok, "findings": [f.__dict__ for f in scan.findings]},
         indent=2,

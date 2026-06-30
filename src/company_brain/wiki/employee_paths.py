@@ -32,10 +32,6 @@ def member_project_path(member_key: str, project_slug: str) -> str:
     return f"{member_prefix(member_key)}projects/{slug}.md"
 
 
-def member_quarantine_path(member_key: str, import_id: str) -> str:
-    return f"{member_prefix(member_key)}imports/_quarantine/{import_id}/"
-
-
 def people_page_path(member_key: str) -> str:
     """Company wiki people directory entry (not under employee wiki root)."""
     return f"people/{_slug(member_key)}.md"

@@ -218,12 +218,21 @@ Run the one-time onboarding agents to backfill history for platforms the user
 connected (these seed the wiki + Notion):
 - GitHub: the `github_onboarding` agent.
 - Finance: the `finance_onboarding` agent (backfills monthly + quarterly reports).
+- Employee wiki (optional): for each person in `config/members.yaml`, run the
+  `employee_wiki_onboarding` agent — it creates the company `people/` stub and the
+  member's `employee_wiki/{member}/_index.md`, then discovers/creates their Notion
+  personal teamspace and syncs the index. Start `employee_wiki_manager` to
+  materialize work events (Linear/Granola/Gmail/Slack) into per-member work logs.
+  Members import existing notes as a zip of `.md` files via `employee_wiki_import`
+  (quarantined, scanned, and admin-reviewed before promotion).
 
 ## Step 4 — Operate and verify
 
 - Run or schedule the managers (e.g. `github_manager`, `monthly_expense`,
-  `quarterly_calculation`). Locally they run in-process; in cloud they target VMs.
-- Confirm the wiki Markdown appears under the wiki dir and mirrors to Notion.
+  `quarterly_calculation`, `employee_wiki_manager`). Locally they run in-process;
+  in cloud they target VMs.
+- Confirm the wiki Markdown appears under the wiki dir and mirrors to Notion;
+  per-member pages appear under the employee wiki dir.
 - `company-brain status` shows article counts and sync state.
 
 ## Adding a new platform later

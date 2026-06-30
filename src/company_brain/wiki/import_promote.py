@@ -11,7 +11,8 @@ from typing import Any
 from company_brain.wiki.duplicate_detect import FileDuplicateVerdict, parse_duplicate_report
 from company_brain.wiki.employee_paths import _slug, member_prefix
 from company_brain.wiki.employee_publish import write_employee_wiki_page
-from company_brain.wiki.employee_store import LocalEmployeeWikiStore, WikiStore
+from company_brain.wiki.employee_store import LocalEmployeeWikiStore
+from company_brain.wiki.store import WikiStore
 
 WIKILINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
 

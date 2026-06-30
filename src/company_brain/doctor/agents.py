@@ -38,16 +38,30 @@ def _iter_agent_py_files() -> list[Path]:
     return out
 
 
-def _iter_handbook_agent_files() -> list[Path]:
-    """Agent files expected in docs/agents/ (exclude REST/client helpers)."""
-    skip_names = {"gh.py"}
-    skip_suffixes = ("_rest.py", "_client.py")
-    out: list[Path] = []
-    for path in _iter_agent_py_files():
-        if path.name in skip_names or path.name.endswith(skip_suffixes):
+def _defines_agent_class(path: Path) -> bool:
+    """True when the module defines a ``BaseAgent`` subclass (i.e. a real agent)."""
+    try:
+        tree = ast.parse(path.read_text())
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ClassDef):
             continue
-        out.append(path)
-    return out
+        for base in node.bases:
+            name = base.id if isinstance(base, ast.Name) else getattr(base, "attr", None)
+            if name == "BaseAgent":
+                return True
+    return False
+
+
+def _iter_handbook_agent_files() -> list[Path]:
+    """Files expected in docs/agents/ — modules that define an agent (BaseAgent subclass).
+
+    Config/standards/propagation helpers and REST/client wrappers are not agents and
+    are not required in the handbook (platform helpers live under the platform folder
+    per agent-organization.mdc).
+    """
+    return [p for p in _iter_agent_py_files() if _defines_agent_class(p)]
 
 
 def _load_smolfile_hosts() -> set[str]:

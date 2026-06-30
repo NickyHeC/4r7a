@@ -113,22 +113,26 @@ class MonthlyExpenseManager(BaseAgent):
         }
 
     def _gather_outflows(self, start: str, end: str) -> list[dict]:
+        from company_brain.runtime import get_runtime
+
         from .mercury.bank_transaction import BankTransactionAgent
         from .mercury.mercury_card_spend import MercuryCardSpendAgent
         from .ramp.ramp_card_spend import RampCardSpendAgent
 
+        runtime = get_runtime()
         txns: list[dict] = []
 
-        bank = BankTransactionAgent(self.config).execute(
-            start=start, end=end, include_inbound=False, include_outbound=True
+        bank = runtime.run(
+            BankTransactionAgent, self.config,
+            start=start, end=end, include_inbound=False, include_outbound=True,
         )
         txns.extend(bank.get("transactions", []))
 
-        card = MercuryCardSpendAgent(self.config).execute(start=start, end=end)
+        card = runtime.run(MercuryCardSpendAgent, self.config, start=start, end=end)
         txns.extend(card.get("transactions", []))
 
         try:
-            ramp = RampCardSpendAgent(self.config).execute(start=start, end=end)
+            ramp = runtime.run(RampCardSpendAgent, self.config, start=start, end=end)
             txns.extend(ramp.get("transactions", []))
         except Exception:
             self.logger.exception("Ramp card spend unavailable; continuing with Mercury only")

@@ -122,7 +122,7 @@ class WorkEventStore:
             mat = event.materialized or {}
             if target == "employee":
                 pending = [
-                    m for m in _event_target_members(event)
+                    m for m in event_target_members(event)
                     if m not in (mat.get("employee") or [])
                 ]
                 if pending:
@@ -169,7 +169,8 @@ class WorkEventStore:
         tmp.replace(self._path)
 
 
-def _event_target_members(event: WorkEvent) -> list[str]:
+def event_target_members(event: WorkEvent) -> list[str]:
+    """Primary member followed by distinct contributors (skips unassigned)."""
     out: list[str] = []
     if event.primary_member and event.primary_member not in ("", "unassigned"):
         out.append(event.primary_member)

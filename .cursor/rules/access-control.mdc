@@ -39,6 +39,26 @@ teamspace.
 - Typical tiers: company-wide teamspace, per-department teamspaces (engineering,
   finance), and admin-only (MD-only or an admin-private teamspace).
 
+## Employee wikis (per-member buildings)
+
+Each member has an `employee_wiki/{member}/` building alongside the company wiki.
+The same MD-first / Notion-mirror posture applies, with a per-page label instead
+of section routing:
+
+- **Page-level `sync:` frontmatter** (resolved by `notion/sync_routing.py`):
+  `private` (member's personal teamspace `member_{key}`), `company` (company
+  teamspace), `admin_only` (admin teamspace), `location:{key}` (named teamspace),
+  or `not_synced` (MD-only, never mirrored). Sharing is done via Notion page
+  permissions on `private` pages — never an MD-side ACL.
+- **`config/members.yaml`** is the member index (pointers only; secrets in `.env`):
+  per-member `ingest` scope (which platforms feed the member's wiki) and
+  `query_grants` (which other members may query the member's `not_synced` paths).
+  These two scopes are independent and admin-controlled, mirroring the ingest vs
+  read split above.
+- **Imports** (zip of `.md`) are always quarantined, security-scanned, and
+  duplicate-checked; the first import per member requires admin approval before
+  promotion (`agents/employee_wiki/`).
+
 ## Read vs write asymmetry (the default posture)
 
 - **Reading is least-privilege**, enforced by Notion teamspace permissions; the

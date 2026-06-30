@@ -19,6 +19,7 @@ flowchart LR
 | **Engineering** | GitHub — PRs, branches, feature updates | [engineering.md](engineering.md) |
 | **Finance** | Mercury + Ramp — expenses, quarterly metrics, subscriptions | [finance.md](finance.md) |
 | **Operations** | Gmail executive assistant, Linear task workflows | [operations.md](operations.md) |
+| **Employee Wiki** | Per-member work buildings — ledger materializers, zip import | [employee_wiki.md](employee_wiki.md) |
 
 ## Conventions (all departments)
 

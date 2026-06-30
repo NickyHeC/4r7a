@@ -11,6 +11,30 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-06-29 — Employee wiki cleanliness audit (working tree)
+
+- Removed dead duplicate `member_quarantine_path` (employee_paths) — `member_quarantine_rel`
+  in import_promote is the single home. Consolidated `_target_members` → public
+  `event_target_members` in `work_events.py` (shared by store + materializer).
+- Fixed resource leak (`with open(...)`), inline `import json`, and indirect `WikiStore`
+  import in the import pipeline.
+- Added `docs/agents/employee_wiki.md` handbook + index rows (docs/agents/README, agent_list);
+  agents doctor now covers all employee_wiki files. Remaining handbook/dispatch warnings are
+  pre-existing (Linear config helpers + finance managers). 110 tests pass.
+- **Full-project coherence sweep:** README (architecture diagram + Employee Wiki section +
+  project-structure tree + config list), `project_install.md` (member onboarding/import step),
+  `.env.example` (`COMPANY_BRAIN_EMPLOYEE_WIKI_DIR`), and `.cursor/rules/access-control.mdc`
+  (employee wiki `sync:` labels + `members.yaml` scopes) now all reference the employee wiki.
+- **Pre-existing doctor warnings cleared (out-of-scope cleanup):**
+  - `agent_handbook_coverage` — refined `doctor/agents.py` so handbook coverage targets only
+    files defining a `BaseAgent` subclass (config/standards/propagation helpers like
+    `notion_config`, `slack_config`, `task_propagate`, `task_standards` are not agents, matching
+    the existing `_client`/`_rest` exclusions and the platform-helper placement rule).
+  - `manager_runtime_dispatch` — finance managers (`monthly_expense`, `quarterly_calculation`,
+    `subscription_audit`) now dispatch transaction specialists via `get_runtime().run()` instead
+    of inline `.execute()`, per agent-runtime.mdc.
+  - Doctors: agents/wiki/ops = 100; connect warnings are local-only missing tokens.
+
 ## 2026-06-29 — Employee wiki Phase E (working tree)
 
 - **Platform materializers:** Granola meeting ingest, Gmail inbox/team-on-it, Slack action items

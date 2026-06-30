@@ -96,28 +96,32 @@ class SubscriptionAuditAgent(BaseAgent):
         return months
 
     def _detect_recurring(self, months: list[str]) -> list[dict]:
+        from company_brain.runtime import get_runtime
+
         from .mercury.bank_transaction import BankTransactionAgent
         from .mercury.mercury_card_spend import MercuryCardSpendAgent
         from .ramp.ramp_card_spend import RampCardSpendAgent
 
+        runtime = get_runtime()
         all_txns: list[dict] = []
         for month in months:
             start, end = transactions.month_range(month)
             all_txns.extend(
-                BankTransactionAgent(self.config)
-                .execute(start=start, end=end, include_inbound=False, include_outbound=True)
-                .get("transactions", [])
+                runtime.run(
+                    BankTransactionAgent, self.config,
+                    start=start, end=end, include_inbound=False, include_outbound=True,
+                ).get("transactions", [])
             )
             all_txns.extend(
-                MercuryCardSpendAgent(self.config)
-                .execute(start=start, end=end)
-                .get("transactions", [])
+                runtime.run(
+                    MercuryCardSpendAgent, self.config, start=start, end=end,
+                ).get("transactions", [])
             )
             try:
                 all_txns.extend(
-                    RampCardSpendAgent(self.config)
-                    .execute(start=start, end=end)
-                    .get("transactions", [])
+                    runtime.run(
+                        RampCardSpendAgent, self.config, start=start, end=end,
+                    ).get("transactions", [])
                 )
             except Exception:
                 self.logger.exception("Ramp unavailable for %s during subscription audit", month)

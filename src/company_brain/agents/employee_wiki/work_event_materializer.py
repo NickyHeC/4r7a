@@ -16,7 +16,7 @@ from company_brain.config import AppConfig
 from company_brain.members_config import MembersConfig, load_members_config
 from company_brain.wiki.employee_paths import member_index_path, member_work_log_path
 from company_brain.wiki.employee_publish import APPEND, UPDATE, write_employee_wiki_page
-from company_brain.wiki.work_events import WorkEvent, WorkEventStore
+from company_brain.wiki.work_events import WorkEvent, WorkEventStore, event_target_members
 
 _BULLET_RE = re.compile(r"^-\s+(.+)$", re.M)
 
@@ -37,7 +37,7 @@ class WorkEventMaterializerAgent(BaseAgent):
         if event is None:
             return {"status": "skipped", "reason": "no_event"}
 
-        targets = _target_members(event)
+        targets = event_target_members(event)
         if not targets:
             return {"status": "skipped", "reason": "unassigned"}
 
@@ -178,16 +178,6 @@ class WorkEventMaterializerAgent(BaseAgent):
             line=line,
             artifact_refs=[event.artifact_ref],
         )
-
-
-def _target_members(event: WorkEvent) -> list[str]:
-    out: list[str] = []
-    if event.primary_member and event.primary_member not in ("", "unassigned"):
-        out.append(event.primary_member)
-    for c in event.contributors or []:
-        if c and c not in out and c != "unassigned":
-            out.append(c)
-    return out
 
 
 def _member_active(cfg: MembersConfig, member: str) -> bool:

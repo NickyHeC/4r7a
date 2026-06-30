@@ -123,21 +123,24 @@ class QuarterlyCalculationManager(BaseAgent):
 
     def _gather_all(self, month: str) -> list[dict]:
         """All inflow + outflow transactions for a month across platforms."""
+        from company_brain.runtime import get_runtime
+
         from .mercury.bank_transaction import BankTransactionAgent
         from .mercury.mercury_card_spend import MercuryCardSpendAgent
         from .ramp.ramp_card_spend import RampCardSpendAgent
 
         start, end = transactions.month_range(month)
+        runtime = get_runtime()
         txns: list[dict] = []
 
-        bank = BankTransactionAgent(self.config).execute(start=start, end=end)
+        bank = runtime.run(BankTransactionAgent, self.config, start=start, end=end)
         txns.extend(bank.get("transactions", []))
 
-        card = MercuryCardSpendAgent(self.config).execute(start=start, end=end)
+        card = runtime.run(MercuryCardSpendAgent, self.config, start=start, end=end)
         txns.extend(card.get("transactions", []))
 
         try:
-            ramp = RampCardSpendAgent(self.config).execute(start=start, end=end)
+            ramp = runtime.run(RampCardSpendAgent, self.config, start=start, end=end)
             txns.extend(ramp.get("transactions", []))
         except Exception:
             self.logger.exception("Ramp unavailable for %s; continuing with Mercury only", month)
