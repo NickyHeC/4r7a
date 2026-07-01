@@ -8,7 +8,6 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import is_handled
 from company_brain.agents.operations.shared import granola_config as cfg
-from company_brain.config import AppConfig
 from company_brain.wiki.publish import write_wiki_page
 
 REPORT_PATH = "operations/granola/missed-note.md"

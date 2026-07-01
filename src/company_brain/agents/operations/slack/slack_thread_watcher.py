@@ -60,7 +60,11 @@ class SlackThreadWatcherAgent(BaseAgent):
             count, hits = self._scan_channel(channel)
             scanned += count
             dispatched += hits
-        return {"channels": len(cfg.watched_channels()), "messages": scanned, "dispatched": dispatched}
+        return {
+            "channels": len(cfg.watched_channels()),
+            "messages": scanned,
+            "dispatched": dispatched,
+        }
 
     def _scan_channel(self, channel: str) -> tuple[int, int]:
         since = self._since_timestamp(channel)

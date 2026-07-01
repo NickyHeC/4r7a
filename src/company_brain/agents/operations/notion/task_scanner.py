@@ -17,8 +17,8 @@ from company_brain.agents.engineering.linear.task_bindings import (
     TaskBindingStore,
     attach_notion_platform,
 )
-from company_brain.agents.operations.notion import db, platform_config, task_config
 from company_brain.agents.gates import StateStore
+from company_brain.agents.operations.notion import db, platform_config, task_config
 from company_brain.config import AppConfig
 from company_brain.notion.client import NotionClient
 

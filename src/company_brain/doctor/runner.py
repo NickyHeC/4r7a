@@ -16,10 +16,10 @@ from company_brain.config import (
 )
 from company_brain.doctor.agents import run_agents_doctor
 from company_brain.doctor.connect import run_connect_doctor
+from company_brain.doctor.naming import run_naming_doctor
 from company_brain.doctor.ops import run_ops_doctor
 from company_brain.doctor.scoring import append_history, history_entry, new_fail_regressions
 from company_brain.doctor.types import DoctorReport
-from company_brain.doctor.naming import run_naming_doctor
 from company_brain.doctor.wiki import run_wiki_doctor
 
 DoctorFn = Callable[[], DoctorReport]

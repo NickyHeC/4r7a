@@ -32,7 +32,7 @@ def ensure_people_stub(
         "",
         "## Employee wiki",
         "",
-        f"Work record and knowledge live in the employee wiki building:",
+        "Work record and knowledge live in the employee wiki building:",
         f"`employee_wiki/{employee_root}/` (see `_index.md` for current work).",
         "",
         "_This page is the company directory entry; the employee wiki holds the work record._",

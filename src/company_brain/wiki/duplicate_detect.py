@@ -231,7 +231,9 @@ class _PageIndexEntry:
     artifact_refs: set[str]
 
 
-def _build_index(paths: Iterable[str], store: WikiStore, *, scope: str) -> dict[str, _PageIndexEntry]:
+def _build_index(
+    paths: Iterable[str], store: WikiStore, *, scope: str,
+) -> dict[str, _PageIndexEntry]:
     del scope  # reserved for future scope-specific rules
     index: dict[str, _PageIndexEntry] = {}
     for rel in paths:

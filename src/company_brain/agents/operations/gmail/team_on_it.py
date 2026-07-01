@@ -108,7 +108,9 @@ class TeamOnItAgent(BaseAgent):
         return {"handled": handled, "slack_channel": channel}
 
     def _record_employee_work_event(self, binding, issue: dict[str, Any], subject: str) -> None:
-        from company_brain.agents.employee_wiki.work_event_materializer import record_gmail_work_event
+        from company_brain.agents.employee_wiki.work_event_materializer import (
+            record_gmail_work_event,
+        )
         from company_brain.members_config import load_members_config
 
         member = load_members_config().find_by_gmail_mailbox(self.mailbox)

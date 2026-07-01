@@ -9,7 +9,6 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.external_wiki.external_wiki_config import catalog_config
-from company_brain.config import AppConfig
 from company_brain.wiki.content_catalog import (
     build_content_catalog,
     catalog_wiki_path,

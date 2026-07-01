@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from company_brain.config import AppConfig, NotionConfig, load_config
-from company_brain.notion.sync import NotionSync
 from company_brain.notion.sync_routing import (
     resolve_sync_parent,
     should_skip_notion_mirror,
 )
-from company_brain.wiki.employee_notion_sync import EmployeeNotionSync, sync_employee_doc
+from company_brain.wiki.employee_notion_sync import EmployeeNotionSync
 from company_brain.wiki.employee_publish import write_employee_wiki_page
 from company_brain.wiki.employee_store import LocalEmployeeWikiStore
 from company_brain.wiki.store import MarkdownDoc
@@ -85,7 +83,9 @@ def test_employee_notion_sync_skips_not_synced(notion_config, tmp_path):
 def test_employee_notion_sync_creates_under_private_parent(notion_config, tmp_path, monkeypatch):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
-    (config_dir / "members.yaml").write_text("members:\n  alice:\n    notion_teamspace: member_alice\n")
+    (config_dir / "members.yaml").write_text(
+        "members:\n  alice:\n    notion_teamspace: member_alice\n",
+    )
     monkeypatch.setattr("company_brain.members_config.CONFIG_DIR", config_dir)
 
     store = LocalEmployeeWikiStore(root=tmp_path / "ew")
@@ -128,9 +128,10 @@ def test_write_employee_wiki_page_mirrors_when_enabled(notion_config, tmp_path, 
 
 
 def test_onboarding_agent_bootstrap(tmp_path, monkeypatch):
-    from unittest.mock import patch
 
-    from company_brain.agents.employee_wiki.employee_wiki_onboarding import EmployeeWikiOnboardingAgent
+    from company_brain.agents.employee_wiki.employee_wiki_onboarding import (
+        EmployeeWikiOnboardingAgent,
+    )
 
     company = tmp_path / "wiki"
     employee = tmp_path / "employee_wiki"

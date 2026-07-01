@@ -11,10 +11,12 @@ from __future__ import annotations
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.config import AppConfig
 from company_brain.members_config import load_members_config
 from company_brain.notion.client import NotionClient
-from company_brain.notion.member_teamspace import ensure_member_teamspace_parent, member_teamspace_key
+from company_brain.notion.member_teamspace import (
+    ensure_member_teamspace_parent,
+    member_teamspace_key,
+)
 from company_brain.wiki.employee_notion_sync import sync_employee_doc
 from company_brain.wiki.member_bootstrap import ensure_member_wiki
 

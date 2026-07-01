@@ -102,7 +102,9 @@ class SlackActionItemsAgent(BaseAgent):
         title: str,
         slack_user_id: str | None,
     ) -> None:
-        from company_brain.agents.employee_wiki.work_event_materializer import record_slack_work_event
+        from company_brain.agents.employee_wiki.work_event_materializer import (
+            record_slack_work_event,
+        )
         from company_brain.members_config import load_members_config
 
         member = load_members_config().find_by_slack_user_id(slack_user_id or "")
@@ -116,7 +118,11 @@ class SlackActionItemsAgent(BaseAgent):
                 title=title,
             )
         except Exception:
-            self.logger.exception("Employee wiki Slack work event failed for %s:%s", channel, thread_ts)
+            self.logger.exception(
+                "Employee wiki Slack work event failed for %s:%s",
+                channel,
+                thread_ts,
+            )
 
     @staticmethod
     def _message_text(channel: str, thread_ts: str, message_ts: str | None) -> str:

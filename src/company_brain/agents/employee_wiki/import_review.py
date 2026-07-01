@@ -11,11 +11,10 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.employee_wiki.employee_wiki_slack import employee_wiki_admin_notifier
-from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.duplicate_detect import parse_duplicate_report
-from company_brain.wiki.external_paths import import_review_wiki_path
 from company_brain.wiki.employee_store import LocalEmployeeWikiStore
+from company_brain.wiki.external_paths import import_review_wiki_path
 from company_brain.wiki.import_promote import member_quarantine_rel
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 
@@ -43,7 +42,10 @@ class ImportReviewAgent(BaseAgent):
         store = LocalEmployeeWikiStore()
         quarantine = member_quarantine_rel(key, iid)
         report_path = f"{quarantine}duplicate_report.json"
-        dup = parse_duplicate_report(store.read_text(report_path)) if store.exists(report_path) else None
+        if store.exists(report_path):
+            dup = parse_duplicate_report(store.read_text(report_path))
+        else:
+            dup = None
 
         scan_summary = ""
         scan_path = f"{quarantine}scan_report.json"
@@ -53,6 +55,9 @@ class ImportReviewAgent(BaseAgent):
             scan_summary = f"{len(blocked)} blocking finding(s)" if blocked else "warnings only"
 
         when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        scan_status = "BLOCKED" if scan_blocked else "passed"
+        if scan_summary:
+            scan_status = f"{scan_status} — {scan_summary}"
         lines = [
             f"# Import review — {key} / {iid}",
             "",
@@ -60,7 +65,7 @@ class ImportReviewAgent(BaseAgent):
             f"- **Import id:** `{iid}`",
             f"- **Quarantine:** `{quarantine}`",
             f"- **Submitted:** {when}",
-            f"- **Scan:** {'BLOCKED' if scan_blocked else 'passed'}{(' — ' + scan_summary) if scan_summary else ''}",
+            f"- **Scan:** {scan_status}",
             "",
             "## Duplicate report",
             "",

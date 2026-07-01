@@ -54,9 +54,7 @@ class LinearCompletedAgent(BaseAgent):
             )
 
         if "slack" in fan_out and binding.platforms.get("slack"):
-            from company_brain.agents.engineering.linear.linear_completed.slack_thread_respond import (
-                SlackThreadRespondAgent,
-            )
+            from .slack_thread_respond import SlackThreadRespondAgent
 
             results["platforms"]["slack"] = SlackThreadRespondAgent(self.config).run(
                 binding=binding,

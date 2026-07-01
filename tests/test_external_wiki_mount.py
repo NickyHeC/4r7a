@@ -57,7 +57,10 @@ def _make_zip(files: dict[str, str]) -> bytes:
 def test_external_duplicate_links_company_page(wiki_env):
     store = LocalWikiStore(root=wiki_env["company"])
     body = "# Ops runbook\n\nFollow these steps.\n"
-    store.write("operations/runbook.md", MarkdownDoc(frontmatter={"title": "Ops runbook"}, body=body))
+    store.write(
+        "operations/runbook.md",
+        MarkdownDoc(frontmatter={"title": "Ops runbook"}, body=body),
+    )
 
     import_body = "# Ops runbook\n\nFollow these steps.\n"
     report = detect_external_duplicates(

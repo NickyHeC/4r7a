@@ -13,7 +13,7 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import timeline_path, mailbox_id
+from company_brain.agents.operations.shared.gmail_config import mailbox_id, timeline_path
 from company_brain.agents.operations.shared.mail_body import plain_text
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig

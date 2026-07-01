@@ -48,7 +48,11 @@ class InboxTaskAgent(BaseAgent):
         for record in self._pending():
             try:
                 issue = self._create_for_record(record)
-                subject = record.extracted.get("subject") or issue.get("title") or "Gmail action item"
+                subject = (
+                    record.extracted.get("subject")
+                    or issue.get("title")
+                    or "Gmail action item"
+                )
                 binding = self._bindings.create_gmail_binding(
                     message_id=record.message_id,
                     thread_id=record.thread_id,
@@ -109,7 +113,9 @@ class InboxTaskAgent(BaseAgent):
         )
 
     def _record_employee_work_event(self, binding, issue: dict[str, Any], subject: str) -> None:
-        from company_brain.agents.employee_wiki.work_event_materializer import record_gmail_work_event
+        from company_brain.agents.employee_wiki.work_event_materializer import (
+            record_gmail_work_event,
+        )
         from company_brain.members_config import load_members_config
 
         member = load_members_config().find_by_gmail_mailbox(self.mailbox)

@@ -31,7 +31,13 @@ class WorkEventMaterializerAgent(BaseAgent):
         self._events = WorkEventStore()
         self._members = load_members_config()
 
-    def run(self, *, event: WorkEvent | None = None, event_id: str | None = None, **kwargs: Any) -> dict[str, Any]:
+    def run(
+        self,
+        *,
+        event: WorkEvent | None = None,
+        event_id: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         if event is None and event_id:
             event = self._events.get(event_id)
         if event is None:

@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from company_brain.wiki.name_migrate import (
     apply_migration,
     migrate_rel_path,
@@ -19,7 +17,9 @@ from company_brain.wiki.store import LocalWikiStore, MarkdownDoc
 
 def test_migrate_rel_path_exact_and_prefix():
     assert migrate_rel_path("engineering/github/open-prs.md") == "engineering/github/open-pr.md"
-    assert migrate_rel_path("finance/expense-reports/2026-01.md") == "finance/expense-report/2026-01.md"
+    assert migrate_rel_path("finance/expense-reports/2026-01.md") == (
+        "finance/expense-report/2026-01.md"
+    )
     assert migrate_rel_path("operations/granola/daily/2026-06-30.md") == (
         "operations/granola/meeting/2026-06-30.md"
     )

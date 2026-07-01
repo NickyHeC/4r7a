@@ -153,7 +153,9 @@ class IngestAgent(BaseAgent):
         member_label: str | None,
         wiki_path: str,
     ) -> None:
-        from company_brain.agents.employee_wiki.work_event_materializer import record_granola_work_event
+        from company_brain.agents.employee_wiki.work_event_materializer import (
+            record_granola_work_event,
+        )
         from company_brain.agents.operations.granola.task import extract_action_items
 
         title = str(detail.get("title") or f"Meeting {note_id}")

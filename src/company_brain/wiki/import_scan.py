@@ -67,7 +67,9 @@ def scan_import_files(
     if zip_bytes and zip_bytes > limits.max_zip_bytes:
         findings.append(ScanFinding("", "block", f"zip exceeds {limits.max_zip_bytes} bytes"))
     if len(files) > limits.max_files:
-        findings.append(ScanFinding("", "block", f"too many files ({len(files)} > {limits.max_files})"))
+        findings.append(
+            ScanFinding("", "block", f"too many files ({len(files)} > {limits.max_files})"),
+        )
 
     for path, content in files.items():
         if not path.lower().endswith(".md"):
@@ -75,7 +77,9 @@ def scan_import_files(
             continue
         encoded = content.encode("utf-8")
         if len(encoded) > limits.max_file_bytes:
-            findings.append(ScanFinding(path, "block", f"file exceeds {limits.max_file_bytes} bytes"))
+            findings.append(
+                ScanFinding(path, "block", f"file exceeds {limits.max_file_bytes} bytes"),
+            )
         findings.extend(_scan_content(path, content))
 
     blocked = any(f.severity == "block" for f in findings)

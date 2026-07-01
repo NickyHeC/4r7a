@@ -1,6 +1,5 @@
 """Tests for Notion task platform (Phase 5)."""
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from company_brain.agents.engineering.linear.linear_completed.dispatcher import (
@@ -13,7 +12,12 @@ from company_brain.agents.operations.notion.task_sync import (
     TaskSyncAgent,
     linear_status_to_notion,
 )
-from company_brain.config import NotionConfig, TaskDatabaseColumns, TaskDatabaseSpec, TaskRoutingRule
+from company_brain.config import (
+    NotionConfig,
+    TaskDatabaseColumns,
+    TaskDatabaseSpec,
+    TaskRoutingRule,
+)
 
 
 def _notion_config_with_db(db_id: str = "db-eng") -> NotionConfig:

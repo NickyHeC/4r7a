@@ -13,9 +13,12 @@ from company_brain.agents.employee_wiki.work_event_materializer import (
     record_linear_work_event,
 )
 from company_brain.config import resolve_employee_wiki_dir
-from company_brain.members_config import MemberSpec, MembersConfig, load_members_config
+from company_brain.members_config import load_members_config
 from company_brain.wiki.employee_paths import member_work_log_path, quarter_slug
-from company_brain.wiki.employee_publish import APPEND, read_employee_wiki_page, write_employee_wiki_page
+from company_brain.wiki.employee_publish import (
+    read_employee_wiki_page,
+    write_employee_wiki_page,
+)
 from company_brain.wiki.employee_store import LocalEmployeeWikiStore
 from company_brain.wiki.member_bootstrap import ensure_member_wiki
 from company_brain.wiki.people import ensure_people_stub
@@ -77,7 +80,9 @@ def test_ensure_people_stub(wiki_roots):
 
 def test_ensure_member_wiki(wiki_roots):
     company = LocalWikiStore(root=wiki_roots["company"])
-    paths = ensure_member_wiki("alice", email="alice@company.com", company_store=company, sync_notion=False)
+    paths = ensure_member_wiki(
+        "alice", email="alice@company.com", company_store=company, sync_notion=False,
+    )
     assert company.exists(paths["people"])
     emp = LocalEmployeeWikiStore()
     assert emp.exists(paths["index"])

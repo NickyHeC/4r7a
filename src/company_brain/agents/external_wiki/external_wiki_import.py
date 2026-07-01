@@ -13,7 +13,6 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.external_wiki.external_mount_review import ExternalMountReviewAgent
 from company_brain.agents.external_wiki.external_wiki_config import import_config
-from company_brain.config import AppConfig
 from company_brain.external_sources_config import load_external_sources, save_external_sources
 from company_brain.runtime import get_runtime
 from company_brain.wiki.duplicate_detect import detect_external_duplicates

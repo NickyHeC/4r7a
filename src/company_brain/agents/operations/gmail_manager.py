@@ -136,7 +136,11 @@ class GmailManager(BaseAgent):
 
 def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.attachment_router import AttachmentRouterAgent
+    from company_brain.agents.operations.gmail.connection import ConnectionAgent
     from company_brain.agents.operations.gmail.customer_crm import CustomerCRMAgent
+    from company_brain.agents.operations.gmail.customer_support import (
+        CustomerSupportAgent,
+    )
     from company_brain.agents.operations.gmail.draft_reply import DraftReplyAgent
     from company_brain.agents.operations.gmail.duplicate_across_mailboxes import (
         DuplicateAcrossMailboxesAgent,
@@ -144,13 +148,9 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.ext_meeting_scheduler import (
         ExtMeetingSchedulerAgent,
     )
-    from company_brain.agents.operations.gmail.connection import ConnectionAgent
-    from company_brain.agents.operations.gmail.customer_support import (
-        CustomerSupportAgent,
-    )
-    from company_brain.agents.operations.gmail.ingest import IngestAgent
     from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent
     from company_brain.agents.operations.gmail.inbox_task import InboxTaskAgent
+    from company_brain.agents.operations.gmail.ingest import IngestAgent
     from company_brain.agents.operations.gmail.ingest_queue_review import IngestQueueReviewAgent
     from company_brain.agents.operations.gmail.investor_tracker import InvestorTrackerAgent
     from company_brain.agents.operations.gmail.partnership_digest import PartnershipDigestAgent

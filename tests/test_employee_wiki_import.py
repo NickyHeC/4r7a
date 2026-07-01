@@ -125,7 +125,10 @@ def test_promote_links_duplicate(wiki_roots):
     employee = LocalEmployeeWikiStore()
     import_id = "imp99"
     q = f"alice/imports/_quarantine/{import_id}/"
-    employee.write(f"{q}notes/acme-spec.md", MarkdownDoc(body="# Acme spec\n\nBuild the integration.\n"))
+    employee.write(
+        f"{q}notes/acme-spec.md",
+        MarkdownDoc(body="# Acme spec\n\nBuild the integration.\n"),
+    )
     report = detect_duplicates(
         {"notes/acme-spec.md": employee.read(f"{q}notes/acme-spec.md").body},
         member_key="alice",

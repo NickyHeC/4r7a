@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from typing import Any, Sequence
 
-from company_brain.wiki.employee_store import LocalEmployeeWikiStore, employee_wiki_store
+from company_brain.wiki.employee_store import employee_wiki_store
 from company_brain.wiki.store import MarkdownDoc, WikiStore
 
 logger = logging.getLogger(__name__)

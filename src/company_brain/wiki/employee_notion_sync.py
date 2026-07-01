@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from company_brain.notion.sync import NotionSync
-from company_brain.wiki.employee_store import LocalEmployeeWikiStore, employee_wiki_store
+from company_brain.wiki.employee_store import employee_wiki_store
 from company_brain.wiki.store import WikiStore
 
 

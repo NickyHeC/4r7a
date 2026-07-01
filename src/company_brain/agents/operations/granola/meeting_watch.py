@@ -17,7 +17,6 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import is_handled, mark_handled
 from company_brain.agents.operations.shared import granola_config as cfg
-from company_brain.config import AppConfig
 
 MEETING_HANDLED_PREFIX = "granola_meeting:"
 

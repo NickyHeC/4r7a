@@ -51,8 +51,9 @@ def wiki_roots(tmp_path: Path, monkeypatch):
 def test_granola_materializes_primary_and_contributor(wiki_roots, monkeypatch):
     from unittest.mock import MagicMock
 
-    ensure_member_wiki("alice", company_store=LocalWikiStore(root=wiki_roots["company"]), sync_notion=False)
-    ensure_member_wiki("bob", company_store=LocalWikiStore(root=wiki_roots["company"]), sync_notion=False)
+    company = LocalWikiStore(root=wiki_roots["company"])
+    ensure_member_wiki("alice", company_store=company, sync_notion=False)
+    ensure_member_wiki("bob", company_store=company, sync_notion=False)
 
     store = WorkEventStore(config_dir=wiki_roots["config"])
     event = record_granola_work_event(
@@ -84,7 +85,8 @@ def test_granola_materializes_primary_and_contributor(wiki_roots, monkeypatch):
 def test_gmail_materializer(wiki_roots, monkeypatch):
     from unittest.mock import MagicMock
 
-    ensure_member_wiki("alice", company_store=LocalWikiStore(root=wiki_roots["company"]), sync_notion=False)
+    company = LocalWikiStore(root=wiki_roots["company"])
+    ensure_member_wiki("alice", company_store=company, sync_notion=False)
     store = WorkEventStore(config_dir=wiki_roots["config"])
     event = record_gmail_work_event(
         primary_member="alice",
@@ -110,7 +112,8 @@ def test_gmail_materializer(wiki_roots, monkeypatch):
 def test_slack_idempotent_and_materializes(wiki_roots, monkeypatch):
     from unittest.mock import MagicMock
 
-    ensure_member_wiki("alice", company_store=LocalWikiStore(root=wiki_roots["company"]), sync_notion=False)
+    company = LocalWikiStore(root=wiki_roots["company"])
+    ensure_member_wiki("alice", company_store=company, sync_notion=False)
     store = WorkEventStore(config_dir=wiki_roots["config"])
     e1 = record_slack_work_event(
         primary_member="alice",
@@ -141,7 +144,8 @@ def test_slack_idempotent_and_materializes(wiki_roots, monkeypatch):
 def test_index_refreshed_after_materialize(wiki_roots, monkeypatch):
     from unittest.mock import MagicMock
 
-    ensure_member_wiki("alice", company_store=LocalWikiStore(root=wiki_roots["company"]), sync_notion=False)
+    company = LocalWikiStore(root=wiki_roots["company"])
+    ensure_member_wiki("alice", company_store=company, sync_notion=False)
     store = WorkEventStore(config_dir=wiki_roots["config"])
     event = record_gmail_work_event(
         primary_member="alice",
