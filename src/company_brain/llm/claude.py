@@ -21,17 +21,25 @@ from company_brain.llm.provider import LLMProvider, prompt_caching_1h_enabled, r
 
 
 def model_kwargs(
-    explicit: str | None = None, provider: LLMProvider | None = None
+    explicit: str | None = None,
+    provider: LLMProvider | None = None,
+    *,
+    agent_name: str | None = None,
 ) -> dict[str, str]:
     """``{"model": ...}`` to splat into ``ClaudeAgentOptions`` (empty -> SDK default).
 
-    An ``explicit`` model (e.g. a CLI ``--model`` override) wins. Otherwise the
-    active provider's model id is used when that provider is driven by the Claude
-    SDK; for non-Claude providers we return ``{}`` so the agent does not get
-    handed an incompatible (OpenAI-style) model id.
+    An ``explicit`` model (e.g. a CLI ``--model`` override) wins. With
+    ``agent_name``, resolves the per-agent tier from ``config/models.yaml``.
     """
     if explicit:
         return {"model": explicit}
+    if agent_name:
+        from company_brain.llm.budget import check_budget
+        from company_brain.llm.tiers import resolve_agent_model
+
+        check_budget(agent=agent_name)
+        binding = resolve_agent_model(agent_name)
+        return {"model": binding.model_id}
     p = provider or resolve_provider()
     if p.sdk == "claude" and p.model:
         return {"model": p.model}

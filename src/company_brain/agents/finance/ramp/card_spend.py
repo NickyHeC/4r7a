@@ -71,7 +71,7 @@ class RampCardSpendAgent(BaseAgent):
             allowed_tools=ramp_client.ramp_allowed_tools(),
             mcp_servers=ramp_client.ramp_mcp_servers(),
             env=llm_claude.options_env(),
-            **llm_claude.model_kwargs(self.model),
+            **llm_claude.model_kwargs(self.model, agent_name="card_spend"),
         )
 
         collected: list[str] = []

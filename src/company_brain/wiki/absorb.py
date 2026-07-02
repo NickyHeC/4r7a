@@ -47,6 +47,10 @@ must get richer; no 3-sentence stubs when more material exists).
 - Cite sources by raw entry id in frontmatter. Use [[wikilinks]] between articles.
 - Tone: Wikipedia. Flat, factual. No em dashes, no peacock words, no editorial \
 voice. Let direct quotes (max 2 per article) carry any emotional weight.
+- Length: keep articles readable. Respect article-type length targets in \
+config/wiki.yaml (typically 20–150 lines). When a topic grows large, split it \
+into its own page under the same theme (anti-cram) rather than one long dump. \
+Prefer several focused pages over one unread wall of text.
 - Do NOT edit _index.md, _backlinks.json, or _absorb_log.json; those are rebuilt \
 automatically.
 """
@@ -110,7 +114,7 @@ class AbsorbWriter:
             cwd=str(self.wiki_dir),
             system_prompt=SYSTEM_PROMPT,
             env=llm_claude.options_env(),
-            **llm_claude.model_kwargs(self.model),
+            **llm_claude.model_kwargs(self.model, agent_name="absorb"),
         )
         async for _ in query(prompt=prompt, options=options):
             pass

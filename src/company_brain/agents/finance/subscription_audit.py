@@ -188,7 +188,7 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
         options = ClaudeAgentOptions(
             allowed_tools=["WebSearch"],
             env=llm_claude.options_env(),
-            **llm_claude.model_kwargs(self.model),
+            **llm_claude.model_kwargs(self.model, agent_name="subscription_audit"),
         )
         out: list[str] = []
         async for message in query(prompt=prompt, options=options):

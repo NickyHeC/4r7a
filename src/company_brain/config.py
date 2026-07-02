@@ -197,10 +197,27 @@ class ProviderSpec(BaseModel):
     model: str | None = None
 
 
+class TokenBudgetSpec(BaseModel):
+    """Monthly LLM spend cap for wiki operations."""
+
+    enabled: bool = False
+    monthly_usd: float = 200.0
+    alert_threshold_percent: int = 80
+    hard_stop: bool = True
+    admin_channel: str = "#wiki-admin"
+
+
 class ModelsConfig(BaseModel):
     """LLM provider configuration loaded from ``config/models.yaml``."""
 
     default_provider: str = "anthropic"
+    mode: str = "balanced"  # balanced | performance
+    tiers: dict[str, dict[str, str]] = Field(default_factory=dict)
+    agents: dict[str, str] = Field(default_factory=dict)
+    agent_providers: dict[str, str] = Field(default_factory=dict)
+    fallback_chains: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
+    overrides: dict[str, Any] = Field(default_factory=dict)
+    token_budget: TokenBudgetSpec = Field(default_factory=TokenBudgetSpec)
     providers: dict[str, ProviderSpec] = Field(default_factory=dict)
 
 
@@ -256,6 +273,14 @@ def load_models_config(config_dir: Path | None = None) -> ModelsConfig:
     if not data:
         return ModelsConfig()
     return ModelsConfig(**data)
+
+
+def save_models_config(config: ModelsConfig, config_dir: Path | None = None) -> None:
+    """Persist ``config/models.yaml``."""
+    path = (config_dir or CONFIG_DIR) / "models.yaml"
+    data = config.model_dump(mode="json", exclude_none=True)
+    with open(path, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
 
 def load_config(config_dir: Path | None = None) -> AppConfig:

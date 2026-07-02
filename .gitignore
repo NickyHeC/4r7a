@@ -230,6 +230,8 @@ notepad.md
 /registry.json
 # Agent gate/runtime state (local markers)
 /config/state.json
+# Doctor run history (local-only rolling log; baseline stays trackable)
+/config/doctor-history.json
 # Task binding registry (local runtime state; may contain company task data)
 /config/task_bindings.json
 # Employee work event ledger (local runtime state)

@@ -25,16 +25,19 @@ from typing import Any
 from company_brain.llm.provider import LLMProvider, resolve_provider
 
 
-def make_model(provider: LLMProvider | None = None) -> Any:
+def make_model(provider: LLMProvider | None = None, *, agent_name: str | None = None) -> Any:
     """Return an OpenAI Agents SDK ``Model`` bound to the active provider.
 
-    * ``anthropic`` -> ``LitellmModel("anthropic/<model>")`` (provider-agnostic
-      access to Claude through the SDK's LiteLLM extension).
-    * ``openai`` / ``glm`` (and any OpenAI-compatible endpoint) ->
-      ``OpenAIChatCompletionsModel`` over an ``AsyncOpenAI`` client pointed at the
-      provider's ``base_url``.
+    With ``agent_name``, uses per-agent tier + provider from ``config/models.yaml``.
     """
-    p = provider or resolve_provider()
+    if agent_name:
+        from company_brain.llm.budget import check_budget
+        from company_brain.llm.tiers import resolve_agent_provider
+
+        check_budget(agent=agent_name)
+        p = resolve_agent_provider(agent_name)
+    else:
+        p = provider or resolve_provider()
 
     if p.key == "anthropic" or p.sdk == "claude":
         from agents.extensions.models.litellm_model import LitellmModel
@@ -51,15 +54,20 @@ def make_model(provider: LLMProvider | None = None) -> Any:
     return OpenAIChatCompletionsModel(model=p.model or "gpt-5.5", openai_client=client)
 
 
-def make_run_config(provider: LLMProvider | None = None) -> Any:
-    """Return a ``RunConfig`` bound to the active provider's model.
+def make_run_config(
+    provider: LLMProvider | None = None,
+    *,
+    agent_name: str | None = None,
+) -> Any:
+    """Return a ``RunConfig`` bound to the active provider's model."""
+    if agent_name:
+        from company_brain.llm.tiers import resolve_agent_provider
 
-    Disables OpenAI platform tracing when running against a non-OpenAI endpoint
-    (so an OpenAI key is not required just to export traces).
-    """
-    p = provider or resolve_provider()
+        p = resolve_agent_provider(agent_name)
+    else:
+        p = provider or resolve_provider()
     from agents import RunConfig, set_tracing_disabled
 
     if p.key != "openai":
         set_tracing_disabled(True)
-    return RunConfig(model=make_model(p))
+    return RunConfig(model=make_model(p, agent_name=agent_name))

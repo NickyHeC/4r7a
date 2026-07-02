@@ -84,15 +84,24 @@ class LinearManagerAgent(BaseAgent):
         return {"polled": len(issues), "dispatched": dispatched, "stale_audit": stale}
 
     def _maybe_run_stale_audit(self, now: datetime) -> dict[str, Any] | None:
+        from company_brain.agents.scheduling.work_ahead import should_run_work_ahead
+
         cfg = stale_audit_cfg()
-        day_name = str(cfg.get("day") or "monday").lower()
-        if now.strftime("%A").lower() != day_name:
+        ready = cfg.get("ready_for") or {}
+        ready_day = str(ready.get("day") or cfg.get("day") or "monday")
+        ready_time = str(ready.get("time") or cfg.get("time") or "09:00")
+        estimated = int(cfg.get("estimated_minutes") or 15)
+        buffer = int(cfg.get("buffer_minutes") or 45)
+
+        if not should_run_work_ahead(
+            ready_day=ready_day,
+            ready_time=ready_time,
+            estimated_minutes=estimated,
+            buffer_minutes=buffer,
+            now=now,
+        ):
             return None
-        time_raw = str(cfg.get("time") or "09:00")
-        hour, minute = time_raw.split(":")
-        scheduled = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
-        if now < scheduled:
-            return None
+
         week_key = f"{STALE_HANDLED_PREFIX}{now.strftime('%G-W%V')}"
         if is_handled("linear_stale_audit", week_key, store=self._state):
             return None

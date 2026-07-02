@@ -394,6 +394,43 @@ def doctor_naming(as_json: bool, min_score: int | None, no_history: bool) -> Non
     )
 
 
+@doctor.command("llm")
+@_doctor_options
+def doctor_llm(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """LLM doctor — tier bindings, budget, model health + auto-fallback."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["llm"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
+    )
+
+
+@main.group()
+def models() -> None:
+    """Configure LLM tiers and onboarding mode."""
+
+
+@models.command("configure")
+@click.option(
+    "--mode",
+    type=click.Choice(["performance", "balanced"]),
+    default=None,
+    help="performance = reasoning tier everywhere; balanced = per-agent tiers",
+)
+def models_configure(mode: str | None) -> None:
+    """Write config/models.yaml from onboarding mode choice."""
+    from company_brain.llm.setup import apply_mode, prompt_configure
+
+    if mode:
+        apply_mode(mode)
+        click.secho(f"Wrote config/models.yaml (mode={mode})", fg="green")
+    else:
+        prompt_configure()
+
+
 @doctor.command("code")
 @_doctor_options
 def doctor_code(as_json: bool, min_score: int | None, no_history: bool) -> None:

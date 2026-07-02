@@ -11,6 +11,46 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-02 — Post-feature hygiene checklist (working tree)
+
+- **`docs/development.md`:** added "Post-feature hygiene checklist" — four passes
+  (cleanliness / coherence / dead code / safety+deps) with concrete commands, plus an
+  optional table (mypy, coverage, codespell, extended ruff). Run after big builds.
+- **`.pre-commit-config.yaml`:** added standard `pre-commit-hooks` (trailing-whitespace,
+  end-of-file-fixer, check-merge-conflict, check-added-large-files, check-yaml,
+  detect-private-key). `ruff-format` deliberately **omitted** — adopting it is a one-time
+  ~105-file reformat, a separate decision.
+- **`solo-maintainer.mdc` §7:** points at the checklist and enumerates the passes.
+- **Ran the plan project-wide:** ruff/tests/doctor-code green (naming 99 = tabled Slack
+  rename only); secret scan clean (2 test-fixture false positives); `pip-audit` → bumped
+  direct-dep floors `requests>=2.33.0`, `python-dotenv>=1.2.2` (CVE patches). Flagged (not
+  fixed, pre-existing): `mercury_client.py` uses `print()` for CLI-fallback diagnostics →
+  should move to `self.logger` in a future finance pass.
+- Session dead-code trim: removed `llm/eval.py` (zero-logic), unused
+  `operations_slack.wiki_admin_notifier` + `operations.yaml` key, `budget.record_usage`
+  / `maybe_alert_budget` (unwired), `ModelHealthReport.all_ok`; gitignored
+  `config/doctor-history.json`; added `llm` doctor row to development.md.
+
+## 2026-07-02 — LLM tiers tabled follow-ups (working tree)
+
+- **Tabled:** overall agent scheduling revisit → Slack platform build (`docs/tabled.md`).
+- **Tabled:** batch absorb by urgency, token budget usage tracking (API tokens primary;
+  card_spend vendor bills fallback), LLM eval harness (concept in `docs/tabled.md` only).
+- Restored `config/models.yaml` `providers` after test artifact drift.
+
+## 2026-07-02 — LLM model tiers + health doctor (working tree)
+
+- **`config/models.yaml`:** `mode` (performance | balanced), cross-provider `tiers`,
+  per-agent tier map, `agent_providers` (strategy B: Anthropic MCP agents + OpenAI
+  `budget_report`), `fallback_chains`, doctor `overrides`, optional `token_budget`.
+- **`company_brain.llm.tiers`:** `resolve_agent_model()` / `resolve_agent_provider()`;
+  onboarding via `company-brain models configure`; doctor `llm` subcommand pings
+  models, auto-falls back within chain, persists override, alerts `#wiki-admin`.
+- **Work-ahead scheduling:** `agents/scheduling/work_ahead.py`; Linear stale audit
+  runs in a Sunday window (12h buffer) so Monday 9am standup wiki is ready.
+- **Absorb:** anti-cram / length targets in system prompt (readable pages, split topics).
+- **`project_install.md`:** LLM onboarding step documents mode choice + doctor health.
+
 ## 2026-06-30 — Agent filename rename pass (working tree)
 
 - Drop redundant platform prefix inside platform folders:

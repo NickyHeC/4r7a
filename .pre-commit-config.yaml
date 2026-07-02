@@ -1,9 +1,22 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-yaml
+      - id: detect-private-key  # cheap secret guard; never commit keys (.env is gitignored)
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.4
     hooks:
       - id: ruff
         args: [--fix]
+      # ruff-format intentionally omitted: adopting it is a one-time project-wide
+      # reformat (~105 files today). Decide separately — see docs/development.md.
 
   - repo: local
     hooks:

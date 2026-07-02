@@ -70,22 +70,29 @@ class BudgetReportAgent(BaseAgent):
         return {"quarter": quarter, "budget_page_id": budget_id, "section": section}
 
     def _compose_section(self, heading: str, metric_text: str, timeline_text: str) -> str:
+        from company_brain.llm.tiers import resolve_agent_model
+
+        provider_key = resolve_agent_model("budget_report").provider_key
         try:
-            body = asyncio.run(self._compose_with_claude(heading, metric_text, timeline_text))
+            if provider_key == "openai":
+                body = asyncio.run(
+                    self._compose_with_openai(heading, metric_text, timeline_text),
+                )
+            else:
+                body = asyncio.run(
+                    self._compose_with_claude(heading, metric_text, timeline_text),
+                )
             if body.strip():
                 return body
         except ImportError:
-            self.logger.warning(
-                "claude-agent-sdk not installed — using deterministic budget summary"
-            )
+            self.logger.warning("LLM SDK not installed — using deterministic budget summary")
         except Exception:
-            self.logger.exception("Claude budget composition failed — using deterministic fallback")
+            self.logger.exception("Budget composition failed — using deterministic fallback")
         return self._deterministic_section(heading, metric_text)
 
-    async def _compose_with_claude(self, heading: str, metric_text: str, timeline_text: str) -> str:
-        from claude_agent_sdk import ClaudeAgentOptions, query
-
-        prompt = f"""You are a finance analyst. Write a Budget Summary section for
+    @staticmethod
+    def _budget_prompt(heading: str, metric_text: str, timeline_text: str) -> str:
+        return f"""You are a finance analyst. Write a Budget Summary section for
 **{heading}**. Match the quarter's expenses to major company events.
 
 QUARTERLY METRIC DATA:
@@ -100,11 +107,36 @@ Write a concise markdown section that:
 - calls out anything anomalous
 Output only the markdown section."""
 
+    async def _compose_with_openai(
+        self, heading: str, metric_text: str, timeline_text: str,
+    ) -> str:
+        from agents import Agent, Runner
+
+        from company_brain.llm import openai_agents as oa
+
+        prompt = self._budget_prompt(heading, metric_text, timeline_text)
+        agent = Agent(
+            name="budget_report",
+            instructions="You write concise finance budget summary sections.",
+            model=oa.make_model(agent_name="budget_report"),
+        )
+        result = Runner.run_sync(
+            agent,
+            prompt,
+            run_config=oa.make_run_config(agent_name="budget_report"),
+        )
+        return str(result.final_output or "")
+
+    async def _compose_with_claude(self, heading: str, metric_text: str, timeline_text: str) -> str:
+        from claude_agent_sdk import ClaudeAgentOptions, query
+
+        prompt = self._budget_prompt(heading, metric_text, timeline_text)
+
         from company_brain.llm import claude as llm_claude
 
         options = ClaudeAgentOptions(
             env=llm_claude.options_env(),
-            **llm_claude.model_kwargs(self.model),
+            **llm_claude.model_kwargs(self.model, agent_name="budget_report"),
         )
         out: list[str] = []
         async for message in query(prompt=prompt, options=options):

@@ -112,7 +112,7 @@ When the draft is created, output exactly: {_RESULT_MARKER}"""
             allowed_tools=gmail_client.gmail_allowed_tools(),
             mcp_servers=gmail_client.gmail_mcp_servers(),
             env=llm_claude.options_env(),
-            **llm_claude.model_kwargs(self.model),
+            **llm_claude.model_kwargs(self.model, agent_name="draft_reply"),
         )
         collected: list[str] = []
         async for message in query(prompt=prompt, options=options):

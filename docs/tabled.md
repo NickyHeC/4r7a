@@ -18,9 +18,11 @@ Format for new rows:
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
-| Token / scheduling optimization | All | Cost or latency pain | Batch absorb, tighten cost gates, manager cadence tuning |
+| Batch absorb by urgency | operations/slack + notion | Slack/Notion agent design session | Split immediate (tasks/platforms) vs deferred (informational); keep current absorb schedules until then |
+| LLM eval harness | All | First tier downgrade in prod or quality drift | **Concept only** (this row): fixtures under `tests/fixtures/llm/<agent>/`, golden outputs, future `eval-model <agent> --tier <t>` CLI, quality gate on downgrades; not built |
+| Token budget usage tracking | All | Admin enables `token_budget.enabled` | **1)** Hook API response token counts (primary). **2)** Fallback: finance `card_spend` pulls Anthropic/OpenAI vendor bills monthly |
 | Ingest existing / personal wikis | External wiki + employee wiki | Admin mount flow stable | Use `migrate-names` on import; see external wiki plan |
-| AI pages too long → unread | All writers | Absorb/handbook quality pass | Enforce length targets in `config/wiki.yaml` |
+| AI pages too long → unread | All writers | Absorb/handbook quality pass | Length targets in absorb prompt + `config/wiki.yaml`; anti-cram split ongoing |
 
 ---
 
@@ -61,6 +63,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
+| **Overall agent scheduling design** | operations/slack (+ fleet-wide) | **Slack platform agent build session** | Revisit work-ahead windows, manager cadence, weekend/overnight runs on always-on fleet, batch LLM timing, two-phase verify; `work_ahead.py` + Linear stale audit are v1 only |
 | Agent filename rename pass | `operations/slack` | Slack platform build / spec session | `slack_action_items` → `action_items`, `slack_thread_watcher` → `thread_watcher`; naming doctor warns until then |
 | Internal meeting scheduler | `operations/slack` | Slack scheduling pain | Distinct from gcal ext_meeting_scheduler |
 | Open threads pending response | `operations/slack` | Watcher + action-item flow proven | Extend `slack_thread_watcher` |

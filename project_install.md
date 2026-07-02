@@ -179,9 +179,39 @@ Docs: https://developers.google.com/workspace/calendar/api/guides/configure-mcp-
 · Connection: `operations/gcal/gcal_client.py` + `gcal_rest.py`. Verify with
 `doctor` ("Google Calendar …").
 
-### LLM provider (which model powers the agents)
-One knob — `COMPANY_BRAIN_LLM_PROVIDER` (resolved against `config/models.yaml`) —
-selects the model for every agent. Confirm the choice with the user.
+### LLM provider and model tiers
+
+During wiki onboarding, configure how agents use LLMs:
+
+```bash
+company-brain models configure
+```
+
+Ask the user to choose:
+
+1. **performance** — reasoning tier (most powerful model) for every LLM agent.
+2. **balanced** (recommended) — per-agent tier tradeoff (absorb/reports on
+   reasoning; draft replies and routine audits on standard).
+
+This writes `config/models.yaml` (`mode`, `tiers`, `agents`, `agent_providers`).
+
+**Mixed providers (strategy B):** MCP-native agents (absorb, draft_reply,
+card_spend, subscription_audit) run on Anthropic; `budget_report` runs on
+OpenAI when both keys are set. Set both `ANTHROPIC_API_KEY` and
+`OPENAI_API_KEY` in `.env`.
+
+**Token budget (optional):** enable in `config/models.yaml` under
+`token_budget` — monthly USD cap, alert at 80%, optional hard stop.
+
+**Model health:** `company-brain doctor llm` pings configured models, auto-falls
+back within `fallback_chains`, persists overrides in `models.yaml`, and alerts
+`#wiki-admin` on substitution.
+
+Hosted provider keys for local installs; GLM-5 self-host option unchanged below.
+
+One knob — `COMPANY_BRAIN_LLM_PROVIDER` (legacy default provider) —
+still selects the fallback when an agent has no explicit `agent_providers` entry.
+Confirm API keys with the user.
 
 - **local installs → a hosted provider key (default).** Locally installing GLM-5
   is not realistic, so default to `anthropic` (set `ANTHROPIC_API_KEY`) or

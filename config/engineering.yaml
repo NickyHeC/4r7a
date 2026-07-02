@@ -9,8 +9,11 @@ linear:
   default_priority: 2
   poll_interval_minutes: 30
   stale_audit:
-    day: monday
-    time: "09:00"
+    ready_for:
+      day: monday
+      time: "09:00"
+    estimated_minutes: 15
+    buffer_minutes: 720
     stale_days: 14
   manual:
     wait_for_completion: true

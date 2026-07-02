@@ -105,4 +105,20 @@ After a **large feature section** ships, ask the user:
 > Would you like a **project coherence check** (doctor + naming + handbook vs code),
 > **excess file scan**, or **repository cleaning** pass?
 
+When they say yes, run the three-pass checklist in
+[`docs/development.md`](../../docs/development.md) → **Post-feature hygiene checklist**:
+
+1. **Cleanliness** — `ruff check .`, `pytest -q`, `git status --short`; no stray
+   generated files tracked (gitignore local-only state), no leftover `docs/plans/*`.
+2. **Coherence** — `company-brain doctor code` (+ `doctor llm` when keys exist), then
+   docs-vs-code: handbook, README map, `project_install.md`, `config/*.yaml` keys have
+   readers, `memory.md` entry, `docs/tabled.md` rows added/removed.
+3. **Dead code** — `ruff check . --select F` for unused imports; manually grep new
+   public symbols for callers (remove definitions with none), delete zero-logic
+   placeholder modules (keep "concept only" as a `tabled.md` row), and consolidate
+   duplicate helpers / orphaned config keys.
+4. **Safety & deps** — secret scan the staged diff (`detect-secrets` / `gitleaks`;
+   never commit `.env`/tokens), `pip-audit` when deps changed, new egress hosts in the
+   `sfile` allow_list. Optional: `mypy`, `pytest --cov`, `codespell`, extended ruff.
+
 Do not run destructive cleanup without explicit approval.

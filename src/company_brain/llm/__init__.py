@@ -15,4 +15,8 @@ from company_brain.llm.provider import (
     resolve_provider,
 )
 
-__all__ = ["LLMProvider", "resolve_provider", "prompt_caching_1h_enabled"]
+__all__ = [
+    "LLMProvider",
+    "resolve_provider",
+    "prompt_caching_1h_enabled",
+]

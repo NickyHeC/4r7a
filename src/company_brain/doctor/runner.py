@@ -16,11 +16,13 @@ from company_brain.config import (
 )
 from company_brain.doctor.agents import run_agents_doctor
 from company_brain.doctor.connect import run_connect_doctor
+from company_brain.doctor.llm import run_llm_doctor
 from company_brain.doctor.naming import run_naming_doctor
 from company_brain.doctor.ops import run_ops_doctor
 from company_brain.doctor.scoring import append_history, history_entry, new_fail_regressions
 from company_brain.doctor.types import DoctorReport
 from company_brain.doctor.wiki import run_wiki_doctor
+from company_brain.llm.tiers import resolve_agent_model
 
 DoctorFn = Callable[[], DoctorReport]
 
@@ -30,6 +32,7 @@ DOCTORS: dict[str, DoctorFn] = {
     "wiki": run_wiki_doctor,
     "ops": run_ops_doctor,
     "naming": run_naming_doctor,
+    "llm": run_llm_doctor,
 }
 
 
@@ -72,6 +75,14 @@ def print_env_banner() -> None:
     click.echo(f"  Runtime:  {resolve_runtime()}")
     click.echo(f"  Wiki dir: {resolve_wiki_dir()}")
     click.echo(f"  LLM:      {resolve_llm_provider()}")
+    try:
+        sample = resolve_agent_model("absorb")
+        click.echo(
+            f"  Models:   mode via config/models.yaml "
+            f"(e.g. absorb → {sample.provider_key}/{sample.tier})",
+        )
+    except Exception:
+        pass
 
 
 def run_and_print(
