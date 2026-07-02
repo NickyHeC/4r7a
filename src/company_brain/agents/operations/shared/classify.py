@@ -33,12 +33,21 @@ class TriageResult:
 
 
 AI_MEETING_SENDERS = (
-    "granola", "otter.ai", "fathom", "read.ai", "fireflies", "tl;dv",
+    "granola",
+    "otter.ai",
+    "fathom",
+    "read.ai",
+    "fireflies",
+    "tl;dv",
 )
 RECEIPT_HINTS = ("receipt", "invoice", "payment confirmation", "order confirmation", "your receipt")
 NEWSLETTER_HINTS = ("newsletter", "unsubscribe", "view in browser")
 SALES_HINTS = (
-    "quick question", "partnership opportunity", "reaching out", "intro call", "book a demo",
+    "quick question",
+    "partnership opportunity",
+    "reaching out",
+    "intro call",
+    "book a demo",
 )
 JOB_HINTS = ("application received", "job alert", "linkedin", "greenhouse", "lever.co", "ashbyhq")
 

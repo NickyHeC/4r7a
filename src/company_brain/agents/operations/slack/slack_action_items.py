@@ -58,11 +58,7 @@ class SlackActionItemsAgent(BaseAgent):
         if message_ts:
             link = slack_client.permalink(channel, message_ts)
 
-        description = (
-            f"From Slack thread in `{channel}`.\n\n"
-            f"**Thread:** `{thread_ts}`\n\n"
-            f"{body}\n"
-        )
+        description = f"From Slack thread in `{channel}`.\n\n**Thread:** `{thread_ts}`\n\n{body}\n"
         if link:
             description += f"\n**Permalink:** {link}"
 

@@ -47,8 +47,7 @@ class StructureOrganizationAgent(BaseAgent):
 
         expected = sorted(set(wiki_departments) | set(binding_departments))
         missing_teams = [
-            d for d in expected
-            if d[:3].upper() not in linear_keys and d.upper() not in linear_keys
+            d for d in expected if d[:3].upper() not in linear_keys and d.upper() not in linear_keys
         ]
 
         body = self._render_proposal(
@@ -82,7 +81,7 @@ class StructureOrganizationAgent(BaseAgent):
             if (wiki_root / name).is_dir():
                 found.append(name)
         cfg = load_wiki_config()
-        for key in (cfg.sections or {}):
+        for key in cfg.sections or {}:
             if key not in found:
                 found.append(key)
         return found
@@ -127,34 +126,40 @@ class StructureOrganizationAgent(BaseAgent):
         lines.append("")
 
         if missing_teams:
-            lines.extend([
-                "## Action required",
-                "",
-                "Create the following Linear teams (or map to existing teams):",
-                "",
-            ])
+            lines.extend(
+                [
+                    "## Action required",
+                    "",
+                    "Create the following Linear teams (or map to existing teams):",
+                    "",
+                ]
+            )
             for dept in missing_teams:
                 key = dept[:3].upper() if len(dept) >= 3 else dept.upper()
                 lines.append(f"- [ ] Create team `{key}` for **{dept}**")
             lines.append("")
 
-        lines.extend([
-            "## Projects (seed from wiki)",
-            "",
-            "For each department, create projects aligned with wiki folders:",
-            "",
-        ])
+        lines.extend(
+            [
+                "## Projects (seed from wiki)",
+                "",
+                "For each department, create projects aligned with wiki folders:",
+                "",
+            ]
+        )
         for dept in expected_departments:
             lines.append(f"- `{dept}/general` — default project for {dept} tasks")
         lines.append("")
-        lines.extend([
-            "## Approval",
-            "",
-            "- [ ] Structure reviewed",
-            "- [ ] Teams created or mapped",
-            "- [ ] Ready to apply (manual step until Slack confirm ships)",
-            "",
-        ])
+        lines.extend(
+            [
+                "## Approval",
+                "",
+                "- [ ] Structure reviewed",
+                "- [ ] Teams created or mapped",
+                "- [ ] Ready to apply (manual step until Slack confirm ships)",
+                "",
+            ]
+        )
         return "\n".join(lines)
 
     def _notify_slack(self, missing_count: int) -> None:

@@ -58,9 +58,12 @@ def _run_cli(args: list[str]) -> list[dict]:
     """Run ``mercury <args> --format jsonl`` and parse JSON-lines output."""
     cmd = [
         "mercury",
-        "--api-key", _token(),
-        "--environment", _env(),
-        "--format", "jsonl",
+        "--api-key",
+        _token(),
+        "--environment",
+        _env(),
+        "--format",
+        "jsonl",
         *args,
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -160,9 +163,12 @@ def list_transactions(
     """
     if _cli_available():
         args = [
-            "transactions", "list",
-            "--account-id", account_id,
-            "--max-items", str(max_items),
+            "transactions",
+            "list",
+            "--account-id",
+            account_id,
+            "--max-items",
+            str(max_items),
         ]
         if start:
             args += ["--start", start]
@@ -211,8 +217,15 @@ def list_account_statements(account_id: str) -> list[dict]:
     """List monthly statements for an account."""
     if _cli_available():
         try:
-            args = ["statements", "accounts", "list",
-                    "--account-id", account_id, "--max-items", "-1"]
+            args = [
+                "statements",
+                "accounts",
+                "list",
+                "--account-id",
+                account_id,
+                "--max-items",
+                "-1",
+            ]
             return _run_cli(args)
         except RuntimeError as e:
             logger.warning("mercury CLI fallback to HTTP: %s", e)

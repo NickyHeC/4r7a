@@ -66,7 +66,10 @@ class DailyAgendaAgent(BaseAgent):
             return False
         scheduled = daily_agenda_time()
         today_at = now.replace(
-            hour=scheduled.hour, minute=scheduled.minute, second=0, microsecond=0,
+            hour=scheduled.hour,
+            minute=scheduled.minute,
+            second=0,
+            microsecond=0,
         )
         return now >= today_at and not is_handled("daily_agenda", now.date().isoformat())
 

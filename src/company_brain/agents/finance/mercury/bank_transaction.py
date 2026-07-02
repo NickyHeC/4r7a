@@ -46,15 +46,17 @@ class BankTransactionAgent(BaseAgent):
                 continue
             if amount < 0 and not include_outbound:
                 continue
-            records.append({
-                "name": mc.txn_counterparty(t),
-                "amount": amount,
-                "date": mc.txn_date(t),
-                "source": "Mercury",
-                "category": mc.txn_category(t),
-                "account": t.get("_account_name", ""),
-                "kind": t.get("kind", ""),
-            })
+            records.append(
+                {
+                    "name": mc.txn_counterparty(t),
+                    "amount": amount,
+                    "date": mc.txn_date(t),
+                    "source": "Mercury",
+                    "category": mc.txn_category(t),
+                    "account": t.get("_account_name", ""),
+                    "kind": t.get("kind", ""),
+                }
+            )
 
         inbound = sum(1 for r in records if r["amount"] > 0)
         outbound = sum(1 for r in records if r["amount"] < 0)

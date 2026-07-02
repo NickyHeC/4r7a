@@ -87,6 +87,7 @@ class InboxTriageAgent(BaseAgent):
 
         profile = rest.get_profile(self.mailbox)
         from company_brain.agents.operations.shared.gmail_state import GmailState
+
         GmailState().set_history_id(self.mailbox, str(profile.get("historyId", "")))
 
         return {"processed": len(results), "results": results}

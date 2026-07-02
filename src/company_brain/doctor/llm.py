@@ -27,10 +27,7 @@ def run_llm_doctor(*, apply_fallbacks: bool = True) -> DoctorReport:
             CheckResult(
                 f"llm_agent:{agent}",
                 "pass",
-                (
-                    f"{agent} → {binding.provider_key}/{binding.tier} "
-                    f"({binding.model_id})"
-                ),
+                (f"{agent} → {binding.provider_key}/{binding.tier} ({binding.model_id})"),
             ),
         )
 

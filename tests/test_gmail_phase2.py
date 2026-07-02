@@ -10,6 +10,7 @@ def _thread(messages: list[dict]) -> dict:
 
 def _msg(subject: str = "", body: str = "", from_: str = "them@co.com") -> dict:
     import base64
+
     data = base64.urlsafe_b64encode(body.encode()).decode().rstrip("=")
     return {
         "payload": {
@@ -40,8 +41,10 @@ def test_simple_reply_thread():
 
 
 def test_complex_reply_thread():
-    thread = _thread([
-        _msg(subject="MSA review", body="Please review the contract terms?"),
-        _msg(subject="Re: MSA", body="Also legal needs your signature."),
-    ])
+    thread = _thread(
+        [
+            _msg(subject="MSA review", body="Please review the contract terms?"),
+            _msg(subject="Re: MSA", body="Also legal needs your signature."),
+        ]
+    )
     assert is_simple_reply(thread) is False

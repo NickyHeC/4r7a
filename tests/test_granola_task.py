@@ -48,18 +48,29 @@ def test_meeting_watch_dispatches_ended_event():
     }
     agent = MeetingWatchAgent(MagicMock())
 
-    with patch(
-        "company_brain.agents.operations.granola.meeting_watch.cfg.granola_is_configured",
-        return_value=True,
-    ), patch.object(agent, "_ended_meetings", return_value=[event]), patch.object(
-        agent, "_dispatch_ingest", return_value={"status": "ok"},
-    ) as mock_ingest, patch.object(
-        agent, "_maybe_miss_check", return_value=None,
-    ), patch(
-        "company_brain.agents.operations.granola.meeting_watch.is_handled",
-        return_value=False,
-    ), patch(
-        "company_brain.agents.operations.granola.meeting_watch.mark_handled",
+    with (
+        patch(
+            "company_brain.agents.operations.granola.meeting_watch.cfg.granola_is_configured",
+            return_value=True,
+        ),
+        patch.object(agent, "_ended_meetings", return_value=[event]),
+        patch.object(
+            agent,
+            "_dispatch_ingest",
+            return_value={"status": "ok"},
+        ) as mock_ingest,
+        patch.object(
+            agent,
+            "_maybe_miss_check",
+            return_value=None,
+        ),
+        patch(
+            "company_brain.agents.operations.granola.meeting_watch.is_handled",
+            return_value=False,
+        ),
+        patch(
+            "company_brain.agents.operations.granola.meeting_watch.mark_handled",
+        ),
     ):
         result = agent.run_once()
 

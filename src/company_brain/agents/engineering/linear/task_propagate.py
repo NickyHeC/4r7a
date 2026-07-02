@@ -13,10 +13,12 @@ from company_brain.agents.engineering.linear.task_bindings import (
 )
 from company_brain.wiki.store import WikiStore
 
-SYSTEM_SOURCES = frozenset({
-    "system:linear_completed",
-    "system:task_propagate",
-})
+SYSTEM_SOURCES = frozenset(
+    {
+        "system:linear_completed",
+        "system:task_propagate",
+    }
+)
 
 TERMINAL_LINEAR_STATUSES = frozenset({"done", "canceled", "cancelled"})
 URGENT_FIELDS = frozenset({"status", "archived"})
@@ -89,6 +91,7 @@ def _fan_out_notion(binding: TaskBinding, linear_status: str) -> None:
         )
     except Exception:
         import logging
+
         logging.getLogger(__name__).exception("Notion fan-out failed for %s", binding.task_id)
 
 

@@ -32,6 +32,7 @@ def run_connect_doctor() -> DoctorReport:
     if shutil.which("ntn"):
         try:
             from company_brain.notion.client import NotionClient
+
             notion_ok = NotionClient().check_auth()
         except Exception:
             notion_ok = False
@@ -77,6 +78,7 @@ def run_connect_doctor() -> DoctorReport:
 
     try:
         from company_brain.agents.operations.gmail import gmail_client as gmail
+
         gmail_ok = gmail.gmail_is_configured()
         gmail_provider = gmail.gmail_provider()
     except Exception:
@@ -90,6 +92,7 @@ def run_connect_doctor() -> DoctorReport:
 
     try:
         from company_brain.agents.engineering.linear import linear_client as linear
+
         linear_ok = linear.check_connection() if linear.linear_is_configured() else False
     except Exception:
         linear_ok = False
@@ -103,6 +106,7 @@ def run_connect_doctor() -> DoctorReport:
     try:
         from company_brain.agents.operations.granola import granola_client as granola_api
         from company_brain.agents.operations.shared import granola_config as granola
+
         if granola.granola_is_configured():
             granola_ok = granola_api.check_connection()
             granola_mode = granola.granola_mode()
@@ -125,6 +129,7 @@ def run_connect_doctor() -> DoctorReport:
     try:
         from company_brain.agents.operations.gcal import gcal_rest as gcal_api
         from company_brain.agents.operations.shared import gcal_config as gcal
+
         if gcal.gcal_is_configured():
             add(
                 "gcal_connection",

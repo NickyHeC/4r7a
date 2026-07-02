@@ -71,8 +71,12 @@ class BranchMonitorAgent(BaseAgent):
 
         body = "\n".join(sections)
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, body, mode=self.WRITE_MODE,
-            section="engineering/github", type_="report",
+            WIKI_PATH,
+            TITLE,
+            body,
+            mode=self.WRITE_MODE,
+            section="engineering/github",
+            type_="report",
         )
         return {"repos": len(repos), "notion_page_id": page_id}
 
@@ -104,8 +108,9 @@ class BranchMonitorAgent(BaseAgent):
             "Behind prod | Ahead of prod | Status |",
             "|---|---|---|---|---|---|",
         ]
-        branch_heads = {b.get("name"): b.get("commit", {}).get("sha", "")[:7]
-                        for b in gh.list_branches(repo)}
+        branch_heads = {
+            b.get("name"): b.get("commit", {}).get("sha", "")[:7] for b in gh.list_branches(repo)
+        }
         for env, branch in self.env_branches.items():
             sha = branch_heads.get(branch, "-")
             if branch == prod_branch:
@@ -114,9 +119,7 @@ class BranchMonitorAgent(BaseAgent):
                 cmp = gh.compare_branches(repo, prod_branch, branch)
                 ahead, behind = cmp.get("ahead_by", 0), cmp.get("behind_by", 0)
             status = self._env_status(ahead, behind)
-            rows.append(
-                f"| {env} | `{sha}` | `{branch}` | {behind} | {ahead} | {status} |"
-            )
+            rows.append(f"| {env} | `{sha}` | `{branch}` | {behind} | {ahead} | {status} |")
         return "\n".join(rows)
 
     def _branches_table(self, repo: str) -> str:

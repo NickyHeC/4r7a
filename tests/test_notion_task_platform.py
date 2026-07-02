@@ -75,12 +75,16 @@ def test_scanner_links_existing_row(tmp_path, monkeypatch):
         },
     }
 
-    with patch.object(agent, "_client"), patch(
-        "company_brain.agents.operations.notion.task_scanner.db.notion_is_available",
-        return_value=True,
-    ), patch(
-        "company_brain.agents.operations.notion.task_scanner.db.query_database_updated_since",
-        return_value=[row],
+    with (
+        patch.object(agent, "_client"),
+        patch(
+            "company_brain.agents.operations.notion.task_scanner.db.notion_is_available",
+            return_value=True,
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_scanner.db.query_database_updated_since",
+            return_value=[row],
+        ),
     ):
         result = agent.run_once()
 
@@ -122,12 +126,15 @@ def test_scanner_does_not_duplicate_link(tmp_path, monkeypatch):
         },
     }
 
-    with patch(
-        "company_brain.agents.operations.notion.task_scanner.db.notion_is_available",
-        return_value=True,
-    ), patch(
-        "company_brain.agents.operations.notion.task_scanner.db.query_database_updated_since",
-        return_value=[row],
+    with (
+        patch(
+            "company_brain.agents.operations.notion.task_scanner.db.notion_is_available",
+            return_value=True,
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_scanner.db.query_database_updated_since",
+            return_value=[row],
+        ),
     ):
         result = agent.run_once()
 
@@ -160,16 +167,20 @@ def test_notion_sync_updates_status(tmp_path, monkeypatch):
     config.notion = _notion_config_with_db()
     agent = TaskSyncAgent(config)
 
-    with patch(
-        "company_brain.agents.operations.notion.task_sync.db.notion_is_available",
-        return_value=True,
-    ), patch(
-        "company_brain.agents.operations.notion.task_sync.task_class_fan_out",
-        return_value=["linear", "notion"],
-    ), patch(
-        "company_brain.agents.operations.notion.task_sync.db.update_database_row",
-        return_value={"id": "page-44"},
-    ) as update_mock:
+    with (
+        patch(
+            "company_brain.agents.operations.notion.task_sync.db.notion_is_available",
+            return_value=True,
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_sync.task_class_fan_out",
+            return_value=["linear", "notion"],
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_sync.db.update_database_row",
+            return_value={"id": "page-44"},
+        ) as update_mock,
+    ):
         result = agent.run(binding=binding, linear_status="Done")
 
     assert result["status"] == "updated"
@@ -197,15 +208,19 @@ def test_notion_sync_creates_row_when_missing(tmp_path, monkeypatch):
     config.notion = _notion_config_with_db()
     agent = TaskSyncAgent(config)
 
-    with patch(
-        "company_brain.agents.operations.notion.task_sync.db.notion_is_available",
-        return_value=True,
-    ), patch(
-        "company_brain.agents.operations.notion.task_sync.task_class_fan_out",
-        return_value=["linear", "notion"],
-    ), patch(
-        "company_brain.agents.operations.notion.task_sync.db.create_database_row",
-        return_value={"id": "page-new", "url": "https://notion.so/page-new"},
+    with (
+        patch(
+            "company_brain.agents.operations.notion.task_sync.db.notion_is_available",
+            return_value=True,
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_sync.task_class_fan_out",
+            return_value=["linear", "notion"],
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_sync.db.create_database_row",
+            return_value={"id": "page-new", "url": "https://notion.so/page-new"},
+        ),
     ):
         result = agent.run(binding=binding, title="Create row", create_if_missing=True)
 
@@ -236,13 +251,16 @@ def test_linear_completed_dispatches_notion(tmp_path, monkeypatch):
     config.notion = _notion_config_with_db()
     agent = LinearCompletedAgent(config)
 
-    with patch(
-        "company_brain.agents.engineering.linear.linear_completed.dispatcher.task_class_fan_out",
-        return_value=["linear", "notion"],
-    ), patch(
-        "company_brain.agents.operations.notion.task_sync.TaskSyncAgent.run",
-        return_value={"status": "updated"},
-    ) as sync_run:
+    with (
+        patch(
+            "company_brain.agents.engineering.linear.linear_completed.dispatcher.task_class_fan_out",
+            return_value=["linear", "notion"],
+        ),
+        patch(
+            "company_brain.agents.operations.notion.task_sync.TaskSyncAgent.run",
+            return_value={"status": "updated"},
+        ) as sync_run,
+    ):
         result = agent.run(
             task_id=binding.task_id,
             linear_issue={"id": "l5", "state": {"name": "Done"}},

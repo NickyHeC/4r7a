@@ -94,8 +94,7 @@ class MonthlyExpenseManager(BaseAgent):
         self._publish_slack(month, grand_total, page_id)
 
         uncategorized = [
-            t for t in txns
-            if cat.classify_budget(t, self.keyword_maps) == cat.UNCATEGORIZED
+            t for t in txns if cat.classify_budget(t, self.keyword_maps) == cat.UNCATEGORIZED
         ]
         if uncategorized and escalate:
             self.logger.info(
@@ -123,8 +122,12 @@ class MonthlyExpenseManager(BaseAgent):
         txns: list[dict] = []
 
         bank = runtime.run(
-            BankTransactionAgent, self.config,
-            start=start, end=end, include_inbound=False, include_outbound=True,
+            BankTransactionAgent,
+            self.config,
+            start=start,
+            end=end,
+            include_inbound=False,
+            include_outbound=True,
         )
         txns.extend(bank.get("transactions", []))
 
@@ -175,7 +178,9 @@ class MonthlyExpenseManager(BaseAgent):
         label = transactions.month_label(month)
         child_key = f"monthly_expense_{month}"
         page_id = notion_pages.ensure_page(
-            child_key, [f"{label} Expenses"], f"{label} Expenses",
+            child_key,
+            [f"{label} Expenses"],
+            f"{label} Expenses",
             parent_key=PARENT_KEY,
         )
         notion_pages.update_page_body(page_id, report)
@@ -188,15 +193,17 @@ class MonthlyExpenseManager(BaseAgent):
         # Detect everything, notify selectively: ping only when there was spend.
         severity = ACTIONABLE if grand_total > 0 else INFO
         try:
-            from_finance_config(self.finance_config).emit(Signal(
-                text=(
-                    f"{label} expense report ready — "
-                    f"total outbound {transactions.fmt_money(grand_total)}."
-                ),
-                severity=severity,
-                link_label=f"{label} Expenses",
-                link_url=notion_pages.page_url(page_id) if page_id else None,
-            ))
+            from_finance_config(self.finance_config).emit(
+                Signal(
+                    text=(
+                        f"{label} expense report ready — "
+                        f"total outbound {transactions.fmt_money(grand_total)}."
+                    ),
+                    severity=severity,
+                    link_label=f"{label} Expenses",
+                    link_url=notion_pages.page_url(page_id) if page_id else None,
+                )
+            )
         except Exception:
             self.logger.exception("Slack notification failed")
 
@@ -206,7 +213,8 @@ class MonthlyExpenseManager(BaseAgent):
         from .request_manual_accounting import RequestManualAccountingAgent
 
         get_runtime().run(
-            RequestManualAccountingAgent, self.config,
+            RequestManualAccountingAgent,
+            self.config,
             source_agent=self.name,
             context={"period": month, "kind": "monthly"},
             uncategorized=uncategorized,
@@ -215,8 +223,9 @@ class MonthlyExpenseManager(BaseAgent):
     @staticmethod
     def _next_run_time(now: datetime) -> datetime:
         """Next occurrence of the 1st of a month at RUN_TIME."""
-        candidate = now.replace(day=RUN_DAY, hour=RUN_TIME.hour, minute=RUN_TIME.minute,
-                                second=0, microsecond=0)
+        candidate = now.replace(
+            day=RUN_DAY, hour=RUN_TIME.hour, minute=RUN_TIME.minute, second=0, microsecond=0
+        )
         if now >= candidate:
             # advance to the 1st of next month
             year = now.year + (1 if now.month == 12 else 0)

@@ -44,6 +44,7 @@ def test_onboarding_backfills_and_starts_watch(
     from company_brain.agents.operations.granola.meeting_watch import (
         MeetingWatchAgent,
     )
+
     assert runtime.start.call_args[0][0] is MeetingWatchAgent
 
 

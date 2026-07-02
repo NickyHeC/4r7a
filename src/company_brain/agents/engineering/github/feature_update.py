@@ -49,8 +49,12 @@ class FeatureUpdateAgent(BaseAgent):
 
         section = self._format_update(major_commits)
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, section, mode=self.WRITE_MODE,
-            section="engineering/github", type_="report",
+            WIKI_PATH,
+            TITLE,
+            section,
+            mode=self.WRITE_MODE,
+            section="engineering/github",
+            type_="report",
         )
         return {
             "total_commits": len(commits),

@@ -54,10 +54,7 @@ def load_baseline(path: Path | None = None) -> dict[str, set[str]]:
 def save_baseline(reports: dict[str, Any], path: Path | None = None) -> None:
     path = path or BASELINE_FILE
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        name: {"fail_rules": sorted(report.fail_rules)}
-        for name, report in reports.items()
-    }
+    payload = {name: {"fail_rules": sorted(report.fail_rules)} for name, report in reports.items()}
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2, sort_keys=True))
     tmp.replace(path)

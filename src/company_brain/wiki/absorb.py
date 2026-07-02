@@ -74,8 +74,7 @@ class AbsorbWriter:
 
     def run(self, *, since=None) -> dict[str, Any]:
         entries = (
-            self.pipeline.load_entries_since(since) if since
-            else self.pipeline.load_unabsorbed()
+            self.pipeline.load_entries_since(since) if since else self.pipeline.load_unabsorbed()
         )
         entries.sort(key=lambda e: e.timestamp)
         if not entries:
@@ -84,8 +83,7 @@ class AbsorbWriter:
 
         self.wiki_dir.mkdir(parents=True, exist_ok=True)
         batches = [
-            entries[i:i + CHECKPOINT_EVERY]
-            for i in range(0, len(entries), CHECKPOINT_EVERY)
+            entries[i : i + CHECKPOINT_EVERY] for i in range(0, len(entries), CHECKPOINT_EVERY)
         ]
         for n, batch in enumerate(batches, 1):
             logger.info("Absorb batch %d/%d (%d entries)", n, len(batches), len(batch))

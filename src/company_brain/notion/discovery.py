@@ -39,6 +39,7 @@ class DiscoveredDatabase:
 @dataclass
 class PageGroup:
     """A group of pages under a common top-level parent."""
+
     label: str
     parent_id: str | None
     pages: list[DiscoveredPage] = field(default_factory=list)

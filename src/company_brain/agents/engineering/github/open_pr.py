@@ -42,8 +42,12 @@ class OpenPRAgent(BaseAgent):
 
         body = f"# {TITLE}\n\n{self._format_pr_list(prs)}\n"
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, body, mode=self.WRITE_MODE,
-            section="engineering/github", type_="report",
+            WIKI_PATH,
+            TITLE,
+            body,
+            mode=self.WRITE_MODE,
+            section="engineering/github",
+            type_="report",
         )
         return {"pr_count": len(prs), "notion_page_id": page_id}
 
@@ -59,8 +63,5 @@ class OpenPRAgent(BaseAgent):
             url = pr.get("url", "")
             branch = pr.get("headRefName", "")
             review = pr.get("reviewDecision", "PENDING")
-            lines.append(
-                f"- **#{number}** [{title}]({url}) by @{author} "
-                f"(`{branch}`) - {review}"
-            )
+            lines.append(f"- **#{number}** [{title}]({url}) by @{author} (`{branch}`) - {review}")
         return "\n".join(lines)

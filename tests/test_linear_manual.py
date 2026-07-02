@@ -28,23 +28,29 @@ def test_stale_audit_finds_old_issues(tmp_path: Path):
     config = MagicMock()
     agent = StaleAuditAgent(config)
     old = "2020-01-01T00:00:00.000Z"
-    issues = [{
-        "id": "1",
-        "identifier": "ENG-99",
-        "title": "Stale task",
-        "updatedAt": old,
-        "state": {"name": "In Progress", "id": "s1"},
-    }]
+    issues = [
+        {
+            "id": "1",
+            "identifier": "ENG-99",
+            "title": "Stale task",
+            "updatedAt": old,
+            "state": {"name": "In Progress", "id": "s1"},
+        }
+    ]
 
-    with patch(
-        "company_brain.agents.engineering.linear.stale_audit.linear_client.list_open_issues",
-        return_value=issues,
-    ), patch(
-        "company_brain.agents.engineering.linear.stale_audit.linear_client.linear_is_configured",
-        return_value=True,
-    ), patch(
-        "company_brain.runtime.get_runtime",
-    ) as mock_rt:
+    with (
+        patch(
+            "company_brain.agents.engineering.linear.stale_audit.linear_client.list_open_issues",
+            return_value=issues,
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.stale_audit.linear_client.linear_is_configured",
+            return_value=True,
+        ),
+        patch(
+            "company_brain.runtime.get_runtime",
+        ) as mock_rt,
+    ):
         mock_rt.return_value.run.return_value = {"status": "requested"}
         result = agent.run(dispatch_manual=True, sync=False)
 
@@ -66,8 +72,7 @@ def test_apply_approved_status(tmp_path: Path, monkeypatch):
 
     wiki = LocalWikiStore(root=tmp_path / "wiki")
     checklist = (
-        "## Manual\n\n"
-        "- [x] ENG-5 | Task | current: In Progress | proposed: Done | note: ok\n"
+        "## Manual\n\n- [x] ENG-5 | Task | current: In Progress | proposed: Done | note: ok\n"
     )
     wiki.write(
         "engineering/linear/manual-management.md",
@@ -78,15 +83,19 @@ def test_apply_approved_status(tmp_path: Path, monkeypatch):
     agent = RequestManualManagementAgent(config)
     agent._bindings = store
 
-    with patch(
-        "company_brain.agents.engineering.linear.request_manual_management.read_wiki_page",
-        return_value=checklist,
-    ), patch(
-        "company_brain.agents.engineering.linear.request_manual_management.linear_client.resolve_state_id",
-        return_value="state-done",
-    ), patch(
-        "company_brain.agents.engineering.linear.request_manual_management.linear_client.update_issue",
-        return_value={"id": "uuid-1", "identifier": "ENG-5"},
+    with (
+        patch(
+            "company_brain.agents.engineering.linear.request_manual_management.read_wiki_page",
+            return_value=checklist,
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.request_manual_management.linear_client.resolve_state_id",
+            return_value="state-done",
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.request_manual_management.linear_client.update_issue",
+            return_value={"id": "uuid-1", "identifier": "ENG-5"},
+        ),
     ):
         applied = agent._apply_approved()
 
@@ -100,21 +109,25 @@ def test_linear_onboarding_backfill(tmp_path: Path, monkeypatch):
     routing.mkdir(parents=True)
     import json
 
-    (routing / "msg1.json").write_text(json.dumps({
-        "message_id": "msg1",
-        "thread_id": "t1",
-        "mailbox": "me",
-        "triaged_at": "2026-01-01T00:00:00+00:00",
-        "attention": "1. Action",
-        "domain_tags": [],
-        "extracted": {
-            "linear_issue_id": "ENG-10",
-            "linear_issue_url": "https://linear.app/x/ENG-10",
-            "subject": "Backfill me",
-        },
-        "handled": {},
-        "disposition": {},
-    }))
+    (routing / "msg1.json").write_text(
+        json.dumps(
+            {
+                "message_id": "msg1",
+                "thread_id": "t1",
+                "mailbox": "me",
+                "triaged_at": "2026-01-01T00:00:00+00:00",
+                "attention": "1. Action",
+                "domain_tags": [],
+                "extracted": {
+                    "linear_issue_id": "ENG-10",
+                    "linear_issue_url": "https://linear.app/x/ENG-10",
+                    "subject": "Backfill me",
+                },
+                "handled": {},
+                "disposition": {},
+            }
+        )
+    )
 
     monkeypatch.setenv("COMPANY_BRAIN_WIKI_DIR", str(wiki))
     config_dir = tmp_path / "config"
@@ -126,20 +139,35 @@ def test_linear_onboarding_backfill(tmp_path: Path, monkeypatch):
 
     from company_brain.agents.engineering.linear.linear_onboarding import LinearOnboardingAgent
 
-    with patch(
-        "company_brain.agents.engineering.linear.linear_onboarding.linear_client.list_teams",
-        return_value=[],
-    ), patch(
-        "company_brain.agents.engineering.linear.linear_onboarding.linear_client.get_issue",
-        return_value={"id": "u10", "identifier": "ENG-10", "url": "https://linear.app/x/ENG-10"},
-    ), patch(
-        "company_brain.agents.engineering.linear.linear_onboarding.linear_client.linear_is_configured",
-        return_value=True,
-    ), patch.object(
-        LinearOnboardingAgent, "_run_structure_proposal", return_value={},
-    ), patch.object(
-        LinearOnboardingAgent, "_run_slot_check", return_value={},
-    ), patch.object(LinearOnboardingAgent, "_start_manager"):
+    with (
+        patch(
+            "company_brain.agents.engineering.linear.linear_onboarding.linear_client.list_teams",
+            return_value=[],
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.linear_onboarding.linear_client.get_issue",
+            return_value={
+                "id": "u10",
+                "identifier": "ENG-10",
+                "url": "https://linear.app/x/ENG-10",
+            },
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.linear_onboarding.linear_client.linear_is_configured",
+            return_value=True,
+        ),
+        patch.object(
+            LinearOnboardingAgent,
+            "_run_structure_proposal",
+            return_value={},
+        ),
+        patch.object(
+            LinearOnboardingAgent,
+            "_run_slot_check",
+            return_value={},
+        ),
+        patch.object(LinearOnboardingAgent, "_start_manager"),
+    ):
         agent = LinearOnboardingAgent(MagicMock())
         result = agent.run(start_manager=False)
 

@@ -6,11 +6,17 @@ from company_brain.agents.operations.shared.routing import RoutingRecord
 
 def test_fingerprint_stable():
     a = RoutingRecord(
-        message_id="1", thread_id="t", mailbox="me", triaged_at="",
+        message_id="1",
+        thread_id="t",
+        mailbox="me",
+        triaged_at="",
         extracted={"subject": "Hello", "from": "a@b.com"},
     )
     b = RoutingRecord(
-        message_id="2", thread_id="t2", mailbox="me", triaged_at="",
+        message_id="2",
+        thread_id="t2",
+        mailbox="me",
+        triaged_at="",
         extracted={"subject": "Hello", "from": "a@b.com"},
     )
     assert _fingerprint(a) == _fingerprint(b)

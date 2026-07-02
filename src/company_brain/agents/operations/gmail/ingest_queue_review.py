@@ -36,9 +36,9 @@ class IngestQueueReviewAgent(BaseAgent):
 
     def run(self, *, ping_slack: bool = True, **kwargs: Any) -> dict[str, Any]:
         ambiguous = [
-            r for r in self._store.iter_mailbox(self.mailbox)
-            if r.extracted.get("ingest_status") == "ambiguous"
-            and SPECIALIST_KEY not in r.handled
+            r
+            for r in self._store.iter_mailbox(self.mailbox)
+            if r.extracted.get("ingest_status") == "ambiguous" and SPECIALIST_KEY not in r.handled
         ]
         if not ambiguous:
             return {"queued": 0, "pinged": False}
@@ -70,10 +70,15 @@ class IngestQueueReviewAgent(BaseAgent):
 
     def _ping_ingest_channel(self, count: int, rel_path: str) -> bool:
         try:
-            return ingest_notifier().emit(Signal(
-                text=f"{count} ambiguous Gmail ingest item(s) need review — see wiki `{rel_path}`.",
-                severity=ACTIONABLE,
-            ))
+            return ingest_notifier().emit(
+                Signal(
+                    text=(
+                        f"{count} ambiguous Gmail ingest item(s) need review "
+                        f"— see wiki `{rel_path}`."
+                    ),
+                    severity=ACTIONABLE,
+                )
+            )
         except Exception:
             self.logger.exception("Ingest queue Slack ping failed")
             return False

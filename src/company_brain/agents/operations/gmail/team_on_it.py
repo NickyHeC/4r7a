@@ -45,7 +45,9 @@ class TeamOnItAgent(BaseAgent):
     def should_run(self, **kwargs: Any) -> bool:
         return linear_client.linear_is_configured() and bool(
             self._store.unhandled_for(
-                SPECIALIST_KEY, mailbox=self.mailbox, attention="4. Team On It",
+                SPECIALIST_KEY,
+                mailbox=self.mailbox,
+                attention="4. Team On It",
             )
         )
 
@@ -55,7 +57,9 @@ class TeamOnItAgent(BaseAgent):
         notifier = channel_notifier(channel)
 
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, attention="4. Team On It",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            attention="4. Team On It",
         ):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
@@ -91,11 +95,7 @@ class TeamOnItAgent(BaseAgent):
                 record.extracted["task_id"] = binding.task_id
                 self._store.write(record)
 
-                text = (
-                    f"*Team on it* — {subject}\n"
-                    f"*From:* {from_}\n"
-                    f"*Linear:* {ident}"
-                )
+                text = f"*Team on it* — {subject}\n*From:* {from_}\n*Linear:* {ident}"
                 if url:
                     text += f"\n<{url}|Open in Linear>"
                 notifier.emit(Signal(text=text, severity=ACTIONABLE))

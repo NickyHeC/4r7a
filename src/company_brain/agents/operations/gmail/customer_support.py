@@ -33,14 +33,20 @@ class CustomerSupportAgent(BaseAgent):
         self._store = RoutingStore()
 
     def should_run(self, **kwargs: Any) -> bool:
-        return bool(self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Customer",
-        ))
+        return bool(
+            self._store.unhandled_for(
+                SPECIALIST_KEY,
+                mailbox=self.mailbox,
+                domain_tag="Customer",
+            )
+        )
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
         posted = 0
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Customer",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            domain_tag="Customer",
         ):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)

@@ -120,12 +120,7 @@ class TaskAgent(BaseAgent):
 
 def extract_action_items(note: dict[str, Any]) -> list[str]:
     """Pull action-item lines from Granola note summary markdown."""
-    text = (
-        note.get("summary_markdown")
-        or note.get("summary")
-        or note.get("summary_text")
-        or ""
-    )
+    text = note.get("summary_markdown") or note.get("summary") or note.get("summary_text") or ""
     if not text:
         return []
 

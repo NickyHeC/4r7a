@@ -83,13 +83,15 @@ def attachments_dir() -> str:
 
 def investor_path() -> str:
     return gmail_cfg().get("investors_wiki") or wiki_paths().get(
-        "investor", "operations/gmail/investor.md",
+        "investor",
+        "operations/gmail/investor.md",
     )
 
 
 def customer_path() -> str:
     return gmail_cfg().get("customer_wiki") or wiki_paths().get(
-        "customer", "operations/gmail/customer.md",
+        "customer",
+        "operations/gmail/customer.md",
     )
 
 

@@ -26,38 +26,34 @@ def all_label_specs(mailbox: str = "me") -> list[LabelSpec]:
     spec = profile_spec(mailbox)
     specs: list[LabelSpec] = []
 
-    attention_src = spec.attention if spec.attention else [
-        e["name"] for e in defs.get("attention") or []
-    ]
+    attention_src = (
+        spec.attention if spec.attention else [e["name"] for e in defs.get("attention") or []]
+    )
     for name in attention_src:
         visible = any(
-            e.get("visible", True)
-            for e in defs.get("attention") or []
-            if e["name"] == name
+            e.get("visible", True) for e in defs.get("attention") or [] if e["name"] == name
         )
         specs.append(LabelSpec(name=name, visible=visible))
 
-    domain_src = spec.domain if spec.domain else [
-        e["name"] for e in defs.get("domain") or []
-    ]
+    domain_src = spec.domain if spec.domain else [e["name"] for e in defs.get("domain") or []]
     for name in domain_src:
         if name in (defs.get("cold_inbound_parent"), defs.get("newsletters_parent")):
             continue
         visible = any(
-            e.get("visible", False)
-            for e in defs.get("domain") or []
-            if e["name"] == name
+            e.get("visible", False) for e in defs.get("domain") or [] if e["name"] == name
         )
         specs.append(LabelSpec(name=name, visible=visible))
 
     parent = defs.get("cold_inbound_parent", "Cold Inbound")
     if spec.cold_inbound_nested:
         for entry in defs.get("cold_inbound") or []:
-            specs.append(LabelSpec(
-                name=entry["name"],
-                visible=False,
-                parent=parent,
-            ))
+            specs.append(
+                LabelSpec(
+                    name=entry["name"],
+                    visible=False,
+                    parent=parent,
+                )
+            )
     elif parent in domain_src:
         specs.append(LabelSpec(name=parent, visible=False))
 
@@ -79,9 +75,7 @@ def ensure_taxonomy(mailbox: str = "me") -> dict[str, str]:
     parent_names: list[str] = []
     cold = defs.get("cold_inbound_parent", "Cold Inbound")
     nl = defs.get("newsletters_parent", "Newsletters")
-    domain_src = spec.domain if spec.domain else [
-        e["name"] for e in defs.get("domain") or []
-    ]
+    domain_src = spec.domain if spec.domain else [e["name"] for e in defs.get("domain") or []]
     if spec.cold_inbound_nested:
         parent_names.append(cold)
     elif cold in domain_src:

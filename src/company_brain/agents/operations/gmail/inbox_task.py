@@ -49,9 +49,7 @@ class InboxTaskAgent(BaseAgent):
             try:
                 issue = self._create_for_record(record)
                 subject = (
-                    record.extracted.get("subject")
-                    or issue.get("title")
-                    or "Gmail action item"
+                    record.extracted.get("subject") or issue.get("title") or "Gmail action item"
                 )
                 binding = self._bindings.create_gmail_binding(
                     message_id=record.message_id,
@@ -76,11 +74,15 @@ class InboxTaskAgent(BaseAgent):
     def _pending(self):
         out = []
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, attention="1. Action",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            attention="1. Action",
         ):
             out.append(record)
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, attention="2. Reply",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            attention="2. Reply",
         ):
             if "draft_reply" in record.handled:
                 continue

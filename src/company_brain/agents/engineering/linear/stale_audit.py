@@ -106,13 +106,15 @@ class StaleAuditAgent(BaseAgent):
             ident = issue.get("identifier") or issue.get("id") or "?"
             binding = self._bindings.find_by_linear(ident)
             suggested, reason = self._suggest_status(binding, updated, stale_days)
-            proposals.append({
-                "identifier": ident,
-                "title": issue.get("title") or "",
-                "current_status": (issue.get("state") or {}).get("name") or "?",
-                "suggested_status": suggested,
-                "reason": reason,
-            })
+            proposals.append(
+                {
+                    "identifier": ident,
+                    "title": issue.get("title") or "",
+                    "current_status": (issue.get("state") or {}).get("name") or "?",
+                    "suggested_status": suggested,
+                    "reason": reason,
+                }
+            )
         return proposals
 
     @staticmethod

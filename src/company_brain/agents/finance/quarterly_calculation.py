@@ -154,8 +154,10 @@ class QuarterlyCalculationManager(BaseAgent):
         def _f(v: float) -> str:
             return transactions.fmt_money(v)
 
-        q = {k: sum(monthly_data[m][k] for m in months) for k in
-             ("revenue", "total_expenses", "net_income", "ebitda", "net_burn")}
+        q = {
+            k: sum(monthly_data[m][k] for m in months)
+            for k in ("revenue", "total_expenses", "net_income", "ebitda", "net_burn")
+        }
 
         lines = [f"## {heading}", ""]
         lines.append(f"*Generated: {datetime.now():%Y-%m-%d %H:%M}. Basis: cash (Mercury + Ramp).*")
@@ -163,8 +165,11 @@ class QuarterlyCalculationManager(BaseAgent):
         lines.append(f"| Metric | {' | '.join(month_headers)} | Quarter Total |")
         lines.append(f"|---|{'---|' * len(months)}---|")
         for key, lbl in [
-            ("revenue", "Revenue"), ("total_expenses", "Total Expenses"),
-            ("net_income", "Net Income"), ("ebitda", "EBITDA"), ("net_burn", "Net Burn"),
+            ("revenue", "Revenue"),
+            ("total_expenses", "Total Expenses"),
+            ("net_income", "Net Income"),
+            ("ebitda", "EBITDA"),
+            ("net_burn", "Net Burn"),
         ]:
             row = " | ".join(_f(monthly_data[m][key]) for m in months)
             lines.append(f"| **{lbl}** | {row} | **{_f(q[key])}** |")
@@ -194,9 +199,7 @@ class QuarterlyCalculationManager(BaseAgent):
             computed = monthly_data[m]["total_expenses"]
             bound = notion_pages.get_bound_id(f"monthly_expense_{m}")
             present = "monthly report present" if bound else "no monthly report yet"
-            notes.append(
-                f"- {label}: computed {transactions.fmt_money(computed)} ({present})"
-            )
+            notes.append(f"- {label}: computed {transactions.fmt_money(computed)} ({present})")
         return "\n".join(notes)
 
     def _publish_notion(self, quarter: str, report: str) -> str | None:
@@ -213,7 +216,8 @@ class QuarterlyCalculationManager(BaseAgent):
         from .request_manual_accounting import RequestManualAccountingAgent
 
         get_runtime().run(
-            RequestManualAccountingAgent, self.config,
+            RequestManualAccountingAgent,
+            self.config,
             source_agent=self.name,
             context={"period": quarter, "kind": "quarterly"},
             uncategorized=uncategorized,
@@ -242,8 +246,14 @@ class QuarterlyCalculationManager(BaseAgent):
         for year in (now.year, now.year + 1):
             for month in sorted(QUARTER_START_MONTHS):
                 candidates.append(
-                    now.replace(year=year, month=month, day=RUN_DAY,
-                                hour=RUN_TIME.hour, minute=RUN_TIME.minute,
-                                second=0, microsecond=0)
+                    now.replace(
+                        year=year,
+                        month=month,
+                        day=RUN_DAY,
+                        hour=RUN_TIME.hour,
+                        minute=RUN_TIME.minute,
+                        second=0,
+                        microsecond=0,
+                    )
                 )
         return min(c for c in candidates if c > now)

@@ -47,7 +47,8 @@ class GrowthInboundAgent(BaseAgent):
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 if PRESS_TAG in record.domain_tags:
                     append_crm_entry(
-                        media_promotion_path(), "Media Promotion",
+                        media_promotion_path(),
+                        "Media Promotion",
                         format_mail_section(record, message),
                     )
                     media += 1
@@ -77,5 +78,7 @@ class GrowthInboundAgent(BaseAgent):
 
     def _pending(self):
         return self._store.unhandled_with_any_tag(
-            SPECIALIST_KEY, {PRESS_TAG, EVENT_TAG}, mailbox=self.mailbox,
+            SPECIALIST_KEY,
+            {PRESS_TAG, EVENT_TAG},
+            mailbox=self.mailbox,
         )

@@ -14,15 +14,20 @@ def test_structure_proposal_writes_wiki(tmp_path: Path):
     (tmp_path / "wiki" / "operations").mkdir(parents=True)
     config = MagicMock()
 
-    with patch(
-        "company_brain.agents.engineering.linear.structure_organization.linear_client.list_teams",
-        return_value=[{"key": "ENG", "name": "Engineering"}],
-    ), patch(
-        "company_brain.agents.engineering.linear.structure_organization.linear_client.linear_is_configured",
-        return_value=True,
-    ), patch.object(StructureOrganizationAgent, "_notify_slack"), patch(
-        "company_brain.wiki.publish.LocalWikiStore",
-        return_value=wiki,
+    with (
+        patch(
+            "company_brain.agents.engineering.linear.structure_organization.linear_client.list_teams",
+            return_value=[{"key": "ENG", "name": "Engineering"}],
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.structure_organization.linear_client.linear_is_configured",
+            return_value=True,
+        ),
+        patch.object(StructureOrganizationAgent, "_notify_slack"),
+        patch(
+            "company_brain.wiki.publish.LocalWikiStore",
+            return_value=wiki,
+        ),
     ):
         agent = StructureOrganizationAgent(config)
         with patch(

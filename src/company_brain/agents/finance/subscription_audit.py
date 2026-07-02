@@ -51,11 +51,13 @@ class SubscriptionAuditAgent(BaseAgent):
         if not quarter:
             return True  # ad-hoc runs always proceed
         from company_brain.agents.gates import changed_since
+
         return changed_since(f"subscription_audit:{quarter}", quarter)
 
     def verify(self, output: Any, **kwargs: Any):
         """Triage: no recurring vendors is 'noise' (suppress the ping)."""
         from company_brain.agents.result import AgentResult
+
         n = (output or {}).get("recurring_count", 0)
         return AgentResult(output=output, status="ok" if n else "noise")
 
@@ -68,9 +70,7 @@ class SubscriptionAuditAgent(BaseAgent):
 
         report = self._build_report(recurring)
 
-        page_id = notion_pages.ensure_page(
-            SUBSCRIPTIONS_KEY, SUBSCRIPTIONS_TERMS, "Subscriptions"
-        )
+        page_id = notion_pages.ensure_page(SUBSCRIPTIONS_KEY, SUBSCRIPTIONS_TERMS, "Subscriptions")
         if page_id:
             notion_pages.update_page_body(page_id, report)
 
@@ -108,19 +108,29 @@ class SubscriptionAuditAgent(BaseAgent):
             start, end = transactions.month_range(month)
             all_txns.extend(
                 runtime.run(
-                    BankTransactionAgent, self.config,
-                    start=start, end=end, include_inbound=False, include_outbound=True,
+                    BankTransactionAgent,
+                    self.config,
+                    start=start,
+                    end=end,
+                    include_inbound=False,
+                    include_outbound=True,
                 ).get("transactions", [])
             )
             all_txns.extend(
                 runtime.run(
-                    MercuryCardSpendAgent, self.config, start=start, end=end,
+                    MercuryCardSpendAgent,
+                    self.config,
+                    start=start,
+                    end=end,
                 ).get("transactions", [])
             )
             try:
                 all_txns.extend(
                     runtime.run(
-                        RampCardSpendAgent, self.config, start=start, end=end,
+                        RampCardSpendAgent,
+                        self.config,
+                        start=start,
+                        end=end,
                     ).get("transactions", [])
                 )
             except Exception:
@@ -137,14 +147,16 @@ class SubscriptionAuditAgent(BaseAgent):
             if len(active_months) < 2:
                 continue
             amounts = [abs(c["amount"]) for c in charges]
-            recurring.append({
-                "name": vendor,
-                "charge_count": len(charges),
-                "months_active": len(active_months),
-                "avg_amount": round(sum(amounts) / len(amounts), 2) if amounts else 0,
-                "total": round(sum(amounts), 2),
-                "sources": ", ".join(sorted({c.get("source", "") for c in charges})),
-            })
+            recurring.append(
+                {
+                    "name": vendor,
+                    "charge_count": len(charges),
+                    "months_active": len(active_months),
+                    "avg_amount": round(sum(amounts) / len(amounts), 2) if amounts else 0,
+                    "total": round(sum(amounts), 2),
+                    "sources": ", ".join(sorted({c.get("source", "") for c in charges})),
+                }
+            )
         return sorted(recurring, key=lambda x: -x["total"])
 
     # -- reporting ---------------------------------------------------------
@@ -175,7 +187,7 @@ recurring-charge data. Use web search to verify each vendor's public pricing,
 then flag overlapping services and suggest consolidations.
 
 RECURRING VENDORS:
-{vendor_block or '(none detected)'}
+{vendor_block or "(none detected)"}
 
 Produce a markdown report titled "# Subscription Audit" with:
 - a summary table (vendor, avg charge, annual estimate, verified price, notes)
@@ -198,13 +210,17 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
         raw = "\n".join(out)
         s, e = raw.rfind(_RESULT_START), raw.rfind(_RESULT_END)
         if s != -1 and e > s:
-            return raw[s + len(_RESULT_START):e].strip()
+            return raw[s + len(_RESULT_START) : e].strip()
         return raw
 
     @staticmethod
     def _deterministic_report(recurring: list[dict]) -> str:
-        lines = ["# Subscription Audit", "",
-                 f"*Generated deterministically; {len(recurring)} recurring vendors.*", ""]
+        lines = [
+            "# Subscription Audit",
+            "",
+            f"*Generated deterministically; {len(recurring)} recurring vendors.*",
+            "",
+        ]
         lines.append("| Vendor | Charges | Months | Avg | Total | Source |")
         lines.append("|---|---|---|---|---|---|")
         for v in recurring:
@@ -223,12 +239,16 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
         # Notify selectively: only ping when there are recurring vendors to review.
         severity = ACTIONABLE if recurring else INFO
         try:
-            from_finance_config(self.finance_config).emit(Signal(
-                text=(f"Subscription audit complete: {len(recurring)} recurring vendors, "
-                      f"~{transactions.fmt_money(total)} over the review window."),
-                severity=severity,
-                link_label="Subscriptions",
-                link_url=notion_pages.page_url(page_id) if page_id else None,
-            ))
+            from_finance_config(self.finance_config).emit(
+                Signal(
+                    text=(
+                        f"Subscription audit complete: {len(recurring)} recurring vendors, "
+                        f"~{transactions.fmt_money(total)} over the review window."
+                    ),
+                    severity=severity,
+                    link_label="Subscriptions",
+                    link_url=notion_pages.page_url(page_id) if page_id else None,
+                )
+            )
         except Exception:
             self.logger.exception("Slack notification failed")

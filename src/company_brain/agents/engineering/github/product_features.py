@@ -51,8 +51,12 @@ class ProductFeaturesAgent(BaseAgent):
 
         section = self._format_features(features)
         page_id = write_wiki_page(
-            WIKI_PATH, TITLE, section, mode=self.WRITE_MODE,
-            section="engineering/github", type_="report",
+            WIKI_PATH,
+            TITLE,
+            section,
+            mode=self.WRITE_MODE,
+            section="engineering/github",
+            type_="report",
         )
         return {"new_features": len(features), "notion_page_id": page_id}
 
@@ -70,12 +74,14 @@ class ProductFeaturesAgent(BaseAgent):
             if any(first_line.startswith(kw) for kw in internal_keywords):
                 continue
             if "feat" in first_line or "feature" in first_line or "add" in first_line:
-                features.append({
-                    "title": msg.split("\n")[0],
-                    "sha": commit.get("sha", "")[:7],
-                    "author": commit.get("author", {}).get("login", "unknown"),
-                    "date": commit.get("commit", {}).get("author", {}).get("date", ""),
-                })
+                features.append(
+                    {
+                        "title": msg.split("\n")[0],
+                        "sha": commit.get("sha", "")[:7],
+                        "author": commit.get("author", {}).get("login", "unknown"),
+                        "date": commit.get("commit", {}).get("author", {}).get("date", ""),
+                    }
+                )
         return features
 
     def _format_features(self, features: list[dict[str, Any]]) -> str:
@@ -83,7 +89,6 @@ class ProductFeaturesAgent(BaseAgent):
         today = datetime.now().strftime("%Y-%m-%d")
         lines = [f"## Detected {today}", ""]
         lines += [
-            f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})"
-            for f in features
+            f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})" for f in features
         ]
         return "\n".join(lines)

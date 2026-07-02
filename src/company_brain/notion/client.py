@@ -191,9 +191,7 @@ class NotionClient:
         databases: list[dict[str, Any]] = []
         cursor: str | None = None
         while True:
-            result = self.search(
-                filter_object="database", page_size=page_size, start_cursor=cursor
-            )
+            result = self.search(filter_object="database", page_size=page_size, start_cursor=cursor)
             if result.json_data and isinstance(result.json_data, dict):
                 databases.extend(result.json_data.get("results", []))
                 if not result.json_data.get("has_more"):

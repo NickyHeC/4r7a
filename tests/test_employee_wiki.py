@@ -81,7 +81,10 @@ def test_ensure_people_stub(wiki_roots):
 def test_ensure_member_wiki(wiki_roots):
     company = LocalWikiStore(root=wiki_roots["company"])
     paths = ensure_member_wiki(
-        "alice", email="alice@company.com", company_store=company, sync_notion=False,
+        "alice",
+        email="alice@company.com",
+        company_store=company,
+        sync_notion=False,
     )
     assert company.exists(paths["people"])
     emp = LocalEmployeeWikiStore()

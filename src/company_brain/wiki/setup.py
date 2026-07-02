@@ -159,8 +159,7 @@ def _find_or_create_root(client: NotionClient, config, notion_config) -> str:
     wiki_name = config.wiki.wiki_name
 
     parent_id = click.prompt(
-        "Enter the Notion page ID to create the wiki under "
-        "(or 'workspace' for top-level)",
+        "Enter the Notion page ID to create the wiki under (or 'workspace' for top-level)",
         default="workspace",
     )
 

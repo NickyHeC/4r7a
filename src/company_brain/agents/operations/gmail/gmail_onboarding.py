@@ -41,6 +41,7 @@ class GmailOnboardingAgent(BaseAgent):
         self.logger.info("Ensured %d Gmail labels", len(labels))
 
         from company_brain.agents.operations.shared.wiki_crm import ensure_crm_seeds
+
         seeded = ensure_crm_seeds(self.mailbox)
         if seeded:
             self.logger.info("Created %d CRM seed wiki page(s)", seeded)

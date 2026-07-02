@@ -89,7 +89,11 @@ class SlackThreadWatcherAgent(BaseAgent):
             if is_handled("slack_action_item", signature, store=self._state):
                 continue
             result = self._dispatch_action_items(
-                channel, thread_ts, message_ts, text, str(msg.get("user") or ""),
+                channel,
+                thread_ts,
+                message_ts,
+                text,
+                str(msg.get("user") or ""),
             )
             mark_handled("slack_action_item", signature, store=self._state)
             seen_threads.add(thread_ts)

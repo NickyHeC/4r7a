@@ -129,7 +129,10 @@ def run_model_health(
             )
             if not ok and apply_fallbacks:
                 replacement = _apply_fallback(
-                    provider_key, tier, primary, cfg=updated_cfg,
+                    provider_key,
+                    tier,
+                    primary,
+                    cfg=updated_cfg,
                 )
                 if replacement:
                     updated_cfg = replacement["cfg"]

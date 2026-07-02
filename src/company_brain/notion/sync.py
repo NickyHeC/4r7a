@@ -114,7 +114,8 @@ class NotionSync:
             logger.warning(
                 "No Notion parent for '%s' (section=%s); cannot create page. "
                 "Run init or set a binding.",
-                title, fm.get("section"),
+                title,
+                fm.get("section"),
             )
             return None
         result = self.client.create_page(parent, doc.body, title=title)

@@ -207,8 +207,7 @@ def _run_cli(args: list[str], *, timeout: int = 120) -> Any:
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     if result.returncode != 0:
         raise LinearCLIError(
-            f"linear CLI failed ({result.returncode}): "
-            f"{result.stderr[:400] or result.stdout[:400]}"
+            f"linear CLI failed ({result.returncode}): {result.stderr[:400] or result.stdout[:400]}"
         )
     out = result.stdout.strip()
     if not out:

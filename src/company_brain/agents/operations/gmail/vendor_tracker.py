@@ -36,14 +36,20 @@ class VendorTrackerAgent(BaseAgent):
         self._store = RoutingStore()
 
     def should_run(self, **kwargs: Any) -> bool:
-        return bool(self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Vendor",
-        ))
+        return bool(
+            self._store.unhandled_for(
+                SPECIALIST_KEY,
+                mailbox=self.mailbox,
+                domain_tag="Vendor",
+            )
+        )
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
         updated = 0
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Vendor",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            domain_tag="Vendor",
         ):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)

@@ -122,8 +122,7 @@ class WorkEventStore:
             mat = event.materialized or {}
             if target == "employee":
                 pending = [
-                    m for m in event_target_members(event)
-                    if m not in (mat.get("employee") or [])
+                    m for m in event_target_members(event) if m not in (mat.get("employee") or [])
                 ]
                 if pending:
                     out.append(event)

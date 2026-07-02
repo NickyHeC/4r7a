@@ -92,15 +92,21 @@ class GmailManager(BaseAgent):
 
         now = at or datetime.now()
         if agent_enabled("ingest_queue_review", self.mailbox) and is_scheduled_moment(
-            now, ingest_review_day(), ingest_review_time(),
+            now,
+            ingest_review_day(),
+            ingest_review_time(),
         ):
             self._run_agent(runtime, dispatch_map["ingest_queue_review"], ping_slack=True)
         if agent_enabled("partnership_digest", self.mailbox) and is_scheduled_moment(
-            now, partnership_digest_day(), partnership_digest_time(),
+            now,
+            partnership_digest_day(),
+            partnership_digest_time(),
         ):
             self._run_agent(runtime, dispatch_map["partnership_digest"])
         if agent_enabled("receipt_router", self.mailbox) and is_scheduled_moment(
-            now, receipt_router_day(), receipt_router_time(),
+            now,
+            receipt_router_day(),
+            receipt_router_time(),
         ):
             self._run_agent(runtime, dispatch_map["receipt_router"])
 

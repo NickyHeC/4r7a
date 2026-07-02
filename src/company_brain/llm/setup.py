@@ -68,9 +68,7 @@ def apply_mode(mode: str, *, config_dir=None) -> ModelsConfig:
 
     from company_brain.config import ProviderSpec
 
-    providers = cfg.providers or {
-        k: ProviderSpec(**v) for k, v in DEFAULT_PROVIDERS.items()
-    }
+    providers = cfg.providers or {k: ProviderSpec(**v) for k, v in DEFAULT_PROVIDERS.items()}
 
     updated = cfg.model_copy(
         update={

@@ -174,7 +174,8 @@ class NotionConfig(BaseModel):
             return None
         section = (section or "").strip("/")
         candidates = [
-            k for k in self.section_teamspace
+            k
+            for k in self.section_teamspace
             if section == k or section.startswith(k + "/") or k == ""
         ]
         if not candidates:

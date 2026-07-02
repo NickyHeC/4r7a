@@ -44,7 +44,9 @@ class SlackNotifier:
 
         try:
             resp = self.client.chat_postMessage(
-                channel=self.channel, text=text, blocks=blocks,
+                channel=self.channel,
+                text=text,
+                blocks=blocks,
             )
             logger.info("Posted to Slack %s (ts=%s)", self.channel, resp.get("ts"))
             return resp.get("ts")

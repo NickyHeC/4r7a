@@ -55,8 +55,9 @@ class StateStore:
         self._save(data)
 
 
-def changed_since(key: str, signature: Any, *, store: StateStore | None = None,
-                  update: bool = True) -> bool:
+def changed_since(
+    key: str, signature: Any, *, store: StateStore | None = None, update: bool = True
+) -> bool:
     """Return True if ``signature`` differs from the stored marker for ``key``.
 
     When True and ``update`` is set, the marker is advanced to ``signature`` so
@@ -116,7 +117,7 @@ def migrate_gate_keys(*, store: StateStore | None = None) -> dict[str, int]:
         else:
             for old_prefix, new_prefix in STATE_KEY_PREFIX_RENAMES.items():
                 if key.startswith(old_prefix):
-                    new_key = new_prefix + key[len(old_prefix):]
+                    new_key = new_prefix + key[len(old_prefix) :]
                     state += 1
                     break
         if new_key in updated and updated[new_key] != value:

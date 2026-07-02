@@ -151,10 +151,12 @@ def create_database_row(
     result = client.api(
         "v1/pages",
         method="POST",
-        data=json.dumps({
-            "parent": {"database_id": database_id},
-            "properties": properties,
-        }),
+        data=json.dumps(
+            {
+                "parent": {"database_id": database_id},
+                "properties": properties,
+            }
+        ),
     )
     if result.json_data and isinstance(result.json_data, dict):
         return result.json_data

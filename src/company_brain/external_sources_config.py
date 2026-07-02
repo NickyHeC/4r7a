@@ -81,8 +81,7 @@ def save_external_sources(cfg: ExternalSourcesConfig, config_dir: Path | None = 
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".yaml.tmp")
     tmp.write_text(
-        yaml.safe_dump(cfg.model_dump(), default_flow_style=False, sort_keys=False).strip()
-        + "\n"
+        yaml.safe_dump(cfg.model_dump(), default_flow_style=False, sort_keys=False).strip() + "\n"
     )
     tmp.replace(path)
 

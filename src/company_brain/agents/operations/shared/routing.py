@@ -102,7 +102,9 @@ class RoutingStore:
             records = self.iter_mailbox(mailbox)
         else:
             records = (
-                rec for sub in self._root.iterdir() if sub.is_dir()
+                rec
+                for sub in self._root.iterdir()
+                if sub.is_dir()
                 for rec in self.iter_mailbox(sub.name)
             )
         for rec in records:

@@ -46,7 +46,9 @@ class IngestAgent(BaseAgent):
             return self._ingest_thread(thread_id)
 
         records = self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Ingest",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            domain_tag="Ingest",
         )
         ingested = 0
         queued = 0
@@ -99,7 +101,13 @@ class IngestAgent(BaseAgent):
         return {"status": "ingested", "thread_id": thread_id, "entry_id": entry.id}
 
     def _mark_ambiguous(
-        self, records, thread_id: str, subject: str, body: str, *, reason: str,
+        self,
+        records,
+        thread_id: str,
+        subject: str,
+        body: str,
+        *,
+        reason: str,
     ) -> dict[str, Any]:
         for rec in records or self._store.find_by_thread(self.mailbox, thread_id):
             rec.extracted["ingest_status"] = "ambiguous"

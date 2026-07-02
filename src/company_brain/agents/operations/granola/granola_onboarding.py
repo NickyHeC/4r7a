@@ -80,8 +80,7 @@ class GranolaOnboardingAgent(BaseAgent):
         from company_brain.runtime import get_runtime
 
         self.logger.info(
-            "Backfill complete — starting meeting_watch "
-            "(post-meeting ingest + weekly miss check)",
+            "Backfill complete — starting meeting_watch (post-meeting ingest + weekly miss check)",
         )
         try:
             get_runtime().start(MeetingWatchAgent, self.config)

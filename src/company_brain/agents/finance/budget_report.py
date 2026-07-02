@@ -96,10 +96,10 @@ class BudgetReportAgent(BaseAgent):
 **{heading}**. Match the quarter's expenses to major company events.
 
 QUARTERLY METRIC DATA:
-{metric_text or '(none available)'}
+{metric_text or "(none available)"}
 
 COMPANY TIMELINE (major events):
-{timeline_text or '(none available)'}
+{timeline_text or "(none available)"}
 
 Write a concise markdown section that:
 - starts with the heading: ## {heading}
@@ -108,7 +108,10 @@ Write a concise markdown section that:
 Output only the markdown section."""
 
     async def _compose_with_openai(
-        self, heading: str, metric_text: str, timeline_text: str,
+        self,
+        heading: str,
+        metric_text: str,
+        timeline_text: str,
     ) -> str:
         from agents import Agent, Runner
 
@@ -148,8 +151,10 @@ Output only the markdown section."""
     @staticmethod
     def _deterministic_section(heading: str, metric_text: str) -> str:
         lines = [f"## {heading}", ""]
-        lines.append("Budget summary generated from quarterly metrics "
-                     "(event matching unavailable without the Claude Agent SDK).")
+        lines.append(
+            "Budget summary generated from quarterly metrics "
+            "(event matching unavailable without the Claude Agent SDK)."
+        )
         lines.append("")
         if metric_text:
             lines.append("Source quarterly metrics:")

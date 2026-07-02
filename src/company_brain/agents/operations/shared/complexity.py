@@ -8,8 +8,17 @@ from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.mail_body import plain_text, question_count
 
 COMPLEX_KEYWORDS = (
-    "contract", "legal", "term sheet", "nda", "msa", "sow", "invoice dispute",
-    "wire transfer", "lawsuit", "counsel", "signature required",
+    "contract",
+    "legal",
+    "term sheet",
+    "nda",
+    "msa",
+    "sow",
+    "invoice dispute",
+    "wire transfer",
+    "lawsuit",
+    "counsel",
+    "signature required",
 )
 
 

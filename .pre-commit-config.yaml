@@ -15,8 +15,7 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-      # ruff-format intentionally omitted: adopting it is a one-time project-wide
-      # reformat (~105 files today). Decide separately — see docs/development.md.
+      - id: ruff-format
 
   - repo: local
     hooks:

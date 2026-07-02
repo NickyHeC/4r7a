@@ -165,10 +165,13 @@ def test_index_refreshed_after_materialize(wiki_roots, monkeypatch):
 
 def test_slack_record_skips_without_member(wiki_roots):
     store = WorkEventStore(config_dir=wiki_roots["config"])
-    assert record_slack_work_event(
-        primary_member="",
-        channel="C1",
-        thread_ts="1.0",
-        title="noop",
-        store=store,
-    ) is None
+    assert (
+        record_slack_work_event(
+            primary_member="",
+            channel="C1",
+            thread_ts="1.0",
+            title="noop",
+            store=store,
+        )
+        is None
+    )

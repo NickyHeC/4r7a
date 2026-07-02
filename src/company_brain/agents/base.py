@@ -80,7 +80,11 @@ class BaseAgent(ABC):
                     break
                 self.logger.info(
                     "Agent '%s' attempt %d/%d: status=%s gaps=%s",
-                    self.name, attempt, self.max_iterations, result.status, result.gaps,
+                    self.name,
+                    attempt,
+                    self.max_iterations,
+                    result.status,
+                    result.gaps,
                 )
             self.logger.info("Agent '%s' completed (status=%s)", self.name, result.status)
             return result.output

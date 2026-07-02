@@ -37,15 +37,19 @@ def test_slack_action_items_creates_binding(tmp_path, monkeypatch):
     config = MagicMock()
     agent = SlackActionItemsAgent(config)
 
-    with patch(
-        "company_brain.agents.operations.slack.slack_action_items.linear_client.create_issue",
-        return_value={"id": "l1", "identifier": "ENG-7", "url": "https://linear/x"},
-    ), patch(
-        "company_brain.agents.operations.slack.slack_action_items.task_class_fan_out",
-        return_value=["linear", "slack"],
-    ), patch(
-        "company_brain.agents.operations.slack.slack_action_items.slack_client.permalink",
-        return_value="https://slack/x",
+    with (
+        patch(
+            "company_brain.agents.operations.slack.slack_action_items.linear_client.create_issue",
+            return_value={"id": "l1", "identifier": "ENG-7", "url": "https://linear/x"},
+        ),
+        patch(
+            "company_brain.agents.operations.slack.slack_action_items.task_class_fan_out",
+            return_value=["linear", "slack"],
+        ),
+        patch(
+            "company_brain.agents.operations.slack.slack_action_items.slack_client.permalink",
+            return_value="https://slack/x",
+        ),
     ):
         result = agent.run(
             channel="#team-ops",
@@ -102,12 +106,15 @@ def test_linear_completed_routes_slack():
     agent._bindings = MagicMock()
     agent._bindings.get.return_value = binding
 
-    with patch(
-        "company_brain.agents.engineering.linear.linear_completed.dispatcher.task_class_fan_out",
-        return_value=["linear", "slack"],
-    ), patch(
-        "company_brain.agents.engineering.linear.linear_completed.slack_thread_respond.SlackThreadRespondAgent"
-    ) as mock_cls:
+    with (
+        patch(
+            "company_brain.agents.engineering.linear.linear_completed.dispatcher.task_class_fan_out",
+            return_value=["linear", "slack"],
+        ),
+        patch(
+            "company_brain.agents.engineering.linear.linear_completed.slack_thread_respond.SlackThreadRespondAgent"
+        ) as mock_cls,
+    ):
         mock_cls.return_value.run.return_value = {"status": "replied"}
         result = agent.run(task_id="t1", linear_issue={"state": {"name": "Done"}})
 
@@ -118,25 +125,33 @@ def test_thread_watcher_dispatches_on_action_item():
     agent = SlackThreadWatcherAgent(MagicMock())
     msg = {"ts": "1.1", "text": "TODO: fix onboarding"}
 
-    with patch(
-        "company_brain.agents.operations.slack.slack_thread_watcher.cfg.watched_channels",
-        return_value=["#team-ops"],
-    ), patch.object(agent, "_since_timestamp", return_value=MagicMock()), patch(
-        "company_brain.agents.operations.slack.slack_thread_watcher.slack_client.fetch_channel_messages",
-        return_value=[msg],
-    ), patch(
-        "company_brain.agents.operations.slack.slack_thread_watcher.slack_client.datetime_to_slack_ts",
-        return_value=0.0,
-    ), patch(
-        "company_brain.agents.operations.slack.slack_thread_watcher.is_handled",
-        return_value=False,
-    ), patch(
-        "company_brain.agents.operations.slack.slack_thread_watcher.mark_handled",
-    ), patch.object(
-        agent,
-        "_dispatch_action_items",
-        return_value={"status": "created"},
-    ) as mock_dispatch:
+    with (
+        patch(
+            "company_brain.agents.operations.slack.slack_thread_watcher.cfg.watched_channels",
+            return_value=["#team-ops"],
+        ),
+        patch.object(agent, "_since_timestamp", return_value=MagicMock()),
+        patch(
+            "company_brain.agents.operations.slack.slack_thread_watcher.slack_client.fetch_channel_messages",
+            return_value=[msg],
+        ),
+        patch(
+            "company_brain.agents.operations.slack.slack_thread_watcher.slack_client.datetime_to_slack_ts",
+            return_value=0.0,
+        ),
+        patch(
+            "company_brain.agents.operations.slack.slack_thread_watcher.is_handled",
+            return_value=False,
+        ),
+        patch(
+            "company_brain.agents.operations.slack.slack_thread_watcher.mark_handled",
+        ),
+        patch.object(
+            agent,
+            "_dispatch_action_items",
+            return_value={"status": "created"},
+        ) as mock_dispatch,
+    ):
         scanned, hits = agent._scan_channel("#team-ops")
 
     assert scanned == 1

@@ -187,7 +187,11 @@ class IngestAgent(BaseAgent):
         return out
 
     def _fetch_for_key(
-        self, api_key: str, *, member_label: str | None, day: date,
+        self,
+        api_key: str,
+        *,
+        member_label: str | None,
+        day: date,
     ) -> list[dict[str, Any]]:
         if not api_key:
             return []
@@ -208,11 +212,13 @@ class IngestAgent(BaseAgent):
             except client.GranolaAPIError as exc:
                 self.logger.warning("Granola get_note failed for %s: %s", note_id, exc)
                 continue
-            summaries.append({
-                "note_id": note_id,
-                "member_label": member_label,
-                "detail": detail,
-            })
+            summaries.append(
+                {
+                    "note_id": note_id,
+                    "member_label": member_label,
+                    "detail": detail,
+                }
+            )
         return summaries
 
 

@@ -31,13 +31,14 @@ _KEY_PATHS = {
 def wiki_path(key: str) -> str:
     """Map a finance key (including dynamic ``monthly_expense_<YYYY-MM>``) to a path."""
     if key.startswith("monthly_expense_") and key != "monthly_expense_reports":
-        month = key[len("monthly_expense_"):]
+        month = key[len("monthly_expense_") :]
         return f"finance/expense-report/{month}.md"
     return _KEY_PATHS.get(key, f"finance/{key.replace('_', '-')}.md")
 
 
-def ensure_page(key: str, search_terms: list[str], create_title: str,
-                parent_key: str | None = None) -> str:
+def ensure_page(
+    key: str, search_terms: list[str], create_title: str, parent_key: str | None = None
+) -> str:
     """Return the wiki rel_path for a finance page (handle for read/write)."""
     return wiki_path(key)
 
@@ -59,8 +60,12 @@ def prepend_page_body(rel_path: str, body: str) -> bool:
     from company_brain.wiki.publish import APPEND
 
     write_wiki_page(
-        rel_path, _title_for(rel_path, body), body,
-        mode=APPEND, section="finance", type_="report",
+        rel_path,
+        _title_for(rel_path, body),
+        body,
+        mode=APPEND,
+        section="finance",
+        type_="report",
     )
     return True
 

@@ -14,29 +14,31 @@ from typing import Any
 from company_brain.agents.operations.shared.gmail_config import gmail_cfg, label_defs, mailbox_id
 
 # Specialist keys (match agent modules / routing handled keys).
-ALL_GMAIL_AGENTS = frozenset({
-    "inbox_triage",
-    "thread_watcher",
-    "inbox_sweep",
-    "draft_reply",
-    "decision_propagate",
-    "ingest",
-    "ingest_queue_review",
-    "attachment_router",
-    "investor_tracker",
-    "customer_support",
-    "customer_crm",
-    "growth_inbound",
-    "vendor_tracker",
-    "connection",
-    "recruiting_inbound",
-    "partnership_digest",
-    "inbox_task",
-    "team_on_it",
-    "duplicate_across_mailboxes",
-    "receipt_router",
-    "ext_meeting_scheduler",
-})
+ALL_GMAIL_AGENTS = frozenset(
+    {
+        "inbox_triage",
+        "thread_watcher",
+        "inbox_sweep",
+        "draft_reply",
+        "decision_propagate",
+        "ingest",
+        "ingest_queue_review",
+        "attachment_router",
+        "investor_tracker",
+        "customer_support",
+        "customer_crm",
+        "growth_inbound",
+        "vendor_tracker",
+        "connection",
+        "recruiting_inbound",
+        "partnership_digest",
+        "inbox_task",
+        "team_on_it",
+        "duplicate_across_mailboxes",
+        "receipt_router",
+        "ext_meeting_scheduler",
+    }
+)
 
 MANAGER_DISPATCH_ORDER = [
     "duplicate_across_mailboxes",
@@ -65,14 +67,16 @@ WEEKLY_DISPATCH = {
 }
 
 # CRM wiki seed keys (see wiki_crm.CRM_SEEDS).
-CRM_SEED_KEYS = frozenset({
-    "investor",
-    "investor_interest",
-    "customer",
-    "media_promotion",
-    "connection",
-    "inbound_candidate",
-})
+CRM_SEED_KEYS = frozenset(
+    {
+        "investor",
+        "investor_interest",
+        "customer",
+        "media_promotion",
+        "connection",
+        "inbound_candidate",
+    }
+)
 
 
 @dataclass

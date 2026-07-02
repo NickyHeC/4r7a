@@ -107,6 +107,7 @@ class GitHubManager(BaseAgent):
 
     def _has_open_pr_changes(self) -> bool:
         from company_brain.agents.engineering.github.gh import list_open_prs
+
         try:
             prs = list_open_prs(self.repo)
             return len(prs) > 0
@@ -116,6 +117,7 @@ class GitHubManager(BaseAgent):
 
     def _has_commit_activity_this_week(self) -> bool:
         from company_brain.agents.engineering.github.gh import list_recent_commits
+
         since = (datetime.now() - timedelta(days=7)).isoformat()
         try:
             commits = list_recent_commits(self.repo, since=since)
@@ -128,6 +130,7 @@ class GitHubManager(BaseAgent):
         """Cost gate: only true when the latest commit advanced since last dispatch."""
         from company_brain.agents.engineering.github.gh import list_recent_commits
         from company_brain.agents.gates import changed_since
+
         since = (datetime.now() - timedelta(days=1)).isoformat()
         try:
             commits = list_recent_commits(self.repo, since=since)

@@ -144,7 +144,8 @@ class SmolCloudRuntime(AgentRuntime):
     def run(self, agent_cls: type, config: AppConfig, /, **kwargs: Any) -> Any:
         logger.warning(
             "SmolCloudRuntime not available yet (smol machine CLI pending); "
-            "running '%s' locally instead.", getattr(agent_cls, "name", agent_cls.__name__)
+            "running '%s' locally instead.",
+            getattr(agent_cls, "name", agent_cls.__name__),
         )
         return LocalRuntime().run(agent_cls, config, **kwargs)
 

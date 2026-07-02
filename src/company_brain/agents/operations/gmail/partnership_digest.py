@@ -25,8 +25,17 @@ from company_brain.notify import ACTIONABLE, Signal
 SPECIALIST_KEY = "partnership_digest"
 PARTNERSHIP_TAGS = {"Cold Inbound/Partnership", "Cold Inbound/Founder Networking"}
 RELEVANCE_KEYWORDS = (
-    "strategic", "integration", "api", "enterprise", "revenue", "distribution",
-    "co-marketing", "platform", "ecosystem", "b2b", "saas",
+    "strategic",
+    "integration",
+    "api",
+    "enterprise",
+    "revenue",
+    "distribution",
+    "co-marketing",
+    "platform",
+    "ecosystem",
+    "b2b",
+    "saas",
 )
 KEEP_TOP = 3
 ARCHIVE_BELOW_SCORE = 2
@@ -65,9 +74,12 @@ class PartnershipDigestAgent(BaseAgent):
             tag = next((t for t in record.domain_tags if t in PARTNERSHIP_TAGS), "")
             lines.append(f"• [{score}] {subject} ({tag})")
 
-        partnership_digest_notifier().emit(Signal(
-            text="\n".join(lines), severity=ACTIONABLE,
-        ))
+        partnership_digest_notifier().emit(
+            Signal(
+                text="\n".join(lines),
+                severity=ACTIONABLE,
+            )
+        )
 
         archived = 0
         keep_ids = {r.message_id for _, r in scored[:KEEP_TOP]}
@@ -88,7 +100,9 @@ class PartnershipDigestAgent(BaseAgent):
 
     def _pending(self):
         return self._store.unhandled_with_any_tag(
-            SPECIALIST_KEY, PARTNERSHIP_TAGS, mailbox=self.mailbox,
+            SPECIALIST_KEY,
+            PARTNERSHIP_TAGS,
+            mailbox=self.mailbox,
         )
 
 

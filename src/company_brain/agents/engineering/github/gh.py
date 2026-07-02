@@ -27,9 +27,14 @@ def gh_json(args: list[str]) -> Any:
 
 def list_open_prs(repo: str | None = None) -> list[dict[str, Any]]:
     """List open pull requests with key metadata."""
-    args = ["pr", "list", "--state", "open", "--json",
-            "number,title,url,author,createdAt,updatedAt,headRefName,baseRefName,"
-            "labels,reviewDecision"]
+    args = [
+        "pr",
+        "list",
+        "--state",
+        "open",
+        "--json",
+        "number,title,url,author,createdAt,updatedAt,headRefName,baseRefName,labels,reviewDecision",
+    ]
     if repo:
         args.extend(["--repo", repo])
     return gh_json(args)

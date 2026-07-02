@@ -43,9 +43,7 @@ def meet_conference_enabled() -> bool:
 
 
 def significant_event_min_minutes() -> int:
-    return int(
-        (gcal_section().get("significant_event") or {}).get("min_duration_minutes", 60)
-    )
+    return int((gcal_section().get("significant_event") or {}).get("min_duration_minutes", 60))
 
 
 def significant_event_keywords() -> list[str]:
@@ -69,9 +67,8 @@ def daily_agenda_time() -> time:
 
 
 def daily_agenda_slack_user() -> str:
-    return (
-        os.getenv("GCAL_DAILY_AGENDA_SLACK_USER", "").strip()
-        or str((gcal_section().get("daily_agenda") or {}).get("slack_user") or "")
+    return os.getenv("GCAL_DAILY_AGENDA_SLACK_USER", "").strip() or str(
+        (gcal_section().get("daily_agenda") or {}).get("slack_user") or ""
     )
 
 

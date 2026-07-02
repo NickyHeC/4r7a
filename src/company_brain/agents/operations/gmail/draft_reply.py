@@ -80,7 +80,9 @@ class DraftReplyAgent(BaseAgent):
     def _llm_candidates(self):
         out = []
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, attention="2. Reply",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            attention="2. Reply",
         ):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
@@ -125,5 +127,6 @@ When the draft is created, output exactly: {_RESULT_MARKER}"""
         output = "\n".join(collected)
         if _RESULT_MARKER not in output and "SKIP" not in output:
             self.logger.warning(
-                "Draft agent did not confirm draft creation for thread %s", thread_id,
+                "Draft agent did not confirm draft creation for thread %s",
+                thread_id,
             )

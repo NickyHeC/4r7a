@@ -97,12 +97,14 @@ SPECIALIST_KEY_RENAMES: dict[str, str] = {
     "gmail_crm": "connection",
 }
 
-FRONTMATTER_PATH_KEYS = frozenset({
-    "duplicate_of",
-    "canonical_path",
-    "external_path",
-    "wiki_path",
-})
+FRONTMATTER_PATH_KEYS = frozenset(
+    {
+        "duplicate_of",
+        "canonical_path",
+        "external_path",
+        "wiki_path",
+    }
+)
 
 WIKILINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
 
@@ -120,7 +122,7 @@ def migrate_rel_path(rel_path: str, *, volume: Volume = "company") -> str:
         if rel == old_prefix.rstrip("/"):
             return new_prefix.rstrip("/")
         if rel.startswith(old_prefix):
-            return new_prefix + rel[len(old_prefix):]
+            return new_prefix + rel[len(old_prefix) :]
 
     if volume == "employee":
         parts = rel.split("/")
@@ -161,7 +163,7 @@ def migrate_specialist_key(key: str) -> str:
     if key in SPECIALIST_KEY_RENAMES:
         return SPECIALIST_KEY_RENAMES[key]
     if key.startswith("gmail_"):
-        stripped = key[len("gmail_"):]
+        stripped = key[len("gmail_") :]
         if stripped:
             return stripped
     return key

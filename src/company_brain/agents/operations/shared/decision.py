@@ -22,8 +22,16 @@ NON_DECISION_PATTERNS = (
 )
 
 DECISION_HINTS = (
-    "decided", "we will", "let's go with", "approved", "moving forward with",
-    "confirmed", "agreed to", "final answer", "our decision", "we're going to",
+    "decided",
+    "we will",
+    "let's go with",
+    "approved",
+    "moving forward with",
+    "confirmed",
+    "agreed to",
+    "final answer",
+    "our decision",
+    "we're going to",
 )
 
 

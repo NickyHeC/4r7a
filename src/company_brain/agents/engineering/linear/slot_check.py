@@ -40,9 +40,7 @@ class SlotCheckAgent(BaseAgent):
             project = issue.get("project")
             problems: list[str] = []
             if expected_key and team.get("key", "").lower() != expected_key:
-                problems.append(
-                    f"team `{team.get('key')}` != expected `{team_key()}`"
-                )
+                problems.append(f"team `{team.get('key')}` != expected `{team_key()}`")
             if project is None:
                 problems.append("missing project")
             if problems:

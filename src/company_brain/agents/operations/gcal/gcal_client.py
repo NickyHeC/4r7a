@@ -33,7 +33,7 @@ def gcal_provider() -> str:
     env = os.getenv("GCAL_MCP_PROVIDER", "").strip().lower()
     if env:
         return env
-    cfg = (load_operations_config().get("gcal") or {})
+    cfg = load_operations_config().get("gcal") or {}
     return str(cfg.get("provider", OFFICIAL)).strip().lower()
 
 

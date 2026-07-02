@@ -124,7 +124,7 @@ Do not include any commentary outside the markers."""
         if start_idx == -1 or end_idx == -1 or end_idx <= start_idx:
             logger.warning("Ramp agent output missing JSON markers")
             return {}
-        blob = raw[start_idx + len(_RESULT_START):end_idx].strip()
+        blob = raw[start_idx + len(_RESULT_START) : end_idx].strip()
         try:
             return json.loads(blob)
         except json.JSONDecodeError:

@@ -39,8 +39,9 @@ class FinanceOnboardingAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.finance_config = load_finance_config()
 
-    def run(self, *, start_month: str | None = None, start_managers: bool = True,
-            **kwargs: Any) -> dict[str, Any]:
+    def run(
+        self, *, start_month: str | None = None, start_managers: bool = True, **kwargs: Any
+    ) -> dict[str, Any]:
         start_month = start_month or self._detect_start_month()
         if not start_month:
             self.logger.warning("Could not determine a start month; nothing to backfill")
@@ -48,8 +49,12 @@ class FinanceOnboardingAgent(BaseAgent):
 
         months = self._months_through_last_complete(start_month)
         quarters = self._quarters_for_months(months)
-        self.logger.info("Onboarding backfill: %d months, %d quarters (from %s)",
-                         len(months), len(quarters), start_month)
+        self.logger.info(
+            "Onboarding backfill: %d months, %d quarters (from %s)",
+            len(months),
+            len(quarters),
+            start_month,
+        )
 
         from .monthly_expense import MonthlyExpenseManager
         from .quarterly_calculation import QuarterlyCalculationManager
@@ -103,11 +108,7 @@ class FinanceOnboardingAgent(BaseAgent):
             return configured
         try:
             accounts = [a for a in mc.list_accounts() if a.get("status") == "active"]
-            dates = [
-                mc.txn_date(t)
-                for t in mc.list_all_transactions(accounts)
-                if mc.txn_date(t)
-            ]
+            dates = [mc.txn_date(t) for t in mc.list_all_transactions(accounts) if mc.txn_date(t)]
             if dates:
                 return min(dates)[:7]
         except Exception:

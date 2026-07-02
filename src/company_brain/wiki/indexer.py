@@ -24,8 +24,9 @@ BACKLINKS_FILE = "_backlinks.json"
 WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 
 
-def rebuild(store: "WikiStore", articles: list["Article"],
-            aliases: dict[str, str] | None = None) -> None:
+def rebuild(
+    store: "WikiStore", articles: list["Article"], aliases: dict[str, str] | None = None
+) -> None:
     """Regenerate _index.md and _backlinks.json from the current articles."""
     store.write_text(INDEX_FILE, _build_index_md(articles, aliases or {}))
     store.write_text(BACKLINKS_FILE, json.dumps(_build_backlinks(articles), indent=2))

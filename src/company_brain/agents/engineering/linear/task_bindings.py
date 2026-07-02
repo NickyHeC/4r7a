@@ -171,12 +171,14 @@ class TaskBindingStore:
             }
             existing.title = title or existing.title
             existing.platforms.setdefault("gmail", {})
-            existing.platforms["gmail"].update({
-                "message_id": message_id,
-                "thread_id": thread_id,
-                "mailbox": mailbox,
-                "archived": existing.platforms.get("gmail", {}).get("archived", False),
-            })
+            existing.platforms["gmail"].update(
+                {
+                    "message_id": message_id,
+                    "thread_id": thread_id,
+                    "mailbox": mailbox,
+                    "archived": existing.platforms.get("gmail", {}).get("archived", False),
+                }
+            )
             return self.upsert(
                 existing,
                 mirror_wiki=mirror_wiki,
@@ -309,12 +311,14 @@ class TaskBindingStore:
             }
             existing.title = title or existing.title
             existing.platforms.setdefault("slack", {})
-            existing.platforms["slack"].update({
-                "channel": channel,
-                "thread_ts": thread_ts,
-                "message_ts": message_ts,
-                "replied": existing.platforms.get("slack", {}).get("replied", False),
-            })
+            existing.platforms["slack"].update(
+                {
+                    "channel": channel,
+                    "thread_ts": thread_ts,
+                    "message_ts": message_ts,
+                    "replied": existing.platforms.get("slack", {}).get("replied", False),
+                }
+            )
             return self.upsert(
                 existing,
                 mirror_wiki=mirror_wiki,
@@ -402,9 +406,7 @@ def rebuild_task_index(
                 detail = task_detail_path(b)
                 notion = b.platforms.get("notion") or {}
                 notion_hint = " · Notion" if notion.get("page_id") else ""
-                lines.append(
-                    f"- [[{ident}|{detail}]] — {b.title or '(untitled)'}{notion_hint}"
-                )
+                lines.append(f"- [[{ident}|{detail}]] — {b.title or '(untitled)'}{notion_hint}")
             lines.append("")
 
     write_wiki_page(
@@ -469,13 +471,15 @@ def _render_detail_body(binding: TaskBinding) -> str:
             lines.append("")
 
     if binding.status_track:
-        lines.extend([
-            "",
-            "## Status track",
-            "",
-            "| Platform | Field | Value | Updated |",
-            "|---|---|---|---|",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Status track",
+                "",
+                "| Platform | Field | Value | Updated |",
+                "|---|---|---|---|",
+            ]
+        )
         for entry in binding.status_track:
             lines.append(
                 f"| {entry.get('platform', '')} | {entry.get('field', '')} "
@@ -496,11 +500,13 @@ def attach_notion_platform(
 ) -> TaskBinding:
     """Attach or update Notion database row metadata on a binding."""
     binding.platforms.setdefault("notion", {})
-    binding.platforms["notion"].update({
-        "database_key": database_key,
-        "page_id": page_id,
-        "url": url,
-    })
+    binding.platforms["notion"].update(
+        {
+            "database_key": database_key,
+            "page_id": page_id,
+            "url": url,
+        }
+    )
     if title:
         binding.title = title
     return binding

@@ -107,18 +107,19 @@ class RequestManualManagementAgent(BaseAgent):
             reason = p.get("reason") or ""
             suffix = f" | note: {reason}" if reason else " | note: ___"
             lines.append(
-                f"- [ ] {ident} | {title} | current: {current} | "
-                f"proposed: {suggested}{suffix}"
+                f"- [ ] {ident} | {title} | current: {current} | proposed: {suggested}{suffix}"
             )
         lines.append("")
         return "\n".join(lines)
 
     def _post_request(self, count: int) -> None:
         try:
-            linear_notifier().emit(Signal(
-                text=f"Linear manual management: {count} issue(s) need review.",
-                severity=ACTIONABLE,
-            ))
+            linear_notifier().emit(
+                Signal(
+                    text=f"Linear manual management: {count} issue(s) need review.",
+                    severity=ACTIONABLE,
+                )
+            )
         except Exception:
             self.logger.exception("Slack request failed")
 
@@ -148,10 +149,12 @@ class RequestManualManagementAgent(BaseAgent):
 
     def _bump(self) -> None:
         try:
-            linear_notifier().emit(Signal(
-                text="Reminder: Linear manual management items still need review.",
-                severity=ACTIONABLE,
-            ))
+            linear_notifier().emit(
+                Signal(
+                    text="Reminder: Linear manual management items still need review.",
+                    severity=ACTIONABLE,
+                )
+            )
         except Exception:
             self.logger.exception("Slack bump failed")
 
@@ -166,9 +169,7 @@ class RequestManualManagementAgent(BaseAgent):
             checked = m.group(1).lower() == "x"
             body = m.group(2)
             proposed = _PROPOSED_RE.search(body)
-            has_proposed = bool(
-                proposed and proposed.group(1).strip() not in ("", "___", "Review")
-            )
+            has_proposed = bool(proposed and proposed.group(1).strip() not in ("", "___", "Review"))
             if not (checked or has_proposed):
                 return False
         return found

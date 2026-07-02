@@ -76,7 +76,9 @@ def _busy_block(raw: dict[str, str]) -> tuple[datetime, datetime]:
 
 
 def _overlaps_busy(
-    start: datetime, end: datetime, blocks: list[tuple[datetime, datetime]],
+    start: datetime,
+    end: datetime,
+    blocks: list[tuple[datetime, datetime]],
 ) -> bool:
     for b_start, b_end in blocks:
         if start < b_end and end > b_start:
@@ -103,7 +105,9 @@ def _significant_event_ends(range_start: datetime, range_end: datetime) -> list[
 
 
 def _after_significant_events(
-    cursor: datetime, day: date, significant_ends: list[datetime],
+    cursor: datetime,
+    day: date,
+    significant_ends: list[datetime],
 ) -> datetime:
     tz = cursor.tzinfo
     latest: datetime | None = None

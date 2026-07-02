@@ -27,6 +27,7 @@ class _SlackChannel:
     def client(self) -> Any:
         if self._client is None:
             from slack_sdk import WebClient
+
             if not self._token:
                 raise RuntimeError("SLACK_BOT_TOKEN not set — see .env")
             self._client = WebClient(token=self._token)
@@ -34,6 +35,7 @@ class _SlackChannel:
 
     def post(self, text: str) -> str | None:
         from slack_sdk.errors import SlackApiError
+
         try:
             resp = self.client.chat_postMessage(channel=self.channel, text=text)
             return resp.get("ts")

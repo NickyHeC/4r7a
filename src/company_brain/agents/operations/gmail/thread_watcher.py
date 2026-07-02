@@ -123,7 +123,10 @@ class ThreadWatcherAgent(BaseAgent):
             apply_labels(message_id, add=add_tags, mailbox=self.mailbox)
 
         updated = self._store.upsert_thread_tags(
-            self.mailbox, thread_id, add_tags=add_tags, extracted=extracted,
+            self.mailbox,
+            thread_id,
+            add_tags=add_tags,
+            extracted=extracted,
         )
 
         if kind == "decision" and agent_enabled("decision_propagate", self.mailbox):
@@ -144,8 +147,11 @@ class ThreadWatcherAgent(BaseAgent):
 
         try:
             get_runtime().run(
-                DecisionPropagateAgent, self.config,
-                mailbox=self.mailbox, thread_id=thread_id, message_id=message_id,
+                DecisionPropagateAgent,
+                self.config,
+                mailbox=self.mailbox,
+                thread_id=thread_id,
+                message_id=message_id,
             )
         except Exception:
             self.logger.exception("decision_propagate dispatch failed")
@@ -156,8 +162,10 @@ class ThreadWatcherAgent(BaseAgent):
 
         try:
             get_runtime().run(
-                IngestAgent, self.config,
-                mailbox=self.mailbox, thread_id=thread_id,
+                IngestAgent,
+                self.config,
+                mailbox=self.mailbox,
+                thread_id=thread_id,
             )
         except Exception:
             self.logger.exception("ingest dispatch failed")

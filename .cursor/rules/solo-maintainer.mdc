@@ -88,6 +88,7 @@ Doc format: [`docs/doc-style.md`](../../docs/doc-style.md).
 
 ```bash
 ruff check .
+ruff format --check .
 pytest -q
 company-brain doctor code
 ```
@@ -108,7 +109,7 @@ After a **large feature section** ships, ask the user:
 When they say yes, run the three-pass checklist in
 [`docs/development.md`](../../docs/development.md) → **Post-feature hygiene checklist**:
 
-1. **Cleanliness** — `ruff check .`, `pytest -q`, `git status --short`; no stray
+1. **Cleanliness** — `ruff check .`, `ruff format --check .`, `pytest -q`, `git status --short`; no stray
    generated files tracked (gitignore local-only state), no leftover `docs/plans/*`.
 2. **Coherence** — `company-brain doctor code` (+ `doctor llm` when keys exist), then
    docs-vs-code: handbook, README map, `project_install.md`, `config/*.yaml` keys have

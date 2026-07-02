@@ -11,6 +11,7 @@ After agent or platform work:
 
 ```bash
 ruff check .
+ruff format --check .
 pytest -q
 company-brain doctor all
 ```
@@ -64,6 +65,7 @@ auto-run destructive cleanup.
 
 ```bash
 ruff check .              # style, unused imports (F401), redefs (F811)
+ruff format --check .     # canonical layout (Black-compatible)
 pytest -q                 # full suite green
 pre-commit run -a         # whitespace, EOF, merge markers, large files, YAML, private-key
 git status --short        # only intended files changed
@@ -75,9 +77,8 @@ git diff                  # self-review the change before commit
 - No `docs/plans/*` left behind for shipped work (delete when steady-state docs are updated).
 - No debug leftovers: `rg -n 'breakpoint\(|import pdb|pdb.set_trace|print\('` in touched
   `src/` files (logging via `self.logger`, not `print`).
-- **Formatting:** the tree is not `ruff format`-clean yet (adopting it is a one-time
-  ~105-file reformat). Until that decision, keep new code close to surrounding style;
-  do not run `ruff format .` as part of a feature commit.
+- **Formatting:** `ruff format` is adopted project-wide. Run `ruff format .` before
+  commit if pre-commit is not installed; CI runs `ruff format --check .`.
 
 ### 2. Coherence
 
@@ -164,8 +165,7 @@ pre-commit run -a          # run against the whole tree once
 
 Hooks: standard file checks (trailing whitespace, EOF newline, merge-conflict
 markers, large-file guard, YAML validity, `detect-private-key`), `ruff check --fix`,
-and `pytest -q`. `ruff-format` is intentionally omitted until the project adopts a
-one-time full reformat.
+`ruff format`, and `pytest -q`.
 
 ## CI
 

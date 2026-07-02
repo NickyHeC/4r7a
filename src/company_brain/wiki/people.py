@@ -28,16 +28,18 @@ def ensure_people_stub(
     ]
     if email:
         body_lines.append(f"- **Email:** {email}")
-    body_lines.extend([
-        "",
-        "## Employee wiki",
-        "",
-        "Work record and knowledge live in the employee wiki building:",
-        f"`employee_wiki/{employee_root}/` (see `_index.md` for current work).",
-        "",
-        "_This page is the company directory entry; the employee wiki holds the work record._",
-        "",
-    ])
+    body_lines.extend(
+        [
+            "",
+            "## Employee wiki",
+            "",
+            "Work record and knowledge live in the employee wiki building:",
+            f"`employee_wiki/{employee_root}/` (see `_index.md` for current work).",
+            "",
+            "_This page is the company directory entry; the employee wiki holds the work record._",
+            "",
+        ]
+    )
 
     write_wiki_page(
         rel,

@@ -54,6 +54,7 @@ class MissCheckAgent(BaseAgent):
     def _calendar_events(start: datetime, end: datetime) -> list[dict[str, Any]]:
         try:
             from company_brain.agents.operations.gcal import gcal_rest as gcal
+
             return gcal.list_events(start, end)
         except Exception:
             return []

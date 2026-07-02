@@ -66,8 +66,9 @@ class RequestManualAccountingAgent(BaseAgent):
         **kwargs: Any,
     ) -> dict[str, Any]:
         period = context.get("period", "")
-        self.logger.info("Manual request for %s (%s): %d uncategorized",
-                         source_agent, period, len(uncategorized))
+        self.logger.info(
+            "Manual request for %s (%s): %d uncategorized", source_agent, period, len(uncategorized)
+        )
 
         page_id = notion_pages.ensure_page(MANUAL_KEY, MANUAL_TERMS, "Manual Accounting")
         if not page_id:
@@ -78,7 +79,7 @@ class RequestManualAccountingAgent(BaseAgent):
         self._post_request(page_id, context, len(uncategorized))
 
         # Default to a bounded polling loop; callers/tests may disable waiting.
-        manual_cfg = (self.finance_config.get("manual") or {})
+        manual_cfg = self.finance_config.get("manual") or {}
         if wait_for_completion is None:
             wait_for_completion = bool(manual_cfg.get("wait_for_completion", True))
 
@@ -101,8 +102,10 @@ class RequestManualAccountingAgent(BaseAgent):
     def _build_checklist(self, context: dict[str, Any], uncategorized: list[dict]) -> str:
         period = context.get("period", "")
         lines = [f"## Manual Accounting Needed — {period}", ""]
-        lines.append(f"*Requested {datetime.now():%Y-%m-%d %H:%M}. "
-                     f"Set a category for each item, then it will be learned automatically.*")
+        lines.append(
+            f"*Requested {datetime.now():%Y-%m-%d %H:%M}. "
+            f"Set a category for each item, then it will be learned automatically.*"
+        )
         lines.append("")
         for t in uncategorized:
             amt = transactions.fmt_money(abs(t.get("amount", 0)))
@@ -114,15 +117,19 @@ class RequestManualAccountingAgent(BaseAgent):
         return "\n".join(lines)
 
     def _post_request(self, page_id: str, context: dict[str, Any], count: int) -> None:
-        text = (f"Manual accounting needed for {context.get('period', '')}: "
-                f"{count} uncategorized transaction(s). Please add categories.")
+        text = (
+            f"Manual accounting needed for {context.get('period', '')}: "
+            f"{count} uncategorized transaction(s). Please add categories."
+        )
         try:
-            from_finance_config(self.finance_config).emit(Signal(
-                text=text,
-                severity=ACTIONABLE,
-                link_label="Manual Accounting",
-                link_url=notion_pages.page_url(page_id),
-            ))
+            from_finance_config(self.finance_config).emit(
+                Signal(
+                    text=text,
+                    severity=ACTIONABLE,
+                    link_label="Manual Accounting",
+                    link_url=notion_pages.page_url(page_id),
+                )
+            )
         except Exception:
             self.logger.exception("Slack request failed")
 
@@ -142,12 +149,14 @@ class RequestManualAccountingAgent(BaseAgent):
 
     def _bump(self, page_id: str) -> None:
         try:
-            from_finance_config(self.finance_config).emit(Signal(
-                text="Reminder: some transactions still need manual categorization.",
-                severity=ACTIONABLE,
-                link_label="Manual Accounting",
-                link_url=notion_pages.page_url(page_id),
-            ))
+            from_finance_config(self.finance_config).emit(
+                Signal(
+                    text="Reminder: some transactions still need manual categorization.",
+                    severity=ACTIONABLE,
+                    link_label="Manual Accounting",
+                    link_url=notion_pages.page_url(page_id),
+                )
+            )
         except Exception:
             self.logger.exception("Slack bump failed")
 
@@ -199,9 +208,11 @@ class RequestManualAccountingAgent(BaseAgent):
         try:
             if source_agent == "finance_monthly_expense":
                 from .monthly_expense import MonthlyExpenseManager
+
                 MonthlyExpenseManager(self.config).run_once(period, escalate=False)
             elif source_agent == "finance_quarterly_calculation":
                 from .quarterly_calculation import QuarterlyCalculationManager
+
                 QuarterlyCalculationManager(self.config).run_once(period, escalate=False)
             else:
                 self.logger.warning("Unknown source agent '%s' — cannot rerun", source_agent)

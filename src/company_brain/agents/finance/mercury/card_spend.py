@@ -37,15 +37,17 @@ class MercuryCardSpendAgent(BaseAgent):
             amount = t.get("amount", 0) or 0
             if amount >= 0:
                 continue  # card spend = outflow
-            records.append({
-                "name": mc.txn_counterparty(t),
-                "amount": amount,
-                "date": mc.txn_date(t),
-                "source": "Mercury Credit",
-                "category": mc.txn_category(t),
-                "account": t.get("_account_name", ""),
-                "kind": t.get("kind", ""),
-            })
+            records.append(
+                {
+                    "name": mc.txn_counterparty(t),
+                    "amount": amount,
+                    "date": mc.txn_date(t),
+                    "source": "Mercury Credit",
+                    "category": mc.txn_category(t),
+                    "account": t.get("_account_name", ""),
+                    "kind": t.get("kind", ""),
+                }
+            )
 
         by_category: dict[str, float] = defaultdict(float)
         for r in records:

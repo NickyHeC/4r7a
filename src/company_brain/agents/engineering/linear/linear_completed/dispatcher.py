@@ -71,7 +71,9 @@ class LinearCompletedAgent(BaseAgent):
             )
 
         results["employee_wiki"] = self._record_employee_work_event(
-            binding, linear_issue or {}, linear_status,
+            binding,
+            linear_issue or {},
+            linear_status,
         )
 
         return results
@@ -101,6 +103,8 @@ class LinearCompletedAgent(BaseAgent):
             status=linear_status,
             url=str(issue.get("url") or linear.get("url") or ""),
             event_type="linear_completed",
-            company_links=[f"engineering/tasks/{binding.department}/{binding.project}/{binding.task_id}.md"],
+            company_links=[
+                f"engineering/tasks/{binding.department}/{binding.project}/{binding.task_id}.md"
+            ],
         )
         return {"status": "recorded", "event_id": event.event_id, "member": member}

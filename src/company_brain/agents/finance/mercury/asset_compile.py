@@ -69,9 +69,14 @@ class AssetCompileAgent(BaseAgent):
         page_id = None
         if self.publish:
             from company_brain.wiki.publish import write_wiki_page
+
             page_id = write_wiki_page(
-                "finance/total-asset.md", "Total Assets", report,
-                mode=self.WRITE_MODE, section="finance", type_="report",
+                "finance/total-asset.md",
+                "Total Assets",
+                report,
+                mode=self.WRITE_MODE,
+                section="finance",
+                type_="report",
             )
 
         return {
@@ -96,23 +101,27 @@ class AssetCompileAgent(BaseAgent):
                 balance, source = acct.get("currentBalance", 0.0), "live balance"
             if acct.get("status") != "active" and not balance:
                 continue
-            bank.append({
-                "name": acct.get("name", ""),
-                "nickname": acct.get("nickname", ""),
-                "kind": acct.get("kind", ""),
-                "status": acct.get("status", ""),
-                "balance": balance,
-                "source": source,
-            })
+            bank.append(
+                {
+                    "name": acct.get("name", ""),
+                    "nickname": acct.get("nickname", ""),
+                    "kind": acct.get("kind", ""),
+                    "status": acct.get("status", ""),
+                    "balance": balance,
+                    "source": source,
+                }
+            )
         return bank
 
     def _collect_treasury(self) -> list[dict]:
         treasury: list[dict] = []
         for t in mc.list_treasury_accounts():
-            treasury.append({
-                "balance": t.get("currentBalance", 0.0),
-                "source": "live balance (no historical API)",
-            })
+            treasury.append(
+                {
+                    "balance": t.get("currentBalance", 0.0),
+                    "source": "live balance (no historical API)",
+                }
+            )
         return treasury
 
     @staticmethod

@@ -31,9 +31,7 @@ class Publisher:
     ):
         self._index = WikiIndex(store)
         self._store = self._index.store
-        self._sync = NotionSync(
-            store=self._store, client=client, config=config, registry=registry
-        )
+        self._sync = NotionSync(store=self._store, client=client, config=config, registry=registry)
 
     def publish(self, article: Article) -> str:
         """Write the article to the wiki store, then sync to Notion.

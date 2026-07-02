@@ -48,7 +48,8 @@ class IngestionPipeline:
         Returns the list of new (non-duplicate) entries.
         """
         targets = (
-            [self._ingestors[source]] if source and source in self._ingestors
+            [self._ingestors[source]]
+            if source and source in self._ingestors
             else list(self._ingestors.values())
         )
 

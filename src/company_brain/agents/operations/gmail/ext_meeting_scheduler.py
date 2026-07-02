@@ -171,7 +171,9 @@ def _has_time_confirmation(thread: dict[str, Any], *, mailbox: str) -> bool:
 
 
 def _match_slot_from_thread(
-    thread: dict[str, Any], *, mailbox: str,
+    thread: dict[str, Any],
+    *,
+    mailbox: str,
 ) -> TimeSlot | None:
     slots = slots_for_scheduler(importance="medium")
     if not slots:
@@ -202,8 +204,10 @@ def _proposal_draft_body(slots: list[TimeSlot]) -> str:
     ]
     for slot in slots:
         lines.append(f"- {slot.label()}")
-    lines.extend([
-        "",
-        "Let me know which works best and I'll send a calendar invite.",
-    ])
+    lines.extend(
+        [
+            "",
+            "Let me know which works best and I'll send a calendar invite.",
+        ]
+    )
     return "\n".join(lines)

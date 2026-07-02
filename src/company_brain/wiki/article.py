@@ -103,8 +103,10 @@ class Article(BaseModel):
         section = fm.get("section") or ""
         if not section and rel_path and "/" in rel_path:
             section = rel_path.rsplit("/", 1)[0]
-        title = fm.get("title") or _title_from_body(doc.body) or (
-            rel_path.rsplit("/", 1)[-1].removesuffix(".md") if rel_path else "Untitled"
+        title = (
+            fm.get("title")
+            or _title_from_body(doc.body)
+            or (rel_path.rsplit("/", 1)[-1].removesuffix(".md") if rel_path else "Untitled")
         )
         return cls(
             id=fm.get("id") or "",

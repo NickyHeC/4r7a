@@ -32,19 +32,26 @@ class CustomerCRMAgent(BaseAgent):
         self._store = RoutingStore()
 
     def should_run(self, **kwargs: Any) -> bool:
-        return bool(self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Customer",
-        ))
+        return bool(
+            self._store.unhandled_for(
+                SPECIALIST_KEY,
+                mailbox=self.mailbox,
+                domain_tag="Customer",
+            )
+        )
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
         updated = 0
         for record in self._store.unhandled_for(
-            SPECIALIST_KEY, mailbox=self.mailbox, domain_tag="Customer",
+            SPECIALIST_KEY,
+            mailbox=self.mailbox,
+            domain_tag="Customer",
         ):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 append_crm_entry(
-                    customers_wiki_path(), "Customers",
+                    customers_wiki_path(),
+                    "Customers",
                     format_mail_section(record, message),
                 )
                 self._store.mark_handled(record, SPECIALIST_KEY)

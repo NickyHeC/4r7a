@@ -42,9 +42,9 @@ class ReceiptRouterAgent(BaseAgent):
     def run(self, **kwargs: Any) -> dict[str, Any]:
         since = datetime.now(timezone.utc) - timedelta(days=7)
         receipts = [
-            r for r in self._store.iter_mailbox(self.mailbox)
-            if "Receipts" in r.domain_tags
-            and _parse_triaged(r.triaged_at) >= since
+            r
+            for r in self._store.iter_mailbox(self.mailbox)
+            if "Receipts" in r.domain_tags and _parse_triaged(r.triaged_at) >= since
         ]
         domains_seen = {_domain_from(r.extracted.get("from", "")) for r in receipts}
         domains_seen.discard("")
@@ -81,7 +81,11 @@ class ReceiptRouterAgent(BaseAgent):
 
         rel_path = receipt_router_wiki_path()
         write_wiki_page(
-            rel_path, "Receipt Routing", "\n".join(lines), mode=APPEND, section="operations/gmail",
+            rel_path,
+            "Receipt Routing",
+            "\n".join(lines),
+            mode=APPEND,
+            section="operations/gmail",
         )
 
         for record in receipts:

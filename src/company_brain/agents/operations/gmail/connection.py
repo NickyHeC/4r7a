@@ -41,7 +41,8 @@ class ConnectionAgent(BaseAgent):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 append_crm_entry(
-                    connection_path(), "Connections",
+                    connection_path(),
+                    "Connections",
                     format_mail_section(record, message),
                 )
                 self._store.mark_handled(record, SPECIALIST_KEY)
@@ -55,7 +56,8 @@ class ConnectionAgent(BaseAgent):
         if profile_spec(self.mailbox).warm_intro:
             tags.add("Warm intro")
         return self._store.unhandled_with_any_tag(
-            SPECIALIST_KEY, tags,
+            SPECIALIST_KEY,
+            tags,
             mailbox=self.mailbox,
             exclude_contact_type="investor",
         )

@@ -65,7 +65,7 @@ def gmail_provider() -> str:
     env = os.getenv("GMAIL_MCP_PROVIDER", "").strip().lower()
     if env:
         return env
-    cfg = (load_operations_config().get("gmail") or {})
+    cfg = load_operations_config().get("gmail") or {}
     return str(cfg.get("provider", OFFICIAL)).strip().lower()
 
 
@@ -78,7 +78,7 @@ def send_allowed() -> bool:
     allowed_env = os.getenv("GMAIL_ALLOW_SEND", "").strip()
     if GMAIL_SEND_FORBIDDEN and allowed_env not in ("1", "true", "yes"):
         return False
-    cfg = (load_operations_config().get("gmail") or {})
+    cfg = load_operations_config().get("gmail") or {}
     return bool(cfg.get("allow_send", False))
 
 
@@ -121,6 +121,7 @@ def gmail_is_configured() -> bool:
 
 # -- official (Google-hosted) ---------------------------------------------------
 
+
 def _official_servers() -> dict[str, Any]:
     url = os.getenv("GMAIL_MCP_URL", "").strip() or DEFAULT_OFFICIAL_URL
     server: dict[str, Any] = {"type": "http", "url": url}
@@ -138,6 +139,7 @@ def _official_servers() -> dict[str, Any]:
 
 
 # -- composio (hosted) ----------------------------------------------------------
+
 
 def _composio_url() -> str:
     """Return the Composio Gmail MCP URL (explicit env, else mint a session)."""

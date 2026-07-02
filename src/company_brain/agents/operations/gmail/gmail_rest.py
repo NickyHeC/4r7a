@@ -245,6 +245,7 @@ def message_date(message: dict[str, Any]) -> str | None:
     if internal:
         try:
             from datetime import datetime, timezone
+
             return datetime.fromtimestamp(int(internal) / 1000, tz=timezone.utc).isoformat()
         except (ValueError, TypeError):
             pass
@@ -306,11 +307,13 @@ def list_attachments(message: dict[str, Any]) -> list[dict[str, str]]:
     def walk(part: dict[str, Any]) -> None:
         body = part.get("body") or {}
         if body.get("attachmentId"):
-            out.append({
-                "filename": part.get("filename") or "attachment",
-                "mimeType": part.get("mimeType") or "application/octet-stream",
-                "attachmentId": body["attachmentId"],
-            })
+            out.append(
+                {
+                    "filename": part.get("filename") or "attachment",
+                    "mimeType": part.get("mimeType") or "application/octet-stream",
+                    "attachmentId": body["attachmentId"],
+                }
+            )
         for child in part.get("parts") or []:
             walk(child)
 

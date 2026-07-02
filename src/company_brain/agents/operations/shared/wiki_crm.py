@@ -24,44 +24,37 @@ CRM_SEEDS: list[tuple[str, str, str, str]] = [
     (
         investor_path(),
         "Investors",
-        "# Investors\n\n"
-        "Confirmed investors (email or domain, one per line):\n\n"
-        "- example-vc.com\n",
+        "# Investors\n\nConfirmed investors (email or domain, one per line):\n\n- example-vc.com\n",
         "investor",
     ),
     (
         investor_interest_path(),
         "Investor Interest",
-        "# Investor Interest\n\n"
-        "Cold inbound investor interest appended below (newest first).\n",
+        "# Investor Interest\n\nCold inbound investor interest appended below (newest first).\n",
         "investor_interest",
     ),
     (
         customers_wiki_path(),
         "Customers",
-        "# Customers\n\n"
-        "Active customers (email or domain, one per line):\n\n",
+        "# Customers\n\nActive customers (email or domain, one per line):\n\n",
         "customer",
     ),
     (
         media_promotion_path(),
         "Media Promotion",
-        "# Media Promotion\n\n"
-        "Press and podcast inbound (newest first).\n",
+        "# Media Promotion\n\nPress and podcast inbound (newest first).\n",
         "media_promotion",
     ),
     (
         connection_path(),
         "Connections",
-        "# Connections\n\n"
-        "People and warm connections (newest first). Excludes investors.\n",
+        "# Connections\n\nPeople and warm connections (newest first). Excludes investors.\n",
         "connection",
     ),
     (
         inbound_candidate_path(),
         "Inbound Candidates",
-        "# Inbound Candidates\n\n"
-        "Job seeker inbound (newest first).\n",
+        "# Inbound Candidates\n\nJob seeker inbound (newest first).\n",
         "inbound_candidate",
     ),
 ]

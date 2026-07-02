@@ -10,7 +10,12 @@ CLASSIFICATION_KEYWORDS: dict[str, list[str]] = {
     "project": ["project", "initiative", "program", "milestone"],
     "product": ["product", "feature", "roadmap", "release", "spec"],
     "architecture": [
-        "architecture", "adr", "design", "system", "infrastructure", "tech stack",
+        "architecture",
+        "adr",
+        "design",
+        "system",
+        "infrastructure",
+        "tech stack",
     ],
     "process": ["process", "procedure", "workflow", "sop", "how we"],
     "decision": ["decision", "rfc", "proposal", "tradeoff"],
@@ -47,9 +52,7 @@ def get_all_article_types(wiki_config: WikiConfig) -> list[str]:
     return list(wiki_config.article_types.keys())
 
 
-def get_section_for_article_type(
-    article_type: str, wiki_config: WikiConfig
-) -> str | None:
+def get_section_for_article_type(article_type: str, wiki_config: WikiConfig) -> str | None:
     """Return the section key that houses a given article type."""
     return wiki_config.get_section_for_type(article_type)
 

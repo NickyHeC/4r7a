@@ -120,11 +120,7 @@ def detect_external_duplicates(
         scope="member",
     )
     other_external_index = _build_index(
-        [
-            p
-            for p in paths
-            if p.startswith("external/") and not p.startswith(source_prefix)
-        ],
+        [p for p in paths if p.startswith("external/") and not p.startswith(source_prefix)],
         company_store,
         scope="other",
     )
@@ -232,7 +228,10 @@ class _PageIndexEntry:
 
 
 def _build_index(
-    paths: Iterable[str], store: WikiStore, *, scope: str,
+    paths: Iterable[str],
+    store: WikiStore,
+    *,
+    scope: str,
 ) -> dict[str, _PageIndexEntry]:
     del scope  # reserved for future scope-specific rules
     index: dict[str, _PageIndexEntry] = {}
