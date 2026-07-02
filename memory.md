@@ -11,6 +11,12 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-02 — Ruff format adoption (5d3f017)
+
+- **`ruff format .`** on 105 files; pre-commit `ruff-format` + CI `ruff format --check`.
+- **`.git-blame-ignore-revs`** points at the format commit; optional
+  `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+
 ## 2026-07-02 — Post-feature hygiene checklist (working tree)
 
 - **`docs/development.md`:** added "Post-feature hygiene checklist" — four passes

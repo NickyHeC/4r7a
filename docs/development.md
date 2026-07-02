@@ -167,6 +167,9 @@ Hooks: standard file checks (trailing whitespace, EOF newline, merge-conflict
 markers, large-file guard, YAML validity, `detect-private-key`), `ruff check --fix`,
 `ruff format`, and `pytest -q`.
 
+Optional (once per clone): `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+so `git blame` skips the one-time format commit.
+
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs ruff, pytest, and
