@@ -22,11 +22,14 @@ CLI install: https://mercury.com/api
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
 from datetime import date
 from typing import Iterable
+
+logger = logging.getLogger(__name__)
 
 MERCURY_BASE = "https://api.mercury.com/api/v1"
 
@@ -102,7 +105,7 @@ def list_accounts() -> list[dict]:
         try:
             return _run_cli(["accounts", "list", "--max-items", "-1"])
         except RuntimeError as e:
-            print(f"  [cli fallback] {e}")
+            logger.warning("mercury CLI fallback to HTTP: %s", e)
     return _http_get("/accounts").get("accounts", [])
 
 
@@ -115,7 +118,7 @@ def list_credit_accounts() -> list[dict]:
                 return data[0]["accounts"]
             return data
         except RuntimeError as e:
-            print(f"  [cli fallback] {e}")
+            logger.warning("mercury CLI fallback to HTTP: %s", e)
     return _http_get("/credit").get("accounts", [])
 
 
@@ -128,7 +131,7 @@ def list_treasury_accounts() -> list[dict]:
                 return data[0]["accounts"]
             return data
         except RuntimeError as e:
-            print(f"  [cli fallback] {e}")
+            logger.warning("mercury CLI fallback to HTTP: %s", e)
     try:
         return _http_get("/treasury").get("accounts", [])
     except Exception:
@@ -141,7 +144,7 @@ def list_categories() -> list[dict]:
         try:
             return _run_cli(["categories", "list", "--max-items", "-1"])
         except RuntimeError as e:
-            print(f"  [cli fallback] {e}")
+            logger.warning("mercury CLI fallback to HTTP: %s", e)
     return _http_get("/categories").get("categories", [])
 
 
@@ -168,7 +171,7 @@ def list_transactions(
         try:
             return _run_cli(args)
         except RuntimeError as e:
-            print(f"  [cli fallback] {e}")
+            logger.warning("mercury CLI fallback to HTTP: %s", e)
 
     out: list[dict] = []
     offset = 0
@@ -212,7 +215,7 @@ def list_account_statements(account_id: str) -> list[dict]:
                     "--account-id", account_id, "--max-items", "-1"]
             return _run_cli(args)
         except RuntimeError as e:
-            print(f"  [cli fallback] {e}")
+            logger.warning("mercury CLI fallback to HTTP: %s", e)
     try:
         return _http_get(f"/account/{account_id}/statements").get("statements", [])
     except Exception:
