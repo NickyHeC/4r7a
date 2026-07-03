@@ -1,7 +1,7 @@
-"""Gmail CRM Agent — Connections for People-tagged mail.
+"""Connection Agent — People / warm intro mail on CRM contact entities.
 
-``People`` → Connections wiki page. Excludes ``contact_type: investor``
-so investor CRM stays in investor_tracker.
+``People`` and ``Warm intro`` → ``crm/contact/{slug}`` with ``segment: connection``.
+Excludes ``contact_type: investor``.
 
 SDK: Neither (deterministic wiki writes).
 """
@@ -12,20 +12,20 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import connection_path, mailbox_id
+from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.profiles import profile_spec
 from company_brain.agents.operations.shared.routing import RoutingStore
-from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
+from company_brain.agents.operations.shared.wiki_crm import format_mail_section
 from company_brain.config import AppConfig
+from company_brain.crm.contacts import record_interaction_on_contact
 
 SPECIALIST_KEY = "connection"
 
 
 class ConnectionAgent(BaseAgent):
-    """Append People interactions to Connections."""
+    """Append People / warm-intro interactions to CRM contact pages."""
 
     name = "connection"
-    WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -40,15 +40,17 @@ class ConnectionAgent(BaseAgent):
         for record in self._pending():
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
-                append_crm_entry(
-                    connection_path(),
-                    "Connections",
-                    format_mail_section(record, message),
-                )
+                from_ = record.extracted.get("from") or rest.message_from(message)
+                section = format_mail_section(record, message)
+                if record_interaction_on_contact(
+                    from_,
+                    section,
+                    segment="connection",
+                ):
+                    updated += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
-                updated += 1
             except Exception:
-                self.logger.exception("Gmail CRM failed for %s", record.message_id)
+                self.logger.exception("Connection CRM failed for %s", record.message_id)
         return {"updated": updated}
 
     def _pending(self):

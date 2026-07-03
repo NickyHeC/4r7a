@@ -1,7 +1,7 @@
-"""Customers Agent — interaction log for active customers.
+"""Customers Agent — interaction log on CRM contact entities.
 
-Split from customer_support: this agent writes the wiki Customers
-page (MD first → Notion). Only handles ``Customer``-tagged routing records.
+``Customer``-tagged routing records append to ``crm/contact/{slug}`` with
+``segment: customer``.
 
 SDK: Neither (deterministic wiki writes).
 """
@@ -12,19 +12,19 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import customers_wiki_path, mailbox_id
+from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
-from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
+from company_brain.agents.operations.shared.wiki_crm import format_mail_section
 from company_brain.config import AppConfig
+from company_brain.crm.contacts import record_interaction_on_contact
 
 SPECIALIST_KEY = "customer_crm"
 
 
 class CustomerCRMAgent(BaseAgent):
-    """Append customer interactions to the Customers wiki page."""
+    """Append customer interactions to CRM contact pages."""
 
     name = "customer_crm"
-    WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -49,13 +49,15 @@ class CustomerCRMAgent(BaseAgent):
         ):
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
-                append_crm_entry(
-                    customers_wiki_path(),
-                    "Customers",
-                    format_mail_section(record, message),
-                )
+                from_ = record.extracted.get("from") or rest.message_from(message)
+                section = format_mail_section(record, message)
+                if record_interaction_on_contact(
+                    from_,
+                    section,
+                    segment="customer",
+                ):
+                    updated += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
-                updated += 1
             except Exception:
                 self.logger.exception("Customers update failed for %s", record.message_id)
         return {"updated": updated}

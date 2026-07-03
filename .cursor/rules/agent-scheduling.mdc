@@ -6,6 +6,20 @@ alwaysApply: true
 
 # Agent Scheduling
 
+## Work-ahead posture
+
+Agents should **finish before human attention is needed**, not block work waiting
+for a human to kick them off. Schedule and orchestration exist so outputs land on
+time — wiki pages ready for standup, reports compiled before review, drafts prepared
+before the inbox session. Run on always-on hosts (Mac mini, cloud VM) including
+weekends and off-hours when that meets a deadline with buffer (`work_ahead` scheduling).
+
+This is complementary to the **human-in-the-loop** boundary: automate agent-suitable
+prep and sync; leave judgment, approval, and high-risk actuation to people. Not
+everything should be automated.
+
+Work-ahead is **not** nudging — prepare early, do not chase after.
+
 ## Persistent Manager Pattern
 
 A department has one or more manager agents, located directly under the department folder. A manager is any agent whose duty is to dispatch other agents based on the information it gathers (the filename need not contain `manager`; e.g. `github_manager.py`). Each manager may be scoped to a single platform or span multiple platforms, starting the specialist agents (which live directly under their platform folders) that complete specific tasks.
@@ -26,4 +40,6 @@ async def run_loop(self):
 2. **Wait times live in the agent** — each recurring agent defines its own check interval (do not rely on external cron)
 3. **Manager triggers specialists** — the manager checks for relevant changes, then starts the appropriate specialist agent(s) only when needed
 4. **Specialists run to completion** — once started, a specialist runs until its job finishes, then returns control to the manager
-5. **Configurable schedules** — intervals and trigger times should be settable in `config/` (e.g. "every morning at 8am", "every Monday", "on demand")
+6. **Work-ahead deadlines** — when output must be ready by a human milestone (standup,
+   review meeting), compute `run_at = ready_by − estimated_duration − buffer` rather
+   than firing at the milestone itself. See `agents/scheduling/work_ahead.py`.

@@ -16,8 +16,6 @@ from company_brain.agents.operations.shared.gmail_config import (
     ingest_review_time,
     mailbox_id,
     manager_times,
-    partnership_digest_day,
-    partnership_digest_time,
     receipt_router_day,
     receipt_router_time,
     sweep_time,
@@ -97,12 +95,6 @@ class GmailManager(BaseAgent):
             ingest_review_time(),
         ):
             self._run_agent(runtime, dispatch_map["ingest_queue_review"], ping_slack=True)
-        if agent_enabled("partnership_digest", self.mailbox) and is_scheduled_moment(
-            now,
-            partnership_digest_day(),
-            partnership_digest_time(),
-        ):
-            self._run_agent(runtime, dispatch_map["partnership_digest"])
         if agent_enabled("receipt_router", self.mailbox) and is_scheduled_moment(
             now,
             receipt_router_day(),
@@ -154,14 +146,12 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.ext_meeting_scheduler import (
         ExtMeetingSchedulerAgent,
     )
-    from company_brain.agents.operations.gmail.growth_inbound import GrowthInboundAgent
+    from company_brain.agents.operations.gmail.inbound_crm import InboundCrmAgent
     from company_brain.agents.operations.gmail.inbox_task import InboxTaskAgent
     from company_brain.agents.operations.gmail.ingest import IngestAgent
     from company_brain.agents.operations.gmail.ingest_queue_review import IngestQueueReviewAgent
     from company_brain.agents.operations.gmail.investor_tracker import InvestorTrackerAgent
-    from company_brain.agents.operations.gmail.partnership_digest import PartnershipDigestAgent
     from company_brain.agents.operations.gmail.receipt_router import ReceiptRouterAgent
-    from company_brain.agents.operations.gmail.recruiting_inbound import RecruitingInboundAgent
     from company_brain.agents.operations.gmail.team_on_it import TeamOnItAgent
     from company_brain.agents.operations.gmail.vendor_tracker import VendorTrackerAgent
 
@@ -176,11 +166,9 @@ def _dispatch_agent_classes() -> dict[str, type]:
         "investor_tracker": InvestorTrackerAgent,
         "customer_support": CustomerSupportAgent,
         "customer_crm": CustomerCRMAgent,
-        "growth_inbound": GrowthInboundAgent,
+        "inbound_crm": InboundCrmAgent,
         "vendor_tracker": VendorTrackerAgent,
         "connection": ConnectionAgent,
-        "recruiting_inbound": RecruitingInboundAgent,
         "ingest_queue_review": IngestQueueReviewAgent,
-        "partnership_digest": PartnershipDigestAgent,
         "receipt_router": ReceiptRouterAgent,
     }

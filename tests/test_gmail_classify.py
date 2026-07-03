@@ -51,6 +51,19 @@ def test_cold_sales_auto_archive():
     assert result.archive_now is True
 
 
+def test_partnership_opportunity_not_sales_outreach():
+    result = classify_message(
+        _msg(
+            subject="Partnership opportunity with Acme",
+            from_="bizdev@partner.com",
+            snippet="Let's explore a strategic partnership.",
+        )
+    )
+    assert "Cold Inbound/Partnership" in result.domain_tags
+    assert "Cold Inbound/Sales Outreach" not in result.domain_tags
+    assert result.archive_now is False
+
+
 def test_ai_meeting_notes():
     result = classify_message(_msg(subject="Meeting notes", from_="Granola <notes@granola.so>"))
     assert "AI Meeting Notes" in result.domain_tags

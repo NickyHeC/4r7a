@@ -23,7 +23,7 @@ def test_default_profile_is_executive_assistant(monkeypatch):
     assert spec.investor
     assert spec.warm_intro
     assert agent_enabled("investor_tracker")
-    assert agent_enabled("partnership_digest")
+    assert agent_enabled("inbound_crm")
 
 
 def test_employee_profile_flat_cold_and_newsletters(monkeypatch):
@@ -36,7 +36,7 @@ def test_employee_profile_flat_cold_and_newsletters(monkeypatch):
     assert "Cold Inbound" in spec.domain
     assert "Newsletters" in spec.domain
     assert not agent_enabled("investor_tracker")
-    assert not agent_enabled("partnership_digest")
+    assert not agent_enabled("inbound_crm")
     assert not agent_enabled("receipt_router")
     assert agent_enabled("customer_support")
     assert agent_enabled("decision_propagate")

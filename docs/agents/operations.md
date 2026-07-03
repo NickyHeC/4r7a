@@ -347,7 +347,7 @@ Active customers only; wiki list also drives triage classification.
 | | |
 |---|---|
 | **Tags** | `Vendor` |
-| **Destination** | `operations/gmail/vendor/<slug>.md` |
+| **Destination** | `finance/vendor/<slug>.md` |
 | **Write mode** | append |
 
 Ops comms per vendor. Finance costs in **`subscription_audit`**.

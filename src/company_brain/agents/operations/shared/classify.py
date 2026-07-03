@@ -44,7 +44,6 @@ RECEIPT_HINTS = ("receipt", "invoice", "payment confirmation", "order confirmati
 NEWSLETTER_HINTS = ("newsletter", "unsubscribe", "view in browser")
 SALES_HINTS = (
     "quick question",
-    "partnership opportunity",
     "reaching out",
     "intro call",
     "book a demo",

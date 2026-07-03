@@ -11,6 +11,90 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-02 — CRM build session 6 (vendor path → finance)
+
+- **`vendor_tracker`** — writes `finance/vendor/<slug>.md` (was `operations/gmail/vendor/`);
+  `section="finance"`; config via `config/finance.yaml` → `wiki.vendor_dir`.
+- **`finance/shared/config.py`** — `vendor_dir()` helper; removed from operations config.
+- **`name_migrate.py`** — `operations/gmail/vendor/` → `finance/vendor/`.
+- **Docs:** `docs/agents/finance.md`, `docs/agents/operations.md` destination updated.
+- **Tests:** `test_vendor_tracker.py` (2 cases). 158 passing.
+
+## 2026-07-02 — CRM build session 5 (inbox retention)
+
+- **`crm/retention.py`** — 7 calendar-day rule from `triaged_at`; requires CRM inbound
+  tag + `inbound_crm` handled (legacy keys accepted).
+- **`inbox_sweep`** — archives CRM cold inbound when retention due.
+- **Removed** `partnership_digest.py`, schedule/config, `partnership_digest_notifier`.
+- **Tests:** `test_crm_retention.py` (5 cases). 156 passing.
+
+## 2026-07-02 — CRM build session 4 (two-way promotion)
+
+- **`crm/promotion.py`** — two-way thread detection, dismissive outbound filter,
+  auto-promote counterparty to `connection`, append `crm/promotion-log.md`, mark
+  inbound pages `promoted` / `archived`, routing record `crm_promoted_to`.
+- **`thread_watcher`** — calls promotion after every sent message (including ack).
+- Skips `customer` / `investor` segments; requires `crm.default_connection_employee`.
+- **Tests:** `test_crm_promotion.py` (4 cases). 151 passing.
+
+## 2026-07-02 — CRM build session 3 (all inbound types + contact writers)
+
+- **`inbound_crm`** — all 6 cold inbound tags → `crm/inbound/{type}/`; Slack still
+  press + events only.
+- **Retired from dispatch:** `partnership_digest`, `recruiting_inbound`, `growth_inbound`
+  (files deprecated); routing handled keys migrate via `name_migrate`.
+- **Contact entity writers:** `investor_tracker` (confirmed Investor only),
+  `connection` (People/Warm intro), `customer_crm` → `crm/contact/{slug}` via
+  `record_interaction_on_contact`.
+- **Config:** `crm.default_connection_employee` for new connections.
+- **Tests:** partnership inbound, connection contact entity. 147 passing.
+
+## 2026-07-02 — CRM build session 2 (inbound_crm + inbound_score)
+
+- **`inbound_score.py`** — shared $0 scorer (reputable/press/event domains, keywords,
+  free-email penalty, known contact boost); Slack threshold for press + events only.
+- **`inbound_crm.py`** — replaces `growth_inbound` in dispatch; writes
+  `crm/inbound/{press-podcast,event-invitation}/` pages; score-gated `#growth` alerts.
+- **`crm/inbound.py`** — triage tag map, inbound page writer, contact dual-write.
+- **Config:** `crm.press_domains`, `crm.event_domains`; profiles/manager wired to
+  `inbound_crm`. `growth_inbound.py` deprecated (file retained).
+- **Tests:** `test_inbound_score.py`, `test_inbound_crm.py`. 145 passing.
+
+## 2026-07-02 — CRM build session 1 (registry + contact schema)
+
+- **Package:** `src/company_brain/crm/` — `config`, `schema`, `slug`, `registry`, `contacts`, `seeds`.
+- **CLI:** `company-brain crm seed`, `company-brain crm rebuild-registry`.
+- **Config:** `config/operations.yaml` → `crm:` block; customer/investor indexes at
+  `crm/customer/_index.md`, `crm/investor/_index.md`; `config/notion.yaml` → `crm: company`
+  teamspace + `crm_databases` stubs.
+- **Classify:** removed `"partnership opportunity"` from Sales Outreach hints.
+- **Migration:** `name_migrate.py` maps legacy investor/customer paths → `crm/`.
+- **Tests:** `tests/test_crm_registry.py` (6 tests); classify partnership case. 139 passing.
+
+## 2026-07-02 — CRM redesign agreed (entity-per-person + unified inbound)
+
+Design locked in `docs/plans/crm-redesign.md` (build not started):
+
+- **Entity model:** `crm/contact/{slug}.md` with `segment` (customer | investor | connection);
+  `crm_registry` (`crm/_registry.json`) for email/domain dedup; Option B inbound sections on
+  contact when known, `crm/inbound/unmatched/` otherwise.
+- **Inbound types (6 Notion DBs):** press-podcast, event-invitation, partnership,
+  founder-networking, investor-interest, candidate — shared `inbound_score.py`; v1 Slack
+  alerts (`#growth` only) for press + events when score ≥ threshold.
+- **Promotion:** two-way exchange → connection (exclude dismissive replies); customer/investor
+  via contract signed or index edit; `crm/promotion-log.md` audit.
+- **Retention:** 7 calendar days in inbox via `inbox_sweep`; `partnership_digest` archive
+  behavior retired.
+- **Out of CRM:** vendor listing → `finance/vendor/`; employees stay in `people/`.
+- **Classify fix:** remove `"partnership opportunity"` from Sales Outreach hints.
+
+## 2026-07-02 — Work-ahead product posture (README + scheduling rule)
+
+- **Design principle:** agents finish agent-suitable work *before* human attention is
+  needed; not everything automated — humans contribute where judgment/actuation matters.
+- **README Expectations** rewritten; **agent-scheduling.mdc** adds work-ahead posture +
+  rule 6 (deadline − duration − buffer). Distinct from no-nudge out-of-scope features.
+
 ## 2026-07-02 — Ruff format adoption (5d3f017)
 
 - **`ruff format .`** on 105 files; pre-commit `ruff-format` + CI `ruff format --check`.

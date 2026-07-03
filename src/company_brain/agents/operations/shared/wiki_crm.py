@@ -7,12 +7,8 @@ from typing import Any
 
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import (
-    connection_path,
     customers_wiki_path,
-    inbound_candidate_path,
-    investor_interest_path,
     investor_path,
-    media_promotion_path,
 )
 from company_brain.agents.operations.shared.mail_body import plain_text
 from company_brain.agents.operations.shared.routing import RoutingRecord
@@ -28,34 +24,10 @@ CRM_SEEDS: list[tuple[str, str, str, str]] = [
         "investor",
     ),
     (
-        investor_interest_path(),
-        "Investor Interest",
-        "# Investor Interest\n\nCold inbound investor interest appended below (newest first).\n",
-        "investor_interest",
-    ),
-    (
         customers_wiki_path(),
         "Customers",
         "# Customers\n\nActive customers (email or domain, one per line):\n\n",
         "customer",
-    ),
-    (
-        media_promotion_path(),
-        "Media Promotion",
-        "# Media Promotion\n\nPress and podcast inbound (newest first).\n",
-        "media_promotion",
-    ),
-    (
-        connection_path(),
-        "Connections",
-        "# Connections\n\nPeople and warm connections (newest first). Excludes investors.\n",
-        "connection",
-    ),
-    (
-        inbound_candidate_path(),
-        "Inbound Candidates",
-        "# Inbound Candidates\n\nJob seeker inbound (newest first).\n",
-        "inbound_candidate",
     ),
 ]
 
@@ -63,17 +35,20 @@ CRM_SEEDS: list[tuple[str, str, str, str]] = [
 def ensure_crm_seeds(mailbox: str | None = None) -> int:
     """Create empty CRM wiki pages if missing. Returns count created."""
     from company_brain.agents.operations.shared.profiles import crm_seed_keys_for_profile
+    from company_brain.crm.registry import rebuild_registry
+    from company_brain.crm.seeds import ensure_crm_seeds as ensure_crm_structure
 
     allowed = crm_seed_keys_for_profile(mailbox)
+    created = ensure_crm_structure()
     store = LocalWikiStore(root=resolve_wiki_dir())
-    created = 0
     for rel_path, title, body, key in CRM_SEEDS:
         if key not in allowed:
             continue
         if store.exists(rel_path):
             continue
-        write_wiki_page(rel_path, title, body, mode=UPDATE, section="operations/gmail")
+        write_wiki_page(rel_path, title, body, mode=UPDATE, section="crm", sync=False)
         created += 1
+    rebuild_registry()
     return created
 
 
@@ -94,5 +69,5 @@ def format_mail_section(
     )
 
 
-def append_crm_entry(rel_path: str, title: str, section: str) -> None:
-    write_wiki_page(rel_path, title, section, mode=APPEND, section="operations/gmail")
+def append_crm_entry(rel_path: str, title: str, section: str, *, section_key: str = "crm") -> None:
+    write_wiki_page(rel_path, title, section, mode=APPEND, section=section_key, sync=False)

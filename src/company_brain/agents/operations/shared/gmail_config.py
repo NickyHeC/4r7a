@@ -82,16 +82,20 @@ def attachments_dir() -> str:
 
 
 def investor_path() -> str:
+    from company_brain.crm.config import investor_index_path
+
     return gmail_cfg().get("investors_wiki") or wiki_paths().get(
         "investor",
-        "operations/gmail/investor.md",
+        investor_index_path(),
     )
 
 
 def customer_path() -> str:
+    from company_brain.crm.config import customer_index_path
+
     return gmail_cfg().get("customer_wiki") or wiki_paths().get(
         "customer",
-        "operations/gmail/customer.md",
+        customer_index_path(),
     )
 
 
@@ -114,20 +118,6 @@ def connection_path() -> str:
 
 def inbound_candidate_path() -> str:
     return wiki_paths().get("inbound_candidate", "operations/gmail/inbound-candidate.md")
-
-
-def vendor_dir() -> str:
-    return wiki_paths().get("vendor_dir", "operations/gmail/vendor")
-
-
-def partnership_digest_day() -> str:
-    return str(schedules().get("partnership_digest_day", "friday")).lower()
-
-
-def partnership_digest_time() -> time:
-    raw = schedules().get("partnership_digest_time", "08:00")
-    hour, minute = raw.split(":", 1)
-    return time(int(hour), int(minute))
 
 
 def thread_watcher_interval_minutes() -> int:

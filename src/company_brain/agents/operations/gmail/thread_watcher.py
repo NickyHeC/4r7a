@@ -105,7 +105,13 @@ class ThreadWatcherAgent(BaseAgent):
         kind = classify_sent_message(message)
 
         if kind == "ack":
-            return {"message_id": message_id, "kind": "ack", "action": "skipped"}
+            promotion = self._try_crm_promotion(thread_id, message)
+            return {
+                "message_id": message_id,
+                "kind": "ack",
+                "action": "skipped",
+                "crm_promotion": promotion,
+            }
 
         add_tags: list[str] = []
         extracted: dict[str, Any] = {"sent_message_id": message_id}
@@ -134,11 +140,14 @@ class ThreadWatcherAgent(BaseAgent):
         if kind == "ingest" and agent_enabled("ingest", self.mailbox):
             self._dispatch_ingest(thread_id)
 
+        promotion = self._try_crm_promotion(thread_id, message)
+
         return {
             "message_id": message_id,
             "thread_id": thread_id,
             "kind": kind,
             "updated_records": len(updated),
+            "crm_promotion": promotion,
         }
 
     def _dispatch_decision_propagate(self, thread_id: str, message_id: str) -> None:
@@ -169,3 +178,17 @@ class ThreadWatcherAgent(BaseAgent):
             )
         except Exception:
             self.logger.exception("ingest dispatch failed")
+
+    def _try_crm_promotion(self, thread_id: str, sent_message: dict[str, Any]) -> dict[str, Any]:
+        from company_brain.crm.promotion import try_promote_thread_on_sent
+
+        try:
+            return try_promote_thread_on_sent(
+                mailbox=self.mailbox,
+                thread_id=thread_id,
+                sent_message=sent_message,
+                store=self._store,
+            )
+        except Exception:
+            self.logger.exception("CRM thread promotion failed for thread %s", thread_id)
+            return {"promoted": False, "reason": "error"}

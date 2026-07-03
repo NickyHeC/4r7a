@@ -1,6 +1,6 @@
 """Vendor Tracker Agent — one wiki page per vendor.
 
-``Vendor``-tagged mail → ``operations/gmail/vendor/<slug>.md`` with ops metadata
+``Vendor``-tagged mail → ``finance/vendor/<slug>.md`` with ops metadata
 (contact, renewal comms). Finance cost/recurrence stays in subscription_audit.
 
 SDK: Neither (deterministic wiki writes).
@@ -13,8 +13,9 @@ from pathlib import PurePosixPath
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.finance.shared.config import vendor_dir
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import mailbox_id, vendor_dir
+from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
 from company_brain.config import AppConfig
@@ -57,8 +58,13 @@ class VendorTrackerAgent(BaseAgent):
                 slug = _vendor_slug(from_)
                 rel_path = str(PurePosixPath(vendor_dir()) / f"{slug}.md")
                 title = slug.replace("-", " ").replace("_", " ").title()
-                self._ensure_vendor_page(rel_path, slug, title, from_)
-                append_crm_entry(rel_path, title, format_mail_section(record, message))
+                self._ensure_vendor_page(rel_path, title, from_)
+                append_crm_entry(
+                    rel_path,
+                    title,
+                    format_mail_section(record, message),
+                    section_key="finance",
+                )
                 self._store.mark_handled(record, SPECIALIST_KEY)
                 updated += 1
             except Exception:
@@ -66,7 +72,7 @@ class VendorTrackerAgent(BaseAgent):
         return {"updated": updated}
 
     @staticmethod
-    def _ensure_vendor_page(rel_path: str, slug: str, title: str, from_hdr: str) -> None:
+    def _ensure_vendor_page(rel_path: str, title: str, from_hdr: str) -> None:
         store = LocalWikiStore()
         if store.exists(rel_path):
             return
@@ -75,9 +81,16 @@ class VendorTrackerAgent(BaseAgent):
             f"**Primary contact:** {from_hdr}\n\n"
             "## Comms log\n\n"
             "_Renewal and billing comms appended below. Finance subscription "
-            "costs live in finance/subscription._\n"
+            "costs live in [[subscription]].\n"
         )
-        write_wiki_page(rel_path, title, body, mode=UPDATE, section="operations/gmail")
+        write_wiki_page(
+            rel_path,
+            title,
+            body,
+            mode=UPDATE,
+            section="finance",
+            sync=False,
+        )
 
 
 def _vendor_slug(from_hdr: str) -> str:

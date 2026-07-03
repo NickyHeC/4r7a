@@ -48,3 +48,7 @@ budget_keywords:
 # Learned categorizations recorded by request_manual_accounting after manual accounting.
 # Maps a counterparty substring -> budget subcategory. Starts empty.
 learned_categories: {}
+
+# Vendor listing pages (billing/renewal comms from Gmail vendor_tracker).
+wiki:
+  vendor_dir: finance/vendor

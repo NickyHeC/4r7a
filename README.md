@@ -8,21 +8,31 @@ The *seven archives of the four repositories* (四库七阁) was the largest lib
 
 ## Expectations
 
-FourSeven is built to boost startup operational efficiency. It does not replace all
-the work that still needs doing. Agents can save you and your team a lot of time, but
-they only help when you are willing to work with them. An agent cannot chase you down
-or hold you accountable — you can ignore its messages with no consequences. The people
-who benefit most are the ones who want to be helped.
+FourSeven is built to boost startup operational efficiency. The goal is **work-ahead,
+not block**: agents finish agent-suitable work on schedule *before* your attention is
+needed — the Monday standup wiki is ready Sunday evening, expense reports are compiled
+before review, drafts sit in Gmail waiting for you to send. The system should move
+faster than you, not hold you up waiting on it.
 
-Operations work is part of a startup's day-to-day. Most of the boring items are already
-handled here; get your head down and finish the rest.
+**Automate what agents can; keep humans where judgment matters.** Not everything will
+be automated, and not everything should be. Approvals, policy calls, relationship
+decisions, and actuation at the source (send mail, move money) stay with people.
+FourSeven handles ingestion, synthesis, scheduling prep, and wiki sync so your team
+contributes where human processing actually adds value — that pairing is what produces
+boosted efficiency, not full replacement.
 
-That posture is deliberate. Features like `pending_reply_monitor`, `follow_up_nudger`,
+You still need to participate. Agents save time when you work with them, but they
+cannot chase you down or hold you accountable — you can ignore their messages with no
+consequences. The people who benefit most are the ones who want to be helped.
+
+Operations work is part of a startup's day-to-day. Most of the boring prep is handled
+here; get your head down and finish the rest.
+
+**Work-ahead is not nudging.** Features like `pending_reply_monitor`, `follow_up_nudger`,
 `daily_brief`, `stale_action_escalator`, and draft-unsent nudges are intentionally out
-of scope: agents should not chase people to do their work. You should be proactively
-doing work and treat agents as valuable assistance — not as a nagging layer you can
-tune out. We keep the features that earn their place and skip code that adds noise
-without enough payoff.
+of scope: agents prepare work before you need it; they do not chase you to do yours.
+We keep the features that earn their place and skip code that adds noise without enough
+payoff.
 
 ## Data flow
 

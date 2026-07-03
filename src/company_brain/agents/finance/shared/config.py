@@ -33,3 +33,9 @@ def record_learned_categories(mapping: dict[str, str], config_dir: Path | None =
     learned = cfg.setdefault("learned_categories", {})
     learned.update({k: v for k, v in mapping.items() if k and v})
     save_finance_config(cfg, config_dir)
+
+
+def vendor_dir() -> str:
+    """Wiki directory for per-vendor ops comms pages (``finance/vendor/``)."""
+    wiki = load_finance_config().get("wiki") or {}
+    return str(wiki.get("vendor_dir", "finance/vendor"))

@@ -58,10 +58,8 @@ gmail:
         - attachment_router
         - customer_support
         - customer_crm
-        - growth_inbound
         - vendor_tracker
         - connection
-        - recruiting_inbound
         - inbox_task
         - team_on_it
         - duplicate_across_mailboxes
@@ -143,30 +141,24 @@ gmail:
     sweep_time: "22:00"
     ingest_review_day: monday
     ingest_review_time: "08:00"
-    partnership_digest_day: friday
-    partnership_digest_time: "08:00"
     workdays_only: true
 
   wiki:
     ingest_queue: operations/gmail/ingest-queue.md
     timeline: operations/decisions/timeline.md
     attachments_dir: operations/gmail/attachments
-    investor: operations/gmail/investor.md
+    investor: crm/investor/_index.md
     investor_interest: operations/gmail/investor-interest.md
-    customer: operations/gmail/customer.md
+    customer: crm/customer/_index.md
     media_promotion: operations/gmail/media-promotion.md
     connection: operations/gmail/connection.md
     inbound_candidate: operations/gmail/inbound-candidate.md
-    vendor_dir: operations/gmail/vendor
 
   slack:
     ingest_channel: "#ingest"
     customer_support_channel: "#customer-support"
     events_channel: "#events"
     growth_channel: "#growth"
-    partnership_digest_channel: "#partnerships"
-    # Optional Slack user ID for partnership digest DM (overrides channel when set).
-    partnership_digest_user: ""
 
   onboarding:
     backfill_days: 30
@@ -226,8 +218,8 @@ gmail:
     newsletters_parent: Newsletters
 
   # Wiki paths for confirmed investors / customers (parsed for triage + CRM agents).
-  investors_wiki: operations/gmail/investor.md
-  customer_wiki: operations/gmail/customer.md
+  investors_wiki: crm/investor/_index.md
+  customer_wiki: crm/customer/_index.md
 
 # Slack platform (operations/slack/) — thread action items → Linear.
 slack_platform:
@@ -318,3 +310,20 @@ gcal:
     enabled: false
     time: "08:00"
     slack_user: ""
+
+# CRM — entity-per-person contacts + typed inbound (see docs/plans/crm-redesign.md).
+crm:
+  contact_dir: crm/contact
+  inbound_dir: crm/inbound
+  registry_path: crm/_registry.json
+  promotion_log: crm/promotion-log.md
+  customer_index: crm/customer/_index.md
+  investor_index: crm/investor/_index.md
+  inbound_retention_days: 7
+  slack_score_threshold: 6
+  growth_channel: "#growth"
+  reputable_domains: []
+  press_domains: []
+  event_domains: []
+  # Member key for new connection contacts (required for People / warm intro mail).
+  default_connection_employee: ""

@@ -62,6 +62,11 @@ class InboxSweepAgent(BaseAgent):
         if "Meeting" in tags:
             return not rest.is_unread(msg)
 
+        from company_brain.crm.retention import crm_inbound_archive_due
+
+        if crm_inbound_archive_due(record):
+            return True
+
         return False
 
     @staticmethod

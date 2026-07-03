@@ -23,6 +23,66 @@ teamspaces:
   company: ""
 section_teamspace:
   admin: admin
+  crm: company
+
+# CRM entity + inbound database mirrors (populate database_id after Notion connect).
+crm_databases:
+  crm_contacts:
+    database_id: ""
+    columns:
+      title: Name
+      segment: Segment
+      email: Email
+      main_connection: "Main connection"
+      status: Status
+  inbound_press_podcast:
+    database_id: ""
+    columns:
+      title: Name
+      contact: Contact
+      score: Score
+      status: Status
+      received: Received
+  inbound_event_invitation:
+    database_id: ""
+    columns:
+      title: Name
+      contact: Contact
+      score: Score
+      status: Status
+      received: Received
+  inbound_partnership:
+    database_id: ""
+    columns:
+      title: Name
+      contact: Contact
+      score: Score
+      status: Status
+      received: Received
+  inbound_founder_networking:
+    database_id: ""
+    columns:
+      title: Name
+      contact: Contact
+      score: Score
+      status: Status
+      received: Received
+  inbound_investor_interest:
+    database_id: ""
+    columns:
+      title: Name
+      contact: Contact
+      score: Score
+      status: Status
+      received: Received
+  inbound_candidate:
+    database_id: ""
+    columns:
+      title: Name
+      contact: Contact
+      score: Score
+      status: Status
+      received: Received
 
 # Tracking database ID for article metadata.
 tracking_database_id: null

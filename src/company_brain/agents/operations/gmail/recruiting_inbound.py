@@ -1,6 +1,6 @@
 """Recruiting Inbound Agent — job seeker mail to Inbound Candidates wiki.
 
-Handles ``Cold Inbound/Job Seekers`` even when auto-archived at triage.
+Deprecated: replaced by ``inbound_crm`` (``crm/inbound/candidate/``).
 
 SDK: Neither (deterministic wiki writes).
 """

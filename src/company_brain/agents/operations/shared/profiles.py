@@ -27,11 +27,9 @@ ALL_GMAIL_AGENTS = frozenset(
         "investor_tracker",
         "customer_support",
         "customer_crm",
-        "growth_inbound",
+        "inbound_crm",
         "vendor_tracker",
         "connection",
-        "recruiting_inbound",
-        "partnership_digest",
         "inbox_task",
         "team_on_it",
         "duplicate_across_mailboxes",
@@ -51,18 +49,15 @@ MANAGER_DISPATCH_ORDER = [
     "investor_tracker",
     "customer_support",
     "customer_crm",
-    "growth_inbound",
+    "inbound_crm",
     "vendor_tracker",
     "connection",
-    "recruiting_inbound",
     "ingest_queue_review",
-    "partnership_digest",
     "receipt_router",
 ]
 
 WEEKLY_DISPATCH = {
     "ingest_queue_review",
-    "partnership_digest",
     "receipt_router",
 }
 
@@ -70,11 +65,7 @@ WEEKLY_DISPATCH = {
 CRM_SEED_KEYS = frozenset(
     {
         "investor",
-        "investor_interest",
         "customer",
-        "media_promotion",
-        "connection",
-        "inbound_candidate",
     }
 )
 
@@ -251,13 +242,6 @@ def crm_seed_keys_for_profile(mailbox: str | None = None) -> set[str]:
     keys: set[str] = set()
     if spec.agent_enabled("investor_tracker"):
         keys.add("investor")
-        keys.add("investor_interest")
     if spec.agent_enabled("customer_crm"):
         keys.add("customer")
-    if spec.agent_enabled("growth_inbound"):
-        keys.add("media_promotion")
-    if spec.agent_enabled("connection"):
-        keys.add("connection")
-    if spec.agent_enabled("recruiting_inbound"):
-        keys.add("inbound_candidate")
     return keys

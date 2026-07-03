@@ -409,6 +409,38 @@ def doctor_llm(as_json: bool, min_score: int | None, no_history: bool) -> None:
 
 
 @main.group()
+def crm() -> None:
+    """CRM entity registry and wiki structure."""
+
+
+@crm.command("seed")
+def crm_seed() -> None:
+    """Create CRM wiki folders, indexes, and promotion log if missing."""
+    from company_brain.crm.registry import rebuild_registry
+    from company_brain.crm.seeds import ensure_crm_seeds
+
+    created = ensure_crm_seeds()
+    registry = rebuild_registry()
+    click.secho(
+        f"CRM seeds: {created} path(s) created; registry has "
+        f"{len(registry.by_email)} email(s), {len(registry.by_domain)} domain(s).",
+        fg="green",
+    )
+
+
+@crm.command("rebuild-registry")
+def crm_rebuild_registry() -> None:
+    """Rebuild crm/_registry.json from contact pages and segment indexes."""
+    from company_brain.crm.registry import rebuild_registry
+
+    registry = rebuild_registry()
+    click.echo(
+        f"Registry rebuilt: {len(registry.by_email)} email(s), "
+        f"{len(registry.by_domain)} domain(s) (updated {registry.updated_at})."
+    )
+
+
+@main.group()
 def models() -> None:
     """Configure LLM tiers and onboarding mode."""
 

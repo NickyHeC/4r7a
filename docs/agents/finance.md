@@ -96,7 +96,12 @@ Matches quarter spend to major company events; prepends a per-quarter budget sec
 
 Detects recurring vendors, verifies pricing via web search, flags overlaps, posts to
 Slack `#finance`. Vendor **cost/recurrence** lives here; operations **`vendor_tracker`**
-owns ops comms metadata per vendor.
+writes billing/renewal comms to **`finance/vendor/<slug>.md`** (not CRM).
+
+### `vendor_tracker.py` (operations agent, finance wiki path)
+
+Gmail **`Vendor`**-tagged mail → per-vendor pages under **`finance/vendor/`** (append comms
+log). Config: `config/finance.yaml` → `wiki.vendor_dir`.
 
 ### `request_manual_accounting.py`
 

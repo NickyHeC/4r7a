@@ -1,5 +1,8 @@
 """Growth Inbound Agent — press/podcast wiki + event Slack routing.
 
+Deprecated: replaced by ``inbound_crm`` (``operations/gmail/inbound_crm.py``).
+Kept for reference until session 3 cleanup.
+
 ``Cold Inbound/Press & Podcast`` → Media Promotion wiki page.
 ``Cold Inbound/Event Invitations`` → #events (attend) or #growth (sponsor/co-host).
 

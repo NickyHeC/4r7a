@@ -1,7 +1,8 @@
-"""Investor Tracker Agent — Investors + Investor Interest.
+"""Investor Tracker Agent — confirmed investor interactions on contact entities.
 
-``Investor`` (confirmed wiki list at triage) → append interaction to Investors
-CRM. ``Cold Inbound/Investor Interest`` → append to Investor Interest page.
+``Investor`` (confirmed wiki index at triage) → append interaction on
+``crm/contact/{slug}`` with ``segment: investor``. Cold investor interest is
+handled by ``inbound_crm``.
 
 SDK: Neither (deterministic wiki writes).
 """
@@ -12,24 +13,20 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.gmail import gmail_rest as rest
-from company_brain.agents.operations.shared.gmail_config import (
-    investor_interest_path,
-    investor_path,
-    mailbox_id,
-)
+from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
-from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
+from company_brain.agents.operations.shared.wiki_crm import format_mail_section
 from company_brain.config import AppConfig
+from company_brain.crm.contacts import record_interaction_on_contact
 
 SPECIALIST_KEY = "investor_tracker"
-INVESTOR_INTEREST_TAG = "Cold Inbound/Investor Interest"
+INVESTOR_TAG = "Investor"
 
 
 class InvestorTrackerAgent(BaseAgent):
-    """Update investor CRM pages from routing records."""
+    """Append confirmed investor mail to CRM contact pages."""
 
     name = "investor_tracker"
-    WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -40,27 +37,26 @@ class InvestorTrackerAgent(BaseAgent):
         return bool(self._pending())
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
-        crm = 0
-        interests = 0
+        updated = 0
         for record in self._pending():
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
+                from_ = record.extracted.get("from") or rest.message_from(message)
                 section = format_mail_section(record, message)
-                is_investor = (
-                    "Investor" in record.domain_tags
-                    and INVESTOR_INTEREST_TAG not in record.domain_tags
-                )
-                if is_investor:
-                    append_crm_entry(investor_path(), "Investors", section)
-                    crm += 1
-                elif INVESTOR_INTEREST_TAG in record.domain_tags:
-                    append_crm_entry(investor_interest_path(), "Investor Interest", section)
-                    interests += 1
+                if record_interaction_on_contact(
+                    from_,
+                    section,
+                    segment="investor",
+                ):
+                    updated += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
             except Exception:
                 self.logger.exception("Investor tracker failed for %s", record.message_id)
-        return {"crm_updates": crm, "interest_updates": interests}
+        return {"updated": updated}
 
     def _pending(self):
-        tags = {"Investor", INVESTOR_INTEREST_TAG}
-        return self._store.unhandled_with_any_tag(SPECIALIST_KEY, tags, mailbox=self.mailbox)
+        return self._store.unhandled_with_any_tag(
+            SPECIALIST_KEY,
+            {INVESTOR_TAG},
+            mailbox=self.mailbox,
+        )
