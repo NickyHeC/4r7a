@@ -89,10 +89,7 @@ class InboundCrmAgent(BaseAgent):
     ) -> None:
         label = inbound_type.replace("-", " ").title()
         text = (
-            f"*{label}* (score {score})\n"
-            f"*Subject:* {subject}\n"
-            f"*From:* {from_}\n\n"
-            f"{preview[:400]}"
+            f"*{label}* (score {score})\n*Subject:* {subject}\n*From:* {from_}\n\n{preview[:400]}"
         )
         self._notifier.emit(Signal(text=text, severity=ACTIONABLE))
 

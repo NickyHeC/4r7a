@@ -33,11 +33,7 @@ INBOUND_TYPE_TO_DB: dict[str, str] = {
 
 def configured_crm_database_keys(*, config: AppConfig | None = None) -> list[str]:
     config = config or load_config()
-    return [
-        key
-        for key, spec in (config.notion.crm_databases or {}).items()
-        if spec.database_id
-    ]
+    return [key for key, spec in (config.notion.crm_databases or {}).items() if spec.database_id]
 
 
 def crm_notion_available(
