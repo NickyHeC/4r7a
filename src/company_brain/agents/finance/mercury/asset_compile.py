@@ -64,9 +64,12 @@ class AssetCompileAgent(BaseAgent):
 
         from company_brain.wiki.publish import format_append_section
 
+        body = self._build_report_body(
+            label, target, bank, treasury, bank_total, treasury_total, total,
+        )
         report = format_append_section(
             label,
-            self._build_report_body(label, target, bank, treasury, bank_total, treasury_total, total),
+            body,
             trigger="asset_compile agent",
             why=f"snapshot for {label} (as-of {target})",
         )
