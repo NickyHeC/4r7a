@@ -54,7 +54,6 @@ Format for new rows:
 | `security_triage` | `operations/gmail` | First auth-alert / wire-transfer incident | Never auto-archive; alert channel |
 | Warm intro classifier | `operations/gmail` | EA profile + confident heuristic | Confident cases only |
 | `inbox_task` archive on Linear Done | `engineering/linear` | Linear completion flow stable | Not gmail sweep |
-| ~~`partnership_inbound` specialist~~ | — | — | **In progress:** `docs/plans/crm-redesign.md` (unified inbound + entity CRM) |
 | Full Ramp receipt cross-check | — | **Do not build** unless explicit approval | Platform boundary; router only |
 
 ---
@@ -110,7 +109,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Hiring log auto-track | `hr` or `operations/gmail` | Recruiting inbound stable | Extend `recruiting_inbound` |
+| Hiring log auto-track | `hr` or `operations/gmail` | CRM inbound stable | Extend **`inbound_crm`** candidate type |
 
 ---
 

@@ -143,6 +143,24 @@ class TaskDatabaseSpec(BaseModel):
     columns: TaskDatabaseColumns = Field(default_factory=TaskDatabaseColumns)
 
 
+class CrmDatabaseColumns(BaseModel):
+    """Notion property names for CRM database rows (contacts or inbound)."""
+
+    title: str = "Name"
+    segment: str = "Segment"
+    email: str = "Email"
+    main_connection: str = "Main connection"
+    status: str = "Status"
+    contact: str = "Contact"
+    score: str = "Score"
+    received: str = "Received"
+
+
+class CrmDatabaseSpec(BaseModel):
+    database_id: str = ""
+    columns: CrmDatabaseColumns = Field(default_factory=CrmDatabaseColumns)
+
+
 class TaskRoutingRule(BaseModel):
     match: dict[str, str] = Field(default_factory=dict)
     database: str = ""
@@ -163,6 +181,7 @@ class NotionConfig(BaseModel):
     # section MD-only (never mirrored to Notion).
     teamspaces: dict[str, str] = Field(default_factory=dict)
     section_teamspace: dict[str, str] = Field(default_factory=dict)
+    crm_databases: dict[str, CrmDatabaseSpec] = Field(default_factory=dict)
 
     @property
     def is_initialized(self) -> bool:

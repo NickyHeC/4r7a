@@ -311,7 +311,7 @@ gcal:
     time: "08:00"
     slack_user: ""
 
-# CRM — entity-per-person contacts + typed inbound (see docs/plans/crm-redesign.md).
+# CRM — entity-per-person contacts + typed inbound (see docs/agents/operations.md).
 crm:
   contact_dir: crm/contact
   inbound_dir: crm/inbound

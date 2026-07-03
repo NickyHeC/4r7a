@@ -440,6 +440,41 @@ def crm_rebuild_registry() -> None:
     )
 
 
+@crm.command("sync-notion")
+@click.option("--force", is_flag=True, help="Re-sync even when content hash unchanged.")
+def crm_sync_notion(force: bool) -> None:
+    """Mirror CRM contact and inbound pages to configured Notion databases."""
+    from company_brain.crm.notion_sync import configured_crm_database_keys, sync_all_crm
+
+    keys = configured_crm_database_keys()
+    if not keys:
+        click.secho(
+            "No CRM Notion databases configured (set database_id in config/notion.yaml).",
+            fg="yellow",
+        )
+        return
+
+    if force:
+        from company_brain.config import resolve_wiki_dir
+        from company_brain.crm.notion_sync import crm_database_key_for_rel_path, sync_crm_doc
+        from company_brain.wiki.store import LocalWikiStore
+
+        store = LocalWikiStore(root=resolve_wiki_dir())
+        results: dict[str, str] = {}
+        for rel_path in store.list():
+            if not crm_database_key_for_rel_path(rel_path):
+                continue
+            page_id = sync_crm_doc(rel_path, store=store, force=True)
+            if page_id:
+                results[rel_path] = page_id
+    else:
+        results = sync_all_crm()
+
+    click.secho(f"CRM Notion sync: {len(results)} page(s) mirrored.", fg="green")
+    for rel, page_id in sorted(results.items()):
+        click.echo(f"  {rel} -> {page_id}")
+
+
 @main.group()
 def models() -> None:
     """Configure LLM tiers and onboarding mode."""

@@ -123,6 +123,15 @@ def build_property_patch(
         return {property_name: {"status": {"name": value}}}
     if ptype == "select":
         return {property_name: {"select": {"name": value}}}
+    if ptype == "number":
+        try:
+            num = float(value) if value not in ("", None) else 0
+        except (TypeError, ValueError):
+            num = 0
+        return {property_name: {"number": num}}
+    if ptype == "date":
+        start = str(value)[:10] if value else None
+        return {property_name: {"date": {"start": start}}}
     return {property_name: {"rich_text": [{"text": {"content": value}}]}}
 
 

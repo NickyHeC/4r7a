@@ -51,7 +51,6 @@ flowchart TD
 | `gmail_manager` dispatch | **08:00, 12:00, 16:00** |
 | `inbox_sweep` | **22:00** (via manager) |
 | `ingest_queue_review` | **Monday 08:00** |
-| `partnership_digest` | **Friday 08:00** |
 | `receipt_router` | **Friday 08:00** |
 
 All times in `config/operations.yaml` → `gmail.schedules`.
@@ -120,18 +119,21 @@ Prospect vs customer disambiguation lives in the routing record / CRM logic.
 | `Sales Outreach` | Mark read + archive |
 | `Job Seekers` | Mark read + archive |
 | `Miscellaneous` | Mark read + archive |
-| `Investor Interest` | Keep in inbox |
-| `Partnership` | Keep; weekly **partnership_digest** ranks and archives low scores |
-| `Founder Networking` | Same as Partnership |
-| `Press & Podcast` | **growth_inbound** |
-| `Event Invitations` | **growth_inbound** |
+| `Investor Interest` | Keep in inbox → **`inbound_crm`** |
+| `Partnership` | Keep in inbox → **`inbound_crm`** |
+| `Founder Networking` | Keep in inbox → **`inbound_crm`** |
+| `Press & Podcast` | **`inbound_crm`** (+ score-gated Slack `#growth` when configured) |
+| `Event Invitations` | **`inbound_crm`** (+ score-gated Slack `#growth` when configured) |
+| `Job Seekers` | Mark read + archive at triage; **`inbound_crm`** logs to wiki first |
 
 **Employee profile:** flat **`Cold Inbound`** only (no nested sub-labels).
 
 ### Investor rule (EA profile only)
 
-Confirmed investor emails/domains in **`operations/gmail/investor.md`** → **`Investor`** label +
-`contact_type: investor`. Everything else cold → **`Cold Inbound/Investor Interest`**.
+Confirmed investor emails/domains in **`crm/investor/_index.md`** → **`Investor`** label +
+`contact_type: investor`. Cold interest → **`crm/inbound/investor-interest/`** via
+**`inbound_crm`**. Confirmed investors also get **`crm/contact/{slug}.md`** from
+**`investor_tracker`**.
 
 Employee profile: no Investor label; investor detection skipped.
 
@@ -170,7 +172,7 @@ specialists follow the active profile.
 | Profile | Use case | Key differences |
 |---------|----------|-----------------|
 | **`executive_assistant`** (default) | Startup founders / CEO | Full label taxonomy, nested cold inbound & newsletters, all specialists |
-| **`employee`** | Employee Gmail | Flat Cold Inbound & Newsletters; no Investor or Warm intro; no investor_tracker, partnership_digest, receipt_router |
+| **`employee`** | Employee Gmail | Flat Cold Inbound & Newsletters; no Investor or Warm intro; no investor_tracker, receipt_router |
 | **`service_account`** | Purpose inboxes | Attention **1–3** only; minimal domain labels; override per mailbox |
 
 **Set profile:** `gmail.profiles` defines each profile's labels and agents;
@@ -303,18 +305,51 @@ Fetches attachments from triaged mail onto the wiki volume.
 
 ## CRM & notifications
 
-All Slack messages below are **severity-gated**: agents emit a `Signal` through a
-`Notifier` (built via `operations_slack` helpers like `ingest_notifier()` /
-`channel_notifier(channel)`), never a direct Slack call. `info` is logged-only;
-only `actionable` / `alert` reach a channel — detect everything, notify selectively.
+Entity-per-person CRM on the wiki (MD source of truth), mirrored to Notion database
+rows when `config/notion.yaml` → `crm_databases` is populated. Slack alerts are
+**severity-gated** via `Notifier` / `Signal` — never direct Slack calls.
+
+```mermaid
+flowchart LR
+  IC[inbound_crm 8/12/4] --> IN[crm/inbound/type/slug.md]
+  IT[investor_tracker] --> CT[crm/contact/slug.md]
+  CC[customer_crm] --> CT
+  CN[connection] --> CT
+  TW[thread_watcher sent mail] --> PR[promotion → connection segment]
+  SW[inbox_sweep 22:00] --> AR[archive CRM inbound after 7 days]
+  IN --> NS[Notion DB row mirror]
+  CT --> NS
+```
+
+**Wiki layout:** `crm/contact/{slug}.md` (canonical person), segment indexes at
+`crm/customer/_index.md` and `crm/investor/_index.md`, typed inbound under
+`crm/inbound/{type}/`, derived lookup at `crm/_registry.json`. Vendors stay in
+**`finance/vendor/`** (not CRM).
+
+**CLI:** `company-brain crm seed`, `crm rebuild-registry`, `crm sync-notion`.
+
+### `inbound_crm.py` *(EA profile)*
+
+| | |
+|---|---|
+| **Tags** | All six cold inbound types (press, events, partnership, founder networking, investor interest, job seekers) |
+| **Destination** | `crm/inbound/{type}/{date}-{subject-slug}.md` |
+| **Write mode** | update (one page per message) |
+| **Slack** | Score ≥ threshold → `#growth` for **press + events only** (v1) |
+| **Retention** | **`inbox_sweep`** archives from Gmail **7 calendar days** after `triaged_at` |
+
+Replaces the retired log-page agents (`growth_inbound`, `recruiting_inbound`,
+`partnership_digest`).
 
 ### `investor_tracker.py` *(EA profile)*
 
 | | |
 |---|---|
 | **Tags** | `Investor`, `Cold Inbound/Investor Interest` |
-| **Destination** | `operations/gmail/investor.md`, `operations/gmail/investor-interest.md` |
-| **Write mode** | append |
+| **Destination** | Confirmed → `crm/contact/{slug}.md`; interest → `crm/inbound/investor-interest/` (via **`inbound_crm`**) |
+| **Write mode** | append on contact interactions |
+
+Index list: **`crm/investor/_index.md`**.
 
 ### `customer_support.py`
 
@@ -330,17 +365,10 @@ Posts summary with source mailbox per customer message.
 | | |
 |---|---|
 | **Tags** | `Customer` |
-| **Destination** | `operations/gmail/customer.md` |
+| **Destination** | `crm/contact/{slug}.md` (segment `customer`) |
 | **Write mode** | append |
 
-Active customers only; wiki list also drives triage classification.
-
-### `growth_inbound.py`
-
-| | |
-|---|---|
-| **Tags** | `Cold Inbound/Press & Podcast`, `Cold Inbound/Event Invitations` |
-| **Destination** | `operations/gmail/media-promotion.md` + Slack `#events` or `#growth` |
+Active customers only; **`crm/customer/_index.md`** drives triage classification.
 
 ### `vendor_tracker.py`
 
@@ -357,30 +385,14 @@ Ops comms per vendor. Finance costs in **`subscription_audit`**.
 | | |
 |---|---|
 | **Tags** | `People`, `Warm intro` (EA only) |
-| **Destination** | `operations/gmail/connection.md` |
+| **Destination** | `crm/contact/{slug}.md` (segment `connection`) |
 | **Write mode** | append |
 
-Excludes `contact_type: investor`.
+Excludes `contact_type: investor`. Two-way mail can auto-promote to `connection` via
+**`thread_watcher`** + `crm/promotion.py` (dismissive outbound replies excluded).
 
-### `recruiting_inbound.py`
-
-| | |
-|---|---|
-| **Tags** | `Cold Inbound/Job Seekers` |
-| **Destination** | `operations/gmail/inbound-candidate.md` |
-| **Write mode** | append |
-
-Logs candidates even when auto-archived at triage.
-
-### `partnership_digest.py` *(EA profile)*
-
-| | |
-|---|---|
-| **Schedule** | **Friday 08:00** |
-| **Tags** | Partnership, Founder Networking |
-| **Destination** | Slack `#partnerships` (ranked digest) |
-
-Keeps top-scoring messages in inbox; archives the rest.
+**Promotion:** `customer` / `investor` segments only via signed contract or manual
+index edit — never auto-promoted from inbound.
 
 ---
 

@@ -11,6 +11,21 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-02 — CRM build session 8 (handbook + cleanup)
+
+- **`docs/agents/operations.md`** — CRM section rewrite (entity layout, mermaid,
+  `inbound_crm`, promotion/retention); removed retired agent docs.
+- **Deleted** deprecated `growth_inbound.py`, `recruiting_inbound.py`; plan file removed.
+- **`docs/tabled.md`** — shipped partnership_inbound row removed; hiring log → inbound_crm.
+
+## 2026-07-02 — CRM build session 7 (Notion DB sync)
+
+- **`crm/notion_sync.py`** — contact + inbound pages → `crm_databases` Notion rows;
+  discover-or-create by title; `notion_page_id` + `synced_hash` in frontmatter.
+- **`write_wiki_page`** — auto-syncs CRM entity paths; **`company-brain crm sync-notion`** CLI.
+- **`NotionConfig.crm_databases`** + number/date property patches in notion `db.py`.
+- **Tests:** `test_crm_notion_sync.py` (4 cases). 162 passing.
+
 ## 2026-07-02 — CRM build session 6 (vendor path → finance)
 
 - **`vendor_tracker`** — writes `finance/vendor/<slug>.md` (was `operations/gmail/vendor/`);

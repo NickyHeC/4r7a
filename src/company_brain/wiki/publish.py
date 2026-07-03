@@ -86,6 +86,17 @@ def write_wiki_page(
     store.write(rel_path, MarkdownDoc(frontmatter=fm, body=body))
     logger.info("Wrote wiki page %s (mode=%s)", rel_path, mode)
 
+    db_key = None
+    try:
+        from company_brain.crm.notion_sync import crm_database_key_for_rel_path, sync_crm_doc
+
+        db_key = crm_database_key_for_rel_path(rel_path)
+        if db_key:
+            return sync_crm_doc(rel_path, store=store)
+    except Exception:
+        logger.exception("CRM Notion sync failed for %s (MD source is still updated)", rel_path)
+        return None
+
     if not sync:
         return None
     try:
