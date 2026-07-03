@@ -93,10 +93,20 @@ class QuarterlyCalculationManager(BaseAgent):
             all_txns.extend(month_txns)
             monthly_data[month] = transactions.compute_monthly_metrics(month_txns)
 
-        report = self._build_report(quarter, months, monthly_data)
+        report_body = self._build_report(quarter, months, monthly_data)
         verification = self._cross_verify(months, monthly_data)
         if verification:
-            report = f"{report}\n{verification}\n"
+            report_body = f"{report_body}\n{verification}\n"
+
+        from company_brain.wiki.publish import format_append_section
+
+        heading = f"{quarter[-2:]} {quarter[:4]}"
+        report = format_append_section(
+            heading,
+            report_body,
+            trigger="quarterly_calculation manager",
+            why=f"scheduled run for {quarter}; cash basis Mercury + Ramp",
+        )
 
         page_id = self._publish_notion(quarter, report)
 
@@ -148,7 +158,6 @@ class QuarterlyCalculationManager(BaseAgent):
         return txns
 
     def _build_report(self, quarter: str, months: list[str], monthly_data: dict[str, dict]) -> str:
-        heading = f"{quarter[-2:]} {quarter[:4]}"  # e.g. "Q1 2026"
         month_headers = [transactions.MONTH_NAMES[int(m[5:7])] for m in months]
 
         def _f(v: float) -> str:
@@ -159,9 +168,10 @@ class QuarterlyCalculationManager(BaseAgent):
             for k in ("revenue", "total_expenses", "net_income", "ebitda", "net_burn")
         }
 
-        lines = [f"## {heading}", ""]
-        lines.append(f"*Generated: {datetime.now():%Y-%m-%d %H:%M}. Basis: cash (Mercury + Ramp).*")
-        lines.append("")
+        lines = [
+            f"*Generated: {datetime.now():%Y-%m-%d %H:%M}. Basis: cash (Mercury + Ramp).*",
+            "",
+        ]
         lines.append(f"| Metric | {' | '.join(month_headers)} | Quarter Total |")
         lines.append(f"|---|{'---|' * len(months)}---|")
         for key, lbl in [

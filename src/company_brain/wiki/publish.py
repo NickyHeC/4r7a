@@ -23,6 +23,32 @@ UPDATE = "update"
 APPEND = "append"
 
 
+def format_append_section(
+    heading: str,
+    body: str,
+    *,
+    why: str | None = None,
+    trigger: str | None = None,
+) -> str:
+    """Build an append-mode section with a visible run-context line.
+
+    Prepended sections (newest on top) include **Why** and/or **Trigger** so
+    Notion mirrors show what fired the run, not just the output snapshot.
+    """
+    lines = [f"## {heading}", ""]
+    context: list[str] = []
+    if trigger:
+        context.append(f"**Trigger:** {trigger}")
+    if why:
+        context.append(f"**Why:** {why}")
+    if context:
+        lines.append(" · ".join(context))
+        lines.append("")
+    lines.append(body.strip())
+    lines.append("")
+    return "\n".join(lines)
+
+
 def write_wiki_page(
     rel_path: str,
     title: str,

@@ -93,9 +93,10 @@ class DraftReplyAgent(BaseAgent):
         return out
 
     async def _create_draft(self, thread_id: str, message_id: str) -> None:
-        from claude_agent_sdk import ClaudeAgentOptions, query
+        from claude_agent_sdk import ClaudeAgentOptions
 
         from company_brain.llm import claude as llm_claude
+        from company_brain.llm.tracking import iter_claude_query
 
         prompt = f"""You are drafting a reply for the CEO's Gmail inbox.
 
@@ -117,7 +118,7 @@ When the draft is created, output exactly: {_RESULT_MARKER}"""
             **llm_claude.model_kwargs(self.model, agent_name="draft_reply"),
         )
         collected: list[str] = []
-        async for message in query(prompt=prompt, options=options):
+        async for message in iter_claude_query("draft_reply", prompt=prompt, options=options):
             result = getattr(message, "result", None)
             if isinstance(result, str):
                 collected.append(result)

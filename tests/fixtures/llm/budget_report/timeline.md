@@ -1,0 +1,3 @@
+- **2026-01-15** — Closed seed extension ($500k)
+- **2026-02-03** — Hired first platform engineer
+- **2026-03-10** — Started GPU VM pilot for agent fleet (self-hosted GLM path)

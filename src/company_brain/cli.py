@@ -480,6 +480,89 @@ def models() -> None:
     """Configure LLM tiers and onboarding mode."""
 
 
+@models.command("budget")
+@click.option("--month", default=None, help="Month to report (YYYY-MM). Default: current.")
+@click.option(
+    "--reconcile",
+    is_flag=True,
+    help="Compare tracked usage to Mercury LLM vendor bills.",
+)
+def models_budget(month: str | None, reconcile: bool) -> None:
+    """Show LLM token budget status and per-agent run caps."""
+    from company_brain.llm.budget import budget_status, resolve_run_limits
+    from company_brain.llm.reconcile import format_reconciliation, reconciliation_report
+    from company_brain.llm.tiers import LLM_AGENTS
+
+    status = budget_status()
+    if status["enabled"]:
+        click.echo(
+            f"Budget {status['month']}: ${status['spent_usd']:.2f} / ${status['limit_usd']:.2f} "
+            f"({status['percent_used']}%)"
+        )
+        click.echo(
+            f"  runtime ${status['runtime_usd']:.2f}, builder ${status['builder_usd']:.2f} "
+            f"(guidance ${status.get('guidance_usd', {}).get('runtime', 0):.0f} / "
+            f"${status.get('guidance_usd', {}).get('builder', 0):.0f})"
+        )
+        in_tok = int(status["input_tokens"])
+        out_tok = int(status["output_tokens"])
+        click.echo(f"  tokens in/out: {in_tok:,} / {out_tok:,}")
+    else:
+        click.secho(
+            "Token budget disabled (set token_budget.enabled in config/models.yaml)",
+            fg="yellow",
+        )
+
+    click.echo("\nPer-agent run caps:")
+    for agent in sorted(LLM_AGENTS):
+        limits = resolve_run_limits(agent)
+        bits = []
+        if limits.max_usd_per_run is not None:
+            bits.append(f"${limits.max_usd_per_run:.2f}/run")
+        if limits.max_steps_per_run is not None:
+            bits.append(f"{limits.max_steps_per_run} steps")
+        if limits.max_tool_calls_per_run is not None:
+            bits.append(f"{limits.max_tool_calls_per_run} tools")
+        click.echo(f"  {agent}: {', '.join(bits) if bits else '(defaults)'}")
+
+    if reconcile or month:
+        report = reconciliation_report(month=month)
+        click.echo("")
+        if report["warn"]:
+            click.secho(format_reconciliation(report), fg="yellow")
+        else:
+            click.echo(format_reconciliation(report))
+
+
+@models.command("spot-check")
+@click.option(
+    "--agent",
+    "agents",
+    multiple=True,
+    help="Run spot check for one agent (repeatable). Default: all configured agents.",
+)
+@click.option("--dry-run", is_flag=True, help="Run fixtures but do not post to Slack.")
+def models_spot_check(agents: tuple[str, ...], dry_run: bool) -> None:
+    """Run LLM vibe-eval spot checks and post samples to #wiki for human review."""
+    from company_brain.llm.spot_check import run_all_spot_checks, run_spot_check, spot_check_config
+
+    cfg = spot_check_config()
+    if not cfg.get("enabled", True):
+        click.secho("eval_spotcheck.enabled is false in config/models.yaml.", fg="yellow")
+        return
+    names = list(agents) if agents else None
+    if dry_run:
+        for name in names or cfg.get("agents") or []:
+            result = run_spot_check(name)
+            if result.error:
+                click.secho(f"{name}: {result.error}", fg="red")
+            else:
+                click.echo(f"{name}: {len(result.output)} chars output")
+        return
+    results = run_all_spot_checks(names, post=True)
+    click.echo(f"Posted {len(results)} spot check(s) to {cfg.get('channel', '#wiki')}.")
+
+
 @models.command("configure")
 @click.option(
     "--mode",

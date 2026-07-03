@@ -201,11 +201,21 @@ OpenAI when both keys are set. Set both `ANTHROPIC_API_KEY` and
 `OPENAI_API_KEY` in `.env`.
 
 **Token budget (optional):** enable in `config/models.yaml` under
-`token_budget` — monthly USD cap, alert at 80%, optional hard stop.
+`token_budget` — monthly USD cap ($250 default pool), runtime/builder guidance
+split, alert at 80%, optional hard stop. Usage is tracked automatically from
+LLM API responses; per-run caps (`run_limits`) enforce USD/steps/tool-call
+limits outside the model.
+
+```bash
+company-brain models budget              # status + per-agent run caps
+company-brain models budget --reconcile  # compare tracked usage vs Mercury vendor bills
+company-brain models spot-check          # vibe eval samples → #wiki
+```
 
 **Model health:** `company-brain doctor llm` pings configured models, auto-falls
-back within `fallback_chains`, persists overrides in `models.yaml`, and alerts
-`#wiki-admin` on substitution.
+back within `fallback_chains`, persists overrides in `models.yaml`, alerts
+`#wiki-admin` on substitution, and (when budget enabled) reconciles tracked
+spend against Anthropic/OpenAI card charges.
 
 Hosted provider keys for local installs; GLM-5 self-host option unchanged below.
 

@@ -18,7 +18,7 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.github.gh import list_recent_commits
 from company_brain.config import AppConfig
-from company_brain.wiki.publish import APPEND, write_wiki_page
+from company_brain.wiki.publish import APPEND, format_append_section, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,12 @@ class ProductFeaturesAgent(BaseAgent):
             self.logger.info("No new user-facing features detected")
             return {"new_features": 0}
 
-        section = self._format_features(features)
+        section = format_append_section(
+            f"Detected {datetime.now():%Y-%m-%d}",
+            self._format_features_body(features),
+            trigger="github_manager daily dispatch",
+            why=f"{len(features)} user-facing features from {len(commits)} commits",
+        )
         page_id = write_wiki_page(
             WIKI_PATH,
             TITLE,
@@ -84,11 +89,8 @@ class ProductFeaturesAgent(BaseAgent):
                 )
         return features
 
-    def _format_features(self, features: list[dict[str, Any]]) -> str:
-        """Build the new-features section (prepended newest-on-top by append mode)."""
-        today = datetime.now().strftime("%Y-%m-%d")
-        lines = [f"## Detected {today}", ""]
-        lines += [
-            f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})" for f in features
-        ]
-        return "\n".join(lines)
+    def _format_features_body(self, features: list[dict[str, Any]]) -> str:
+        return "\n".join(
+            f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})"
+            for f in features
+        ) + "\n"

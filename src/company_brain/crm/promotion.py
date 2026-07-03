@@ -26,7 +26,7 @@ from company_brain.crm.inbound import (
 from company_brain.crm.registry import lookup_contact, rebuild_registry
 from company_brain.crm.schema import ContactEntity
 from company_brain.crm.slug import slug_from_email
-from company_brain.wiki.publish import APPEND, write_wiki_page
+from company_brain.wiki.publish import APPEND, format_append_section, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -190,11 +190,11 @@ def _append_promotion_log(
     thread_id: str,
 ) -> None:
     when = datetime.now(timezone.utc).date().isoformat()
-    section = (
-        f"## {when} — {slug}: {promoted_from} → connection\n\n"
-        f"**Trigger:** two-way exchange (thread `{thread_id}`)\n\n"
-        f"**Prior segment:** {prior_segment}\n\n"
-        f"**Actor:** thread_watcher\n"
+    section = format_append_section(
+        f"{when} — {slug}: {promoted_from} → connection",
+        f"**Prior segment:** {prior_segment}\n",
+        trigger="thread_watcher",
+        why=f"two-way exchange (thread `{thread_id}`)",
     )
     write_wiki_page(
         promotion_log_path(),

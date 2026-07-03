@@ -45,6 +45,18 @@ class AgentModel:
     model_id: str
 
 
+def resolve_llm_agent_key(agent: str) -> str | None:
+    """Map a runtime agent name to its ``config/models.yaml`` LLM key, if any."""
+    if agent in LLM_AGENTS:
+        return agent
+    for prefix in ("finance_", "operations_", "engineering_"):
+        if agent.startswith(prefix):
+            candidate = agent.removeprefix(prefix)
+            if candidate in LLM_AGENTS:
+                return candidate
+    return None
+
+
 def agent_tier(agent: str, cfg: ModelsConfig | None = None) -> str:
     """Return the tier name for ``agent`` given the active ``mode``."""
     cfg = cfg or load_models_config()

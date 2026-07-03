@@ -113,9 +113,10 @@ Output only the markdown section."""
         metric_text: str,
         timeline_text: str,
     ) -> str:
-        from agents import Agent, Runner
+        from agents import Agent
 
         from company_brain.llm import openai_agents as oa
+        from company_brain.llm.tracking import run_openai_sync
 
         prompt = self._budget_prompt(heading, metric_text, timeline_text)
         agent = Agent(
@@ -123,7 +124,8 @@ Output only the markdown section."""
             instructions="You write concise finance budget summary sections.",
             model=oa.make_model(agent_name="budget_report"),
         )
-        result = Runner.run_sync(
+        result = run_openai_sync(
+            "budget_report",
             agent,
             prompt,
             run_config=oa.make_run_config(agent_name="budget_report"),
@@ -131,18 +133,19 @@ Output only the markdown section."""
         return str(result.final_output or "")
 
     async def _compose_with_claude(self, heading: str, metric_text: str, timeline_text: str) -> str:
-        from claude_agent_sdk import ClaudeAgentOptions, query
+        from claude_agent_sdk import ClaudeAgentOptions
 
         prompt = self._budget_prompt(heading, metric_text, timeline_text)
 
         from company_brain.llm import claude as llm_claude
+        from company_brain.llm.tracking import iter_claude_query
 
         options = ClaudeAgentOptions(
             env=llm_claude.options_env(),
             **llm_claude.model_kwargs(self.model, agent_name="budget_report"),
         )
         out: list[str] = []
-        async for message in query(prompt=prompt, options=options):
+        async for message in iter_claude_query("budget_report", prompt=prompt, options=options):
             result = getattr(message, "result", None)
             if isinstance(result, str):
                 out.append(result)

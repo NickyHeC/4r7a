@@ -38,7 +38,7 @@ score = 100 − 1.5 × fails − 0.75 × warns
 | `wiki` | MD-first flow — no direct Notion imports in agents |
 | `ops` | Notifier transport, receipt forward policy, Gmail send surface |
 | `naming` | Agent/wiki slug conventions, legacy path drift vs `name_migrate.py` |
-| `llm` | Model tier bindings, token budget, model health ping + auto-fallback (needs keys; may write `models.yaml` overrides + alert `#wiki-admin`) |
+| `llm` | Model tier bindings, token budget + vendor reconcile, run caps, model health ping + auto-fallback (needs keys; may write `models.yaml` overrides + alert `#wiki-admin`) |
 | `all` | Every doctor (default when you run `company-brain doctor`) |
 | `code` | `agents` + `wiki` + `ops` + `naming` (CI; no tokens) |
 
@@ -85,7 +85,13 @@ git diff                  # self-review the change before commit
 ```bash
 company-brain doctor code   # agents + wiki + ops + naming (no tokens)
 company-brain doctor llm    # tier bindings, budget, model health (needs keys)
+company-brain models budget              # monthly spend + per-agent run caps
+company-brain models budget --reconcile  # tracked usage vs Mercury LLM vendor bills
+company-brain models spot-check          # vibe eval fixtures → #wiki
 ```
+
+Enable enforcement in `config/models.yaml` (`token_budget.enabled: true`).
+Per-run caps apply via `run_limits` regardless of monthly budget toggle.
 
 Then confirm **docs match code** (drift is silent):
 

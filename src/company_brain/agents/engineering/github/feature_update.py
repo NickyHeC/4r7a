@@ -18,7 +18,7 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.github.gh import list_recent_commits
 from company_brain.config import AppConfig
-from company_brain.wiki.publish import APPEND, write_wiki_page
+from company_brain.wiki.publish import APPEND, format_append_section, write_wiki_page
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,12 @@ class FeatureUpdateAgent(BaseAgent):
         major_commits = self._filter_major(commits)
         self.logger.info("Filtered to %d major updates", len(major_commits))
 
-        section = self._format_update(major_commits)
+        section = format_append_section(
+            f"Week of {datetime.now():%Y-%m-%d}",
+            self._format_update_body(major_commits),
+            trigger="github_manager weekly dispatch",
+            why=f"{len(commits)} commits scanned, {len(major_commits)} major",
+        )
         page_id = write_wiki_page(
             WIKI_PATH,
             TITLE,
@@ -79,14 +84,11 @@ class FeatureUpdateAgent(BaseAgent):
             major.append(commit)
         return major
 
-    def _format_update(self, commits: list[dict[str, Any]]) -> str:
-        today = datetime.now().strftime("%Y-%m-%d")
-        header = f"## Week of {today}\n\n"
-
+    def _format_update_body(self, commits: list[dict[str, Any]]) -> str:
         if not commits:
-            return header + "No major updates this week.\n"
+            return "No major updates this week.\n"
 
-        lines = [header]
+        lines = []
         for commit in commits:
             msg = commit.get("commit", {}).get("message", "").split("\n")[0]
             author = commit.get("author", {}).get("login", "unknown")

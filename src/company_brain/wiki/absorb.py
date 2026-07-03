@@ -73,6 +73,12 @@ class AbsorbWriter:
         self.wiki_dir: Path = resolve_wiki_dir()
 
     def run(self, *, since=None) -> dict[str, Any]:
+        from company_brain.llm.run_budget import run_budget_scope
+
+        with run_budget_scope("absorb"):
+            return self._run_inner(since=since)
+
+    def _run_inner(self, *, since=None) -> dict[str, Any]:
         entries = (
             self.pipeline.load_entries_since(since) if since else self.pipeline.load_unabsorbed()
         )
@@ -101,9 +107,10 @@ class AbsorbWriter:
         return {"absorbed": len(entries), "batches": len(batches), "synced": len(synced)}
 
     async def _absorb_batch(self, batch: list[RawEntry]) -> None:
-        from claude_agent_sdk import ClaudeAgentOptions, query
+        from claude_agent_sdk import ClaudeAgentOptions
 
         from company_brain.llm import claude as llm_claude
+        from company_brain.llm.tracking import iter_claude_query
 
         prompt = self._build_prompt(batch)
         options = ClaudeAgentOptions(
@@ -114,7 +121,7 @@ class AbsorbWriter:
             env=llm_claude.options_env(),
             **llm_claude.model_kwargs(self.model, agent_name="absorb"),
         )
-        async for _ in query(prompt=prompt, options=options):
+        async for _ in iter_claude_query("absorb", prompt=prompt, options=options):
             pass
 
     def _build_prompt(self, batch: list[RawEntry]) -> str:

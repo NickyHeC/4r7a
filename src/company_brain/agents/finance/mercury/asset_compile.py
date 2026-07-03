@@ -62,8 +62,13 @@ class AssetCompileAgent(BaseAgent):
         treasury_total = sum(t["balance"] for t in treasury)
         total = bank_total + treasury_total
 
-        report = self._build_report(
-            label, target, bank, treasury, bank_total, treasury_total, total
+        from company_brain.wiki.publish import format_append_section
+
+        report = format_append_section(
+            label,
+            self._build_report_body(label, target, bank, treasury, bank_total, treasury_total, total),
+            trigger="asset_compile agent",
+            why=f"snapshot for {label} (as-of {target})",
         )
 
         page_id = None
@@ -134,9 +139,9 @@ class AssetCompileAgent(BaseAgent):
         return account.get("currentBalance", 0.0), "live balance"
 
     @staticmethod
-    def _build_report(label, target, bank, treasury, bank_total, treasury_total, total) -> str:
-        lines = [f"## Total Assets — {label} (as of {target})", ""]
-        lines.append("## Mercury Bank Accounts")
+    def _build_report_body(label, target, bank, treasury, bank_total, treasury_total, total) -> str:
+        lines = [f"*As of {target}*", ""]
+        lines.append("### Mercury Bank Accounts")
         lines.append("")
         for b in sorted(bank, key=lambda x: -x["balance"]):
             nick = f" — {b['nickname']}" if b.get("nickname") else ""
@@ -145,7 +150,7 @@ class AssetCompileAgent(BaseAgent):
         lines.append(f"**Mercury Bank Total: {mc.fmt_money(bank_total)}**")
         lines.append("")
         if treasury:
-            lines.append("## Mercury Treasury")
+            lines.append("### Mercury Treasury")
             lines.append("")
             for t in treasury:
                 lines.append(f"- Treasury Account: {mc.fmt_money(t['balance'])}")

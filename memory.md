@@ -11,6 +11,31 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-02 — LLM budget reconcile + CLI (vendor fallback)
+
+- **`llm/reconcile.py`** — Mercury card vendor totals vs tracked usage; doctor warn on drift.
+- **`company-brain models budget`** — status, run caps, `--reconcile` flag.
+- **Doctor `llm`** — per-agent run cap summary; reconcile check when budget enabled.
+- **Spot checks** — wrapped in `run_budget_scope`.
+
+## 2026-07-02 — LLM budget Layer B (per-run cap enforcement)
+
+- **`llm/run_budget.py`** — `run_budget_scope()` context; caps on USD, steps, tool calls.
+- **`BaseAgent.execute()`** — wraps run/verify loop; blocks before each iteration.
+- **SDK hooks** — `begin_llm_step()` + tool-call tracking on Claude/OpenAI paths; absorb scoped.
+- **`resolve_llm_agent_key()`** — maps `finance_budget_report` → `budget_report` for limits.
+
+## 2026-07-02 — LLM budget Layer A (categories, caps defaults, usage tracking)
+
+- **`config/models.yaml`** — `spend_categories` (runtime/builder), tier+agent `run_limits`,
+  `model_rates`, `token_budget.guidance_usd` ($200 runtime / $50 builder soft targets;
+  $250 hard pool).
+- **`llm/budget.py`** — `record_usage()`, `resolve_spend_category()`, `resolve_run_limits()`,
+  `estimate_usd()`, category breakdown in `budget_status()`, near-limit alert to `#wiki-admin`.
+- **`llm/tracking.py`** — `iter_claude_query`, `run_openai_sync`, SDK usage hooks wired into
+  absorb, draft_reply, budget_report, subscription_audit, card_spend, spot_check.
+- **Layer B shipped:** enforce `run_limits` in `BaseAgent.execute()` + LLM SDK hooks.
+
 ## 2026-07-02 — CRM build session 8 (handbook + cleanup)
 
 - **`docs/agents/operations.md`** — CRM section rewrite (entity layout, mermaid,

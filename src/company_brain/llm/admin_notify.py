@@ -14,3 +14,16 @@ def wiki_admin_channel() -> str:
 
 def wiki_admin_notifier() -> Notifier:
     return channel_notifier(wiki_admin_channel())
+
+
+def wiki_eval_notifier(channel: str | None = None) -> Notifier:
+    """Notifier for LLM vibe-eval spot checks (default ``#wiki``)."""
+    return channel_notifier(channel or spot_check_channel())
+
+
+def spot_check_channel() -> str:
+    cfg = load_models_config()
+    spec = getattr(cfg, "eval_spotcheck", None)
+    if spec is not None and getattr(spec, "channel", None):
+        return spec.channel
+    return "#wiki"

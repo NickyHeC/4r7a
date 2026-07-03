@@ -7,6 +7,12 @@ model behind every agent across the two agent SDKs the project uses:
 * OpenAI Agents SDK specialists bind to the provider via ``llm.openai_agents``
   (this is the provider-flexible path that can target a self-hosted/remote
   open-source GLM-5 endpoint at no external token cost).
+
+When running self-hosted models (``COMPANY_BRAIN_LLM_PROVIDER=glm``), Ramp Labs
+**Latent Briefing** (KV-cache compaction for multi-agent handoffs) may reduce
+token cost once manager→specialist memory sharing is implemented — it requires
+internal access to the worker model's KV tensors, so it does not apply to
+hosted Anthropic/OpenAI APIs alone.
 """
 
 from company_brain.llm.provider import (

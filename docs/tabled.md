@@ -19,8 +19,11 @@ Format for new rows:
 |------|----------------------|------------------|-------|
 | Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
 | Batch absorb by urgency | operations/slack + notion | Slack/Notion agent design session | Split immediate (tasks/platforms) vs deferred (informational); keep current absorb schedules until then |
-| LLM eval harness | All | First tier downgrade in prod or quality drift | **Concept only** (this row): fixtures under `tests/fixtures/llm/<agent>/`, golden outputs, future `eval-model <agent> --tier <t>` CLI, quality gate on downgrades; not built |
-| Token budget usage tracking | All | Admin enables `token_budget.enabled` | **1)** Hook API response token counts (primary). **2)** Fallback: finance `card_spend` pulls Anthropic/OpenAI vendor bills monthly |
+| Ramp LLM vendor reconcile | Finance / LLM | Ramp MCP stable in reconcile path | Mercury card vendor bills wired; add Ramp card txns to `llm/reconcile.py` |
+| Process artifacts (Architect/Doer) | Cross | Agents living on cloud VMs | Compile reusable Processes (steps, inputs, temporal deps) from observed workflows; second-order automation per Ramp Labs |
+| Self-maintaining monitor-driven ops | Cross / runtime | Agents living on cloud VMs | PR-merge monitor generation, alert → sandbox reproduce → propose fix; includes cloud builder agent maintenance loop |
+| Latent Briefing (KV cache handoff) | LLM / runtime | Self-hosted GLM-5 (`COMPANY_BRAIN_LLM_PROVIDER=glm`) | Ramp Labs multi-agent memory compaction; needs internal KV access — not for hosted API-only |
+| Review queue UX for actionable outputs | operations/notion | Notion platform agents build | Single admin surface for drafts, accounting proposals, CRM promotions awaiting judgment |
 | Ingest existing / personal wikis | External wiki + employee wiki | Admin mount flow stable | Use `migrate-names` on import; see external wiki plan |
 | AI pages too long → unread | All writers | Absorb/handbook quality pass | Length targets in absorb prompt + `config/wiki.yaml`; anti-cram split ongoing |
 
@@ -31,6 +34,7 @@ Format for new rows:
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Platform connection order | Admin / `project_install.md` | Almost all platforms specced | Canonical connect sequence for new installs; ties stacks together last |
+| Process mining from Loom (evolving agents) | Admin onboarding | Last part of 4r7a onboarding | Observe how admin actually works; suggest/write agents that evolve with behavior — needs design time before build |
 | Quarterly doc pass | Admin / docs | First multi-member deploy or major release | Handbooks vs code paths, `migrate-names`, trim stale plans |
 
 ---

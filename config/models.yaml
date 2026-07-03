@@ -48,10 +48,36 @@ overrides:
       reasoning: claude-sonnet-4-6
 token_budget:
   enabled: false
-  monthly_usd: 200.0
+  monthly_usd: 250.0
   alert_threshold_percent: 80
   hard_stop: true
   admin_channel: '#wiki-admin'
+  guidance_usd:
+    runtime: 200.0
+    builder: 50.0
+spend_categories:
+  default: runtime
+  agents:
+    builder: builder
+run_limits:
+  defaults:
+    max_usd_per_run: 0.5
+    max_steps_per_run: 20
+    max_tool_calls_per_run: 40
+  tiers: {}
+  agents: {}
+  builder:
+    max_usd_per_run: 10.0
+    max_steps_per_run: 80
+    max_tool_calls_per_run: 200
+model_rates: {}
+eval_spotcheck:
+  enabled: true
+  channel: '#wiki'
+  agents:
+  - budget_report
+  - draft_reply
+  - absorb
 providers:
   anthropic:
     sdk: claude

@@ -8,6 +8,7 @@ from typing import Any
 
 from company_brain.agents.result import AgentResult
 from company_brain.config import AppConfig
+from company_brain.llm.run_budget import RunLimitExceededError, run_budget_scope
 
 logger = logging.getLogger(__name__)
 
@@ -71,23 +72,28 @@ class BaseAgent(ABC):
             self.logger.info("Agent '%s' skipped by cost gate (no change)", self.name)
             return SKIPPED
         try:
-            self.setup()
-            result: AgentResult | None = None
-            for attempt in range(1, self.max_iterations + 1):
-                output = self.run(**kwargs)
-                result = self.verify(output, **kwargs)
-                if result.passed:
-                    break
-                self.logger.info(
-                    "Agent '%s' attempt %d/%d: status=%s gaps=%s",
-                    self.name,
-                    attempt,
-                    self.max_iterations,
-                    result.status,
-                    result.gaps,
-                )
-            self.logger.info("Agent '%s' completed (status=%s)", self.name, result.status)
-            return result.output
+            with run_budget_scope(self.name) as run_budget:
+                self.setup()
+                result: AgentResult | None = None
+                for attempt in range(1, self.max_iterations + 1):
+                    run_budget.begin_execute_step()
+                    output = self.run(**kwargs)
+                    result = self.verify(output, **kwargs)
+                    if result.passed:
+                        break
+                    self.logger.info(
+                        "Agent '%s' attempt %d/%d: status=%s gaps=%s",
+                        self.name,
+                        attempt,
+                        self.max_iterations,
+                        result.status,
+                        result.gaps,
+                    )
+                self.logger.info("Agent '%s' completed (status=%s)", self.name, result.status)
+                return result.output
+        except RunLimitExceededError:
+            self.logger.error("Agent '%s' stopped by per-run budget cap", self.name)
+            raise
         except Exception:
             self.logger.exception("Agent '%s' failed", self.name)
             raise

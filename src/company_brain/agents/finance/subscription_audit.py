@@ -173,7 +173,7 @@ class SubscriptionAuditAgent(BaseAgent):
         return self._deterministic_report(recurring)
 
     async def _build_with_claude(self, recurring: list[dict]) -> str:
-        from claude_agent_sdk import ClaudeAgentOptions, query
+        from claude_agent_sdk import ClaudeAgentOptions
 
         vendor_block = "\n".join(
             f"- {v['name']}: {v['charge_count']} charges over {v['months_active']} months, "
@@ -196,6 +196,7 @@ Produce a markdown report titled "# Subscription Audit" with:
 Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
 
         from company_brain.llm import claude as llm_claude
+        from company_brain.llm.tracking import iter_claude_query
 
         options = ClaudeAgentOptions(
             allowed_tools=["WebSearch"],
@@ -203,7 +204,11 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
             **llm_claude.model_kwargs(self.model, agent_name="subscription_audit"),
         )
         out: list[str] = []
-        async for message in query(prompt=prompt, options=options):
+        async for message in iter_claude_query(
+            "subscription_audit",
+            prompt=prompt,
+            options=options,
+        ):
             result = getattr(message, "result", None)
             if isinstance(result, str):
                 out.append(result)

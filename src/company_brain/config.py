@@ -218,13 +218,78 @@ class ProviderSpec(BaseModel):
 
 
 class TokenBudgetSpec(BaseModel):
-    """Monthly LLM spend cap for wiki operations."""
+    """Monthly LLM spend cap for 4r7a operations.
+
+    Covers all API token spend for running the product:
+    - **runtime** — specialist agents (absorb, draft_reply, finance LLM agents, …)
+    - **builder** — autonomous coding agents that edit 4r7a from human feedback
+      (future cloud Inspect-style agent; same monthly pool, tagged separately in usage)
+
+    ``guidance_usd`` is for doctor reporting only (soft targets); enforcement uses
+    ``monthly_usd`` as one hard pool. Per-run caps live in ``run_limits``.
+    """
 
     enabled: bool = False
-    monthly_usd: float = 200.0
+    monthly_usd: float = 250.0
     alert_threshold_percent: int = 80
     hard_stop: bool = True
     admin_channel: str = "#wiki-admin"
+    guidance_usd: dict[str, float] = Field(
+        default_factory=lambda: {"runtime": 200.0, "builder": 50.0},
+    )
+
+
+class ModelRateSpec(BaseModel):
+    """USD per 1M tokens for cost estimation when APIs omit dollar amounts."""
+
+    input_per_million: float = 3.0
+    output_per_million: float = 15.0
+
+
+class SpendCategoriesSpec(BaseModel):
+    """Maps agent names to spend buckets (``runtime`` or ``builder``)."""
+
+    default: str = "runtime"
+    agents: dict[str, str] = Field(default_factory=lambda: {"builder": "builder"})
+
+
+class RunLimitValues(BaseModel):
+    """Per-run runtime caps (enforced outside the agent, not in prompts)."""
+
+    max_usd_per_run: float | None = None
+    max_steps_per_run: int | None = None
+    max_tool_calls_per_run: int | None = None
+
+
+class RunLimitsSpec(BaseModel):
+    """Resolved per agent: defaults ← tier ← agent override ← builder profile."""
+
+    defaults: RunLimitValues = Field(
+        default_factory=lambda: RunLimitValues(
+            max_usd_per_run=0.50,
+            max_steps_per_run=20,
+            max_tool_calls_per_run=40,
+        ),
+    )
+    tiers: dict[str, RunLimitValues] = Field(default_factory=dict)
+    agents: dict[str, RunLimitValues] = Field(default_factory=dict)
+    builder: RunLimitValues = Field(
+        default_factory=lambda: RunLimitValues(
+            max_usd_per_run=10.0,
+            max_steps_per_run=80,
+            max_tool_calls_per_run=200,
+        ),
+    )
+
+
+class EvalSpotcheckSpec(BaseModel):
+    """Periodic vibe evals posted to Slack for human spot-checking."""
+
+    enabled: bool = True
+    channel: str = "#wiki"
+    agents: list[str] = Field(
+        default_factory=lambda: ["budget_report", "draft_reply", "absorb"],
+    )
 
 
 class ModelsConfig(BaseModel):
@@ -238,6 +303,10 @@ class ModelsConfig(BaseModel):
     fallback_chains: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
     overrides: dict[str, Any] = Field(default_factory=dict)
     token_budget: TokenBudgetSpec = Field(default_factory=TokenBudgetSpec)
+    spend_categories: SpendCategoriesSpec = Field(default_factory=SpendCategoriesSpec)
+    run_limits: RunLimitsSpec = Field(default_factory=RunLimitsSpec)
+    model_rates: dict[str, ModelRateSpec] = Field(default_factory=dict)
+    eval_spotcheck: EvalSpotcheckSpec = Field(default_factory=EvalSpotcheckSpec)
     providers: dict[str, ProviderSpec] = Field(default_factory=dict)
 
 

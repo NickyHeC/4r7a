@@ -62,9 +62,10 @@ class RampCardSpendAgent(BaseAgent):
         }
 
     async def _query_ramp(self, start: str, end: str) -> str:
-        from claude_agent_sdk import ClaudeAgentOptions, query
+        from claude_agent_sdk import ClaudeAgentOptions
 
         from company_brain.llm import claude as llm_claude
+        from company_brain.llm.tracking import iter_claude_query
 
         prompt = self._build_prompt(start, end)
         options = ClaudeAgentOptions(
@@ -75,7 +76,7 @@ class RampCardSpendAgent(BaseAgent):
         )
 
         collected: list[str] = []
-        async for message in query(prompt=prompt, options=options):
+        async for message in iter_claude_query("card_spend", prompt=prompt, options=options):
             result = getattr(message, "result", None)
             if isinstance(result, str):
                 collected.append(result)
