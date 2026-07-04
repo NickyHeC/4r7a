@@ -110,9 +110,7 @@ def reconciliation_report(
     vendor_total = float(vendor["total_usd"])
     tracked_total = float(tracked["estimated_usd"])
     drift_usd = round(vendor_total - tracked_total, 4)
-    drift_percent = (
-        round(abs(drift_usd) / vendor_total * 100, 1) if vendor_total > 0 else 0.0
-    )
+    drift_percent = round(abs(drift_usd) / vendor_total * 100, 1) if vendor_total > 0 else 0.0
     report = {
         "month": month,
         "tracked_usd": tracked_total,

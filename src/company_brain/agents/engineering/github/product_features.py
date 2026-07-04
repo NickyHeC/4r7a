@@ -90,7 +90,10 @@ class ProductFeaturesAgent(BaseAgent):
         return features
 
     def _format_features_body(self, features: list[dict[str, Any]]) -> str:
-        return "\n".join(
-            f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})"
-            for f in features
-        ) + "\n"
+        return (
+            "\n".join(
+                f"- **{f['title']}** (`{f['sha']}`, @{f['author']}, {f['date'][:10]})"
+                for f in features
+            )
+            + "\n"
+        )
