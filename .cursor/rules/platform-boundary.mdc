@@ -36,5 +36,5 @@ If yes: integrate, configure, or surface a gap in the wiki — **do not reimplem
 ## When adding a new integration
 
 - Read the platform's docs first (`llms.txt` or handbook link).
-- Add hosts to `sfile` `allow_hosts` when introducing new API egress.
+- Add hosts to `vmspec.toml` `allow_hosts` when introducing new API egress.
 - Document scope in the department handbook — what the agent does **and does not** do.

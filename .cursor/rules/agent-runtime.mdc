@@ -6,10 +6,10 @@ alwaysApply: true
 
 # Agent Runtime
 
-The goal is for every agent to run in a smol cloud VM, with managers spinning up
+The goal is for every agent to run in a cloud VM, with managers spinning up
 VMs on demand across a multi-VM fleet. To keep that future seamless:
 
-1. **Dispatch through the runtime** — managers start specialists via `get_runtime().run(SpecialistAgent, self.config, **kwargs)` from `company_brain.runtime`, never by instantiating and calling `.execute()` directly. `LocalRuntime` runs in-process today; `SmolCloudRuntime` (pending the `smol machine` CLI) will spin up a VM, deploy the agent, run it, and tear it down.
+1. **Dispatch through the runtime** — managers start specialists via `get_runtime().run(SpecialistAgent, self.config, **kwargs)` from `company_brain.runtime`, never by instantiating and calling `.execute()` directly. `LocalRuntime` runs in-process today; `CloudRuntime` (pending cloud VM provider integration) will spin up a VM, deploy the agent, run it, and tear it down.
 2. **Runtime-agnostic agents** — an agent must behave identically in-process or on a spun-up VM. Keep state only in the shared wiki volume (Markdown source of truth) and environment variables; do not rely on local-only files, in-memory cross-agent state, or the host filesystem outside `COMPANY_BRAIN_WIKI_DIR`.
-3. **Selection via env** — `COMPANY_BRAIN_RUNTIME=local|smolcloud` (default `local`). Do not hardcode a runtime.
-4. **VM specs map to the Smolfile** — when deploying, the VM image, network allow-list, and the `/workspace/wiki` shared volume come from the `Smolfile` / `VMSpec`. New external API hosts must be added to the Smolfile `allow_hosts`.
+3. **Selection via env** — `COMPANY_BRAIN_RUNTIME=local|cloud` (default `local`). Do not hardcode a runtime.
+4. **VM specs map to `vmspec.toml`** — when deploying, the VM image, network allow-list, and the `/workspace/wiki` shared volume come from `vmspec.toml` / `VMSpec`. New external API hosts must be added to `vmspec.toml` `allow_hosts`.

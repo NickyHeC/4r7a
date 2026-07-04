@@ -38,7 +38,7 @@ Ask the user: local or cloud?
 
 - **local** (default): wiki Markdown lives in `./wiki` (gitignored). Good for a
   single machine / trying it out.
-- **cloud**: wiki Markdown lives on the smol cloud VM's persistent storage at
+- **cloud**: wiki Markdown lives on the cloud VM's persistent storage at
   `/workspace/wiki`. Set `COMPANY_BRAIN_MODE=cloud` and
   `COMPANY_BRAIN_WIKI_DIR=/workspace/wiki`.
 
@@ -240,8 +240,8 @@ Confirm API keys with the user.
   3. Set `COMPANY_BRAIN_LLM_PROVIDER=glm` and point `GLM_BASE_URL` at Ollama's
      OpenAI-compatible endpoint (`http://localhost:11434/v1`); `GLM_API_KEY` can
      be any non-empty value (`ollama` ignores it). Set `COMPANY_BRAIN_LLM_MODEL`
-     to the exact Ollama model tag you pulled (e.g. `glm-5`). Add the host to the
-     `sfile`/Smolfile `allow_hosts` only if Ollama runs off-VM.
+     to the exact Ollama model tag you pulled (e.g. `glm-5`). Add the host to
+     `vmspec.toml` `allow_hosts` only if Ollama runs off-VM.
   - GLM-5 is large (744B-A40B); run Ollama on a capable GPU VM. For high-throughput
     production serving, SGLang (RadixAttention) or vLLM (`--enable-prefix-caching`)
     remain alternatives — same `glm` provider, just a different `GLM_BASE_URL`.

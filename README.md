@@ -75,7 +75,7 @@ intake -> raw/entries/*.md -> absorb (LLM writer) -> wiki/**/*.md (source of tru
 - **Knowledge path**: `ingest` mechanically writes raw Markdown entries; `absorb` is an LLM writer that synthesizes them into wiki articles (theme-organized, `[[wikilinks]]`, cited sources).
 - **Operational path**: department agents write their pages (open PRs, expense reports) directly as Markdown via `write_wiki_page`, then sync.
 
-The wiki Markdown lives on a shared volume (`COMPANY_BRAIN_WIKI_DIR`, e.g. `/workspace/wiki` on a smol cloud VM). The binding to each Notion page is stored in the file's frontmatter (`notion_page_id`).
+The wiki Markdown lives on a shared volume (`COMPANY_BRAIN_WIKI_DIR`, e.g. `/workspace/wiki` on a cloud VM). The binding to each Notion page is stored in the file's frontmatter (`notion_page_id`).
 
 ## Agents
 
@@ -130,13 +130,13 @@ Admin-only one-shot import of shared external Markdown wikis into `wiki/external
 
 Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (cheap cost gate) -> `run` -> `verify` (triage: ok / rework / noise), up to `max_iterations`.
 
-- **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral [smol](https://github.com/smol-machines/smolvm) sandbox (`COMPANY_BRAIN_SANDBOX=smolvm`) before committing — reproduce, then commit only if it passes.
+- **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral VM sandbox (`COMPANY_BRAIN_SANDBOX=vm`) before committing — reproduce, then commit only if it passes.
 - **Cost gates**: expensive agents implement `should_run()` using cheap change-detection (`agents/gates.py`) so no LLM is invoked when nothing changed; re-fires dedup via stored "handled" state.
 - **Notify selectively**: **every** human-facing message goes through `notify.Notifier` / `Signal` (never a direct Slack call) — detect everything, deliver only what's `actionable`/`alert`; `info` and routine ticks are silent.
 
-## Cloud direction (smol VMs)
+## Cloud direction
 
-The target state runs every agent in an isolated [smol](https://github.com/smol-machines/smolvm) cloud VM: company-brain spans a multi-VM fleet, managers spin up specialist VMs on demand (via the forthcoming `smol machine` CLI), and all VMs share the wiki volume. Agents dispatch through an `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|smolcloud`) so the same code runs in-process today and on a VM later. VM config lives in the `Smolfile`.
+The target state runs every agent in an isolated cloud VM: company-brain spans a multi-VM fleet, managers spin up specialist VMs on demand via a cloud provider CLI, and all VMs share the wiki volume. Cloud VMs should be persistent with no billing at idle (schedule-based managers live in VMs woken by cron where available, or run persistently otherwise). Agents dispatch through an `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|cloud`) so the same code runs in-process today and on a VM later. VM config lives in `vmspec.toml`.
 
 ## Setup (agent-assisted)
 
@@ -159,7 +159,7 @@ ntn login && company-brain init
 
 - **Local** (default): the wiki Markdown lives in `./wiki` inside the project
   folder (gitignored). Run everything on one machine.
-- **Cloud**: the wiki Markdown lives on the smol cloud VM's persistent storage at
+- **Cloud**: the wiki Markdown lives on the cloud VM's persistent storage at
   `/workspace/wiki`. Set `COMPANY_BRAIN_MODE=cloud`.
 
 `company-brain doctor` reports the active mode and connection status. See
@@ -200,7 +200,7 @@ switches the model:
 ```
 company-brain/
   project_install.md      # Agent-assisted setup runbook
-  Smolfile                # smol VM image, network allow-list, shared wiki volume
+  vmspec.toml             # Cloud VM image, network allow-list, shared wiki volume
   config/                 # wiki, notion, finance, engineering, operations, models
   src/company_brain/
     cli.py · config.py · runtime/ · wiki/ · notion/ · doctor/ · llm/

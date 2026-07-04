@@ -16,8 +16,8 @@ PROJECT_ROOT = CONFIG_DIR.parent
 def resolve_wiki_dir() -> Path:
     """Directory holding the Markdown wiki (the source of truth).
 
-    Override with ``COMPANY_BRAIN_WIKI_DIR`` (e.g. ``/workspace/wiki`` on a smol
-    cloud VM, pointing at the mounted shared volume). Defaults to ``<root>/wiki``.
+    Override with ``COMPANY_BRAIN_WIKI_DIR`` (e.g. ``/workspace/wiki`` on a cloud
+    VM, pointing at the mounted persistent volume). Defaults to ``<root>/wiki``.
     """
     env = os.getenv("COMPANY_BRAIN_WIKI_DIR")
     return Path(env) if env else PROJECT_ROOT / "wiki"
@@ -45,7 +45,7 @@ def resolve_raw_dir() -> Path:
 
 
 def resolve_runtime() -> str:
-    """Agent runtime selector: ``local`` (in-process) or ``smolcloud`` (VM)."""
+    """Agent runtime selector: ``local`` (in-process) or ``cloud`` (VM)."""
     return os.getenv("COMPANY_BRAIN_RUNTIME", "local").strip().lower()
 
 
@@ -53,7 +53,7 @@ def resolve_mode() -> str:
     """Deployment mode: ``local`` or ``cloud``.
 
     Explicit ``COMPANY_BRAIN_MODE`` wins. Otherwise inferred as ``cloud`` when the
-    wiki dir lives under ``/workspace`` (the mounted smol cloud volume), else
+    wiki dir lives under ``/workspace`` (the mounted cloud VM volume), else
     ``local`` (wiki Markdown stored inside the project folder, gitignored).
     """
     explicit = os.getenv("COMPANY_BRAIN_MODE", "").strip().lower()
@@ -63,10 +63,10 @@ def resolve_mode() -> str:
 
 
 def resolve_sandbox() -> str:
-    """Sandbox backend for verification: ``off`` (in-process) or ``smolvm``.
+    """Sandbox backend for verification: ``off`` (in-process) or ``vm``.
 
-    When ``smolvm`` is selected, state-changing agents can verify/reproduce a
-    change inside an ephemeral smol VM before committing it.
+    When ``vm`` is selected, state-changing agents can verify/reproduce a
+    change inside an ephemeral cloud VM before committing it.
     """
     return os.getenv("COMPANY_BRAIN_SANDBOX", "off").strip().lower()
 

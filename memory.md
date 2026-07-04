@@ -11,6 +11,22 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-03 — Generalize cloud VM runtime (provider-agnostic)
+
+- **Runtime:** `CloudRuntime` / `CloudDeployer` / `VMSandbox` are now generic
+  abstractions not tied to any specific cloud VM provider. `COMPANY_BRAIN_RUNTIME=local|cloud`;
+  `COMPANY_BRAIN_SANDBOX=vm`.
+- **VM spec:** `vmspec.toml` (generic TOML VM specification — image, network
+  allow-list, volumes). Provider-agnostic — works with any cloud VM service that
+  offers a CLI, persistent machines with no idle billing, and cron-based wake.
+- **Cloud direction:** managers live in VMs woken by cron where the provider
+  supports it; persistent manager loops otherwise. Agents can spin up other VMs
+  via the provider CLI.
+- **Doctor:** `vmspec_allow_hosts` check validates agent API hosts against `vmspec.toml`.
+- **Docs/rules:** all references updated (README, project_install, agent-runtime,
+  agent-eval, agent-construction, platform-boundary, solo-maintainer, development,
+  no-sus skill, .env.example, .gitignore, wiki/store docstring).
+
 ## 2026-07-02 — LLM budget reconcile + CLI (vendor fallback)
 
 - **`llm/reconcile.py`** — Mercury card vendor totals vs tracked usage; doctor warn on drift.
@@ -277,7 +293,7 @@ Design locked in `docs/plans/crm-redesign.md` (build not started):
 - **Ledger:** `wiki/work_events.py` + `record_linear_work_event()`.
 - **Agents:** `agents/employee_wiki/` — `employee_wiki_manager`, `work_event_materializer`.
 - **Config:** `employee_wiki.poll_interval_minutes` in `operations.yaml`; gitignore
-  `/employee_wiki/`, `/config/work_events.jsonl`; sfile sibling mount.
+  `/employee_wiki/`, `/config/work_events.jsonl`; vmspec sibling mount.
 - Tests: `tests/test_employee_wiki.py` (9 cases). Platform → ledger hook not wired yet.
 
 ## 2026-06-26 — Employee wiki architecture plan drafted (working tree)
@@ -378,7 +394,7 @@ Design locked in `docs/plans/crm-redesign.md` (build not started):
   (REST), `calendar_availability.py`, `book_meeting.py`, optional `daily_agenda.py`
   (Slack DM, off by default).
 - **`ext_meeting_scheduler.py`** in Gmail: proposes times via draft or books confirmed
-  meetings; dispatched by `gmail_manager`. `doctor` + `sfile` updated.
+  meetings; dispatched by `gmail_manager`. `doctor` + `vmspec.toml` updated.
 
 ## 2026-06-23 — Granola onboarding agent (working tree)
 
@@ -393,7 +409,7 @@ Design locked in `docs/plans/crm-redesign.md` (build not started):
 - Supports **business** (per-member API keys + roster) and **enterprise** (single public-notes
   key) modes via `config/operations.yaml` → `granola` + `GRANOLA_*` env vars.
 - Writes raw entries for absorb plus a daily compiled wiki page at
-  `operations/granola/meeting/{date}.md`. `doctor` checks Granola; `sfile` allow_hosts updated.
+  `operations/granola/meeting/{date}.md`. `doctor` checks Granola; `vmspec.toml` allow_hosts updated.
 
 ## 2026-06-21 — Linear connection under engineering (working tree)
 
@@ -462,7 +478,7 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
 - **Phase 4 cross-platform**: `inbox_task` + `team_on_it` (Linear), `duplicate_across_mailboxes`,
   `receipt_router`; **Linear** via GraphQL + MCP + optional CLI (`linear_client.py`).
 
-`doctor` checks Gmail + Linear; Smolfile allow_hosts updated; docs in README,
+`doctor` checks Gmail + Linear; `vmspec.toml` allow_hosts updated; docs in README,
 `agent_list.md`, `project_install.md`.
 
 ## 2026-06-18 — LLM provider abstraction + open-source GLM-5 option (`21242f4`)
@@ -493,7 +509,7 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
   whose intra-run calls are minutes apart. Self-hosted GLM uses the engine's
   prefix caching (SGLang RadixAttention / vLLM `--enable-prefix-caching`).
 - Added `openai-agents[litellm]` dep; `.env.example` provider/GLM/OpenAI vars +
-  caching knob; `sfile` allow_hosts (api.openai.com + GLM host placeholder);
+  caching knob; `vmspec.toml` allow_hosts (api.openai.com + GLM host placeholder);
   `doctor` now prints the active `LLM:` provider/model/endpoint and checks the
   right credential; updated README, project_install.md, agent-construction rule.
 
@@ -511,7 +527,7 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
   **read + labels + draft compose, never send**: `GMAIL_SEND_FORBIDDEN=True`,
   `send_allowed()` stays false unless a human opts in via config + env.
 - Added `config/operations.yaml` (provider/scopes/allow_send) + loader
-  `operations/shared/config.py`; `.env.example` Gmail/Composio vars; Smolfile
+  `operations/shared/config.py`; `.env.example` Gmail/Composio vars; `vmspec.toml`
   allow_hosts (gmailmcp/gmail/oauth2/accounts.googleapis + backend.composio.dev);
   a `doctor` Gmail check; README (Operations platform map + tree + config) and
   `project_install.md` (Gmail connect step, both paths); `agent_list.md` gained an
@@ -607,7 +623,7 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
   `verify` triage (ok/rework/noise) with bounded iteration.
 - New: `agents/result.py`, `agents/gates.py` (state store + change/dedup), `notify.py`
   (Signal/Notifier: detect everything, notify selectively), `runtime/sandbox.py`
-  (optional smolvm sandboxed verification).
+  (optional VM sandboxed verification).
 - Open-source onboarding: `config.resolve_mode()` (local vs cloud), `company-brain
   doctor` command, root `AGENTS.md` setup runbook, README slimmed to human-facing.
 - Mercury/Ramp documented read-only at client + rule + README.
@@ -619,8 +635,8 @@ Full CEO inbox agent fleet under `operations/` (54 files, 15 tests):
   mirror. New `WikiStore`/`MarkdownDoc`, `NotionSync`, `wiki/absorb.py` LLM writer loop,
   `wiki/indexer.py` (`_index.md` + `_backlinks.json`), and `wiki/publish.py` helper.
 - Ingestion writes `raw/entries/*.md`; absorb log moved to `wiki/_absorb_log.json`.
-- Added `runtime/` (AgentRuntime/AgentDeployer: local now, smol cloud later) and a
-  `Smolfile`; agents write MD-first then sync.
+- Added `runtime/` (AgentRuntime/AgentDeployer: local now, cloud VM later) and
+  `vmspec.toml`; agents write MD-first then sync.
 - Renamed `manual_request` -> `request_manual_accounting`.
 
 ## 2026-06-15 — Finance department + department reorganization (`a8434a8`)

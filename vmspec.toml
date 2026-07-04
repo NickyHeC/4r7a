@@ -1,10 +1,9 @@
-# Smolfile — reproducible smol VM for running company-brain agents.
-# Docs: https://github.com/smol-machines/smolvm
+# vmspec.toml — VM specification for running company-brain agents in the cloud.
 #
-# Each agent (or the manager fleet) runs in an isolated microVM. The wiki lives
-# on a shared volume mounted at /workspace/wiki so the Markdown source of truth
-# is consistent across every VM in the fleet. Egress is locked to the APIs the
-# agents actually use.
+# Each agent (or the manager fleet) runs in an isolated cloud VM. The wiki lives
+# on a shared persistent volume mounted at /workspace/wiki so the Markdown source
+# of truth is consistent across every VM in the fleet. Egress is locked to the
+# APIs the agents actually use.
 
 image = "python:3.12"
 net = true
@@ -42,7 +41,7 @@ allow_hosts = [
 
 [dev]
 init = ["pip install -e ."]
-# The shared wiki volume (the smol cloud volume in production). COMPANY_BRAIN_WIKI_DIR
+# The shared wiki volume (persistent cloud storage in production). COMPANY_BRAIN_WIKI_DIR
 # should point here so all agents read/write the same Markdown source of truth.
 # Employee wikis live in a sibling mount (COMPANY_BRAIN_EMPLOYEE_WIKI_DIR).
 volumes = ["./wiki:/workspace/wiki", "./employee_wiki:/workspace/employee_wiki"]

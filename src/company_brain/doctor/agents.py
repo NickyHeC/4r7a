@@ -1,4 +1,4 @@
-"""Agents doctor — naming, docs, Smolfile drift, handbook coverage."""
+"""Agents doctor — naming, docs, vmspec drift, handbook coverage."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from company_brain.doctor.types import CheckResult, DoctorReport
 
 AGENTS_ROOT = PROJECT_ROOT / "src" / "company_brain" / "agents"
 HANDBOOK_DIR = PROJECT_ROOT / "docs" / "agents"
-SMOLFILE = PROJECT_ROOT / "sfile"
+VMSPEC = PROJECT_ROOT / "vmspec.toml"
 
 _SKIP_FILES = frozenset({"base.py", "gates.py", "result.py", "__init__.py"})
 _SKIP_SUFFIXES = ("_client.py",)
@@ -64,10 +64,10 @@ def _iter_handbook_agent_files() -> list[Path]:
     return [p for p in _iter_agent_py_files() if _defines_agent_class(p)]
 
 
-def _load_smolfile_hosts() -> set[str]:
-    if not SMOLFILE.exists():
+def _load_vmspec_hosts() -> set[str]:
+    if not VMSPEC.exists():
         return set()
-    text = SMOLFILE.read_text()
+    text = VMSPEC.read_text()
     return {m.group(1).strip().lower() for m in re.finditer(r'"([^"]+)"', text)}
 
 
@@ -124,7 +124,7 @@ def run_agents_doctor() -> DoctorReport:
     agent_files = _iter_agent_py_files()
     handbook_files = _iter_handbook_agent_files()
     handbook = _handbook_text()
-    smol_hosts = _load_smolfile_hosts()
+    vmspec_hosts = _load_vmspec_hosts()
 
     hyphen_files = [p.name for p in agent_files if "-" in p.name]
     if hyphen_files:
@@ -184,22 +184,24 @@ def run_agents_doctor() -> DoctorReport:
     api_hosts: set[str] = set()
     for path in AGENTS_ROOT.rglob("*.py"):
         api_hosts |= _extract_api_hosts(path)
-    # Google Calendar REST uses www.googleapis.com; sfile lists calendar.googleapis.com.
-    if "calendar.googleapis.com" in smol_hosts and "www.googleapis.com" in api_hosts:
+    # Google Calendar REST uses www.googleapis.com; vmspec lists calendar.googleapis.com.
+    if "calendar.googleapis.com" in vmspec_hosts and "www.googleapis.com" in api_hosts:
         api_hosts.discard("www.googleapis.com")
-    drift = sorted(h for h in api_hosts if h not in smol_hosts)
+    drift = sorted(h for h in api_hosts if h not in vmspec_hosts)
     if drift:
         report.checks.append(
             CheckResult(
-                "smolfile_allow_hosts",
+                "vmspec_allow_hosts",
                 "warn",
-                f"API hosts in code missing from sfile: {', '.join(drift)}",
-                "add hosts to sfile [network] allow_hosts",
+                f"API hosts in code missing from vmspec.toml: {', '.join(drift)}",
+                "add hosts to vmspec.toml [network] allow_hosts",
             )
         )
     else:
         report.checks.append(
-            CheckResult("smolfile_allow_hosts", "pass", "sfile allow_hosts covers agent API hosts")
+            CheckResult(
+                "vmspec_allow_hosts", "pass", "vmspec.toml allow_hosts covers agent API hosts"
+            )
         )
 
     bypasses = _manager_runtime_bypasses()

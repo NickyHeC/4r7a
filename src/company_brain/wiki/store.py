@@ -2,9 +2,9 @@
 
 Each wiki page is a Markdown file with a YAML frontmatter block. The store is
 backend-agnostic: ``LocalWikiStore`` writes to a local directory today; on a
-smol cloud VM that directory is a mounted shared volume (``/workspace/wiki``),
-and a future ``SmolCloudWikiStore`` can implement the same interface against the
-cloud service without touching agent code.
+cloud VM that directory is a mounted shared volume (``/workspace/wiki``), and a
+future ``CloudWikiStore`` can implement the same interface against the cloud
+service without touching agent code.
 
 Writes are atomic (temp file + rename) so the shared volume stays consistent
 across VMs, and every write stamps a ``content_hash`` so NotionSync can cheaply

@@ -46,7 +46,7 @@ When rules conflict, **record the conflict** — do not silently pick the conven
 - **Runtime bypass** — manager dispatching specialists via `.execute()` instead of `get_runtime().run()` (onboarding backfill excepted)
 - Gmail **send** without dual opt-in (`gmail.allow_send` + `GMAIL_ALLOW_SEND`)
 - Finance **writes at source** (Mercury/Ramp mutations)
-- New external API host without `sfile` `allow_hosts` entry
+- New external API host without `vmspec.toml` `allow_hosts` entry
 - New agent file without handbook + README + `project_install` update
 - PR or summary claims behavior **without test or doctor proof**
 - Multiple sources of truth for one decision
