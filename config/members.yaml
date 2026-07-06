@@ -7,6 +7,9 @@ members: {}
 #     email: alice@company.com
 #     status: active              # active | departed
 #     notion_teamspace: member_alice
+#     bridge:
+#       departments: [engineering]   # required for AI agent dept read scope
+#                                    # (sync: location:engineering pages)
 #     bindings:
 #       granola_label: alice
 #       gmail_mailbox: alice@company.com

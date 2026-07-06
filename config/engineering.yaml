@@ -2,6 +2,15 @@
 #
 # Non-secret settings only — API keys and OAuth tokens live in .env.
 
+wiki:
+  # Department agent pages default to sync: location:engineering (engineering
+  # Notion teamspace). Bridge MCP reads are department-scoped via members.yaml
+  # bridge.departments. Cross-company pages (e.g. lead master table) use
+  # sync: company explicitly.
+  default_sync: location:engineering
+  paths:
+    - engineering/**
+
 linear:
   # Default team for issue creation (set team_id UUID or team_key e.g. ENG).
   team_key: ENG

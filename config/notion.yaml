@@ -21,9 +21,11 @@ section_page_ids: {}
 teamspaces:
   admin: ""
   company: ""
+  engineering: ""
 section_teamspace:
   admin: admin
   crm: company
+  engineering: engineering
 
 # CRM entity + inbound database mirrors (populate database_id after Notion connect).
 crm_databases:

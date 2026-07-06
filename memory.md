@@ -11,6 +11,19 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-06 — Member bridge MCP (v1 implementation)
+
+- **`src/company_brain/bridge/`** — HTTP MCP (JSON-RPC), read gate
+  (`sync: company` + `sync: location:{dept}` via `bridge.departments`), token
+  hashes, ledger, index, rate limits, audit log.
+- **Agents:** `bridge_manager`, `bridge_event_materializer`, `blocker_rollup`
+  (deterministic 08:00 rollup; no Linear).
+- **CLI:** `company-brain bridge serve|issue-token|revoke-token|rebuild-index|manager|rollup`.
+- **Doctor:** `company-brain doctor bridge`.
+- **Config:** `config/bridge.yaml`; `members.yaml` → `bridge.departments`.
+- **Skill:** `.cursor/skills/4r7a-bridge/SKILL.md`.
+- **Tests:** `tests/test_bridge.py` (6 cases). 192 passing.
+
 ## 2026-07-03 — Generalize cloud VM runtime (provider-agnostic)
 
 - **Runtime:** `CloudRuntime` / `CloudDeployer` / `VMSandbox` are now generic

@@ -126,6 +126,15 @@ Admin-only one-shot import of shared external Markdown wikis into `wiki/external
 - **Registry** — `config/external_sources.yaml` tracks mounted sources and history.
 - **Admin catalog** — `content_catalog.py` regenerates `admin/content-catalog.md` (view-only fleet TOC mirrored to the admin Notion teamspace). Manual rebuild: `company-brain catalog`.
 
+### Member Bridge (MCP)
+
+A scoped **MCP server** (co-located with the wiki, reached over a private mesh) lets a member's AI coding agent converse with company-brain without direct access to the Markdown wiki. Humans read via Notion teamspaces; member AI agents use the bridge only.
+
+- **Tools** — `report_blocker`, `get_priority`, `search_practices`, `list_skills`, `get_skill`. Blockers are a summary compilation layer; Linear issue tracking stays in each agent's own integration.
+- **Scope** — per-member bearer tokens (hashes only); reads are department-scoped (`sync: company` + `sync: location:{dept}` from `members.yaml` `bridge.departments` + own `employee_wiki/{member}/`). Rate limits 60 reads/min, 20 reports/day.
+- **Flow** — `report_blocker` → `config/bridge_events.jsonl` → `bridge_manager` → `bridge_event_materializer` → `employee_wiki/{member}/blockers/`; daily `blocker_rollup` writes `engineering/priorities/blockers.md` (deterministic, no LLM over member text).
+- **Commands** — `company-brain bridge serve | issue-token | revoke-token | rebuild-index | manager | rollup`; verify with `company-brain doctor bridge`. Client skill: `.cursor/skills/4r7a-bridge/`.
+
 ## Self-maintaining foundation
 
 Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (cheap cost gate) -> `run` -> `verify` (triage: ok / rework / noise), up to `max_iterations`.
@@ -201,7 +210,7 @@ switches the model:
 company-brain/
   project_install.md      # Agent-assisted setup runbook
   vmspec.toml             # Cloud VM image, network allow-list, shared wiki volume
-  config/                 # wiki, notion, finance, engineering, operations, models
+  config/                 # wiki, notion, finance, engineering, operations, models, members, bridge
   src/company_brain/
     cli.py · config.py · runtime/ · wiki/ · notion/ · doctor/ · llm/
     agents/               # department → platform → agent
@@ -209,6 +218,8 @@ company-brain/
       finance/            # monthly_expense, quarterly_calculation, mercury/, ramp/
       operations/         # gmail_manager, gmail/, gcal/, granola/
       employee_wiki/      # employee_wiki_manager, materializer, import, onboarding
+      bridge/             # bridge_manager, materializer, blocker_rollup
+    bridge/               # MCP server, auth, read gate, index, tools
   docs/agents/            # Agent handbook — schedules, diagrams, per-agent detail
   wiki/ · employee_wiki/ · raw/entries/   # Gitignored locally; shared volume in cloud
 ```

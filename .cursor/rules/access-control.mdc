@@ -22,14 +22,22 @@ alwaysApply: true
    Independent of ingest scope: a member may contribute data they cannot broadly
    read.
 
-## Read access is delegated to Notion teamspaces
+## Read access: humans vs member AI agents
 
-The full Markdown wiki (the source of truth) is **admin-only** — it lives on the
-admin's machine / cloud VM and is never exposed to members directly. Members read
-through **Notion teamspaces**, and **Notion enforces who sees what** (the admin
-sets each teamspace's access level in Notion). company-brain does not build its
-own identity or read-ACL system; it just routes each wiki area to the right
-teamspace.
+**Humans (members)** read through **Notion teamspaces**. Notion enforces who sees
+what; the admin sets each teamspace's access level. company-brain routes each wiki
+area to the right teamspace via `config/notion.yaml`.
+
+**Member AI agents** (Cursor, Claude Desktop, other MCP clients) do **not** get
+direct access to the Markdown wiki volume, filesystem paths, or admin CLI on the
+wiki host. They converse with company-brain only through the **member bridge MCP**
+(HTTP, private mesh). The bridge is a safety layer: fixed tools, schema-validated
+writes, prefix-scoped reads, per-member bearer tokens. See **Member bridge MCP**
+below.
+
+The full Markdown wiki (source of truth) remains **admin-only** for humans and for
+admin tooling (`company-brain` CLI on the wiki host). Members never receive
+`COMPANY_BRAIN_WIKI_DIR`, wiki checkout, or a token that can read arbitrary paths.
 
 - `config/notion.yaml` `teamspaces`: teamspace key -> the Notion parent page that
   pages in that teamspace sync under.
@@ -72,6 +80,72 @@ Admin initiates only; members cannot mount external wikis.
 - **Admin catalog:** `admin/content-catalog.md` lists company wiki, external mounts,
   employee building counts, and audit pages — view-only; regenerate via `company-brain catalog`.
 - **Section routing:** `section_teamspace` maps top-level `admin` → admin teamspace.
+
+## Member bridge MCP (planned)
+
+Bridge process runs **co-located with the wiki** on the same host (cloud VM or
+local always-on NAS/home server). Setup recommends **all-local or all-cloud**;
+mixed wiki-on-NAS + agents-in-cloud is unsupported without explicit migration.
+
+| Actor | Access |
+|-------|--------|
+| Admin | CLI on wiki host; full MD |
+| Member (human) | Notion teamspaces |
+| Member (coding agent / LLM) | Bridge MCP only — never raw MD |
+
+**Tokens:** per-member bearer tokens; **hashes only** in gitignored
+``config/bridge-tokens.json`` (plaintext shown once at issuance). Issued at
+employee onboarding; revoked when a Slack offboarding agent detects member
+removal. No admin god-token via MCP.
+
+**Writes:** append-only ledger (``config/bridge_events.jsonl``) →
+``bridge_manager`` → ``bridge_event_materializer`` →
+``employee_wiki/{member}/blockers/``; daily 08:00 ``blocker_rollup`` compiles
+company summary only (no Linear integration — issue tracking stays in Linear via
+each coding agent's own integrations).
+
+**Reads (bridge):** **department-scoped** for member AI agents. Visibility from
+frontmatter ``sync:`` plus ``config/bridge.yaml`` allow-list prefixes. Maintained
+**bridge index** per department (and company-wide slice), rebuilt on wiki
+write/sync.
+
+Each member token carries ``bridge.departments`` from onboarding (required for
+dept access — no blanket cross-department read). A token may read:
+
+1. **Company-wide** — ``sync: company`` under company allow-list prefixes only
+   (e.g. cross-department priority master table). Not a substitute for
+   department content.
+2. **Department** — ``sync: location:{dept}`` when ``{dept}`` is in the member's
+   ``bridge.departments``. Engineering wiki pages use ``sync: location:engineering``
+   (Notion engineering teamspace). Finance → ``location:finance``, etc.
+3. **Employee (own tree)** — ``employee_wiki/{member}/`` with ``sync: private``
+   or ``sync: company``.
+
+Always **deny:** other departments' ``location:*`` pages, ``sync: admin_only``,
+``sync: not_synced``, other members' ``sync: private`` (unless ``query_grants``).
+
+Human members still read their department via Notion teamspace ACL; bridge
+enforces the same boundary for AI agents via ``bridge.departments``.
+
+**Rate limits (default, admin-overridable in ``config/bridge.yaml``):** 60
+reads/minute per token; 20 ``report_blocker`` calls/day per token.
+
+**Priority master table:** lives on a ``sync: company`` wiki page (Notion-mirrored);
+leads edit via Notion; rollup agent reads it at 08:00.
+
+**Skills manifest:** per-department, e.g.
+``engineering/practices/skills/_index.yaml`` (``sync: location:engineering``).
+
+Reachability via private mesh (e.g. Tailscale). Local always-on NAS supported;
+uptime/downtime tradeoffs are the admin's choice — bridge **hard fails** when
+host is unreachable.
+
+**v1 tools:** ``report_blocker``, ``get_priority``, ``search_practices``,
+``get_skill``, ``list_skills``. Blockers are a **summary compilation layer** —
+not linked to Linear inside 4r7a.
+
+Skill for agent clients: ``.cursor/skills/4r7a-bridge/SKILL.md`` (first install
+artifact when connecting a member's coding agent).
 
 ## Read vs write asymmetry (the default posture)
 

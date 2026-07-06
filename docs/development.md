@@ -39,6 +39,7 @@ score = 100 − 1.5 × fails − 0.75 × warns
 | `ops` | Notifier transport, receipt forward policy, Gmail send surface |
 | `naming` | Agent/wiki slug conventions, legacy path drift vs `name_migrate.py` |
 | `llm` | Model tier bindings, token budget + vendor reconcile, run caps, model health ping + auto-fallback (needs keys; may write `models.yaml` overrides + alert `#wiki-admin`) |
+| `bridge` | Bridge MCP config, tokens, index readiness |
 | `all` | Every doctor (default when you run `company-brain doctor`) |
 | `code` | `agents` + `wiki` + `ops` + `naming` (CI; no tokens) |
 

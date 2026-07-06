@@ -23,10 +23,15 @@ class MemberIngestConfig(BaseModel):
     slack: str = "watched_channels_only"
 
 
+class MemberBridgeConfig(BaseModel):
+    departments: list[str] = Field(default_factory=list)
+
+
 class MemberSpec(BaseModel):
     email: str = ""
     status: str = "active"
     notion_teamspace: str = ""
+    bridge: MemberBridgeConfig = Field(default_factory=MemberBridgeConfig)
     bindings: MemberBindings = Field(default_factory=MemberBindings)
     ingest: MemberIngestConfig = Field(default_factory=MemberIngestConfig)
     query_grants: dict[str, list[str]] = Field(default_factory=dict)

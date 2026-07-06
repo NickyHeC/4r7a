@@ -21,6 +21,7 @@ flowchart LR
 | **Operations** | Gmail executive assistant, Linear task workflows | [operations.md](operations.md) |
 | **Employee Wiki** | Per-member work buildings — ledger materializers, zip import | [employee_wiki.md](employee_wiki.md) |
 | **External Wiki** | Admin one-shot external wiki mounts + content catalog | [external_wiki.md](external_wiki.md) |
+| **Member Bridge** | Scoped MCP for member coding agents — blockers, priorities, practices | [bridge.md](bridge.md) |
 
 ## Conventions (all departments)
 

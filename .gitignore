@@ -236,3 +236,8 @@ notepad.md
 /config/task_bindings.json
 # Employee work event ledger (local runtime state)
 /config/work_events.jsonl
+# Member bridge MCP runtime state (gitignored secrets + ledgers)
+/config/bridge-tokens.json
+/config/bridge_events.jsonl
+/config/bridge_index.json
+/config/bridge-audit.jsonl

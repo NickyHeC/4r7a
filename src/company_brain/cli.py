@@ -595,6 +595,20 @@ def doctor_code(as_json: bool, min_score: int | None, no_history: bool) -> None:
     )
 
 
+@doctor.command("bridge")
+@_doctor_options
+def doctor_bridge(as_json: bool, min_score: int | None, no_history: bool) -> None:
+    """Bridge MCP config, tokens, and index readiness."""
+    from company_brain.doctor.runner import main_exit
+
+    main_exit(
+        ["bridge"],
+        as_json=as_json,
+        min_score=min_score,
+        record_history=not no_history,
+    )
+
+
 @doctor.command("all")
 @_doctor_options
 def doctor_all(as_json: bool, min_score: int | None, no_history: bool) -> None:
@@ -607,3 +621,73 @@ def doctor_all(as_json: bool, min_score: int | None, no_history: bool) -> None:
         min_score=min_score,
         record_history=not no_history,
     )
+
+
+@main.group()
+def bridge() -> None:
+    """Member bridge MCP — tokens, index, manager, HTTP server."""
+
+
+@bridge.command("serve")
+@click.option("--host", default=None, help="Bind host (default from config/bridge.yaml).")
+@click.option("--port", type=int, default=None, help="Bind port (default from config/bridge.yaml).")
+def bridge_serve(host: str | None, port: int | None) -> None:
+    """Run the HTTP MCP server (co-located with wiki host)."""
+    from company_brain.bridge.mcp_http import serve
+
+    serve(host=host, port=port)
+
+
+@bridge.command("issue-token")
+@click.argument("member")
+def bridge_issue_token(member: str) -> None:
+    """Issue a per-member bearer token (plaintext shown once)."""
+    from company_brain.bridge.tokens import BridgeTokenStore
+
+    token = BridgeTokenStore().issue(member)
+    click.secho(f"Token for {member} (store in COMPANY_BRAIN_MEMBER_TOKEN):", bold=True)
+    click.echo(token)
+    click.secho("Plaintext is not stored — copy it now.", fg="yellow")
+
+
+@bridge.command("revoke-token")
+@click.argument("member")
+def bridge_revoke_token(member: str) -> None:
+    """Revoke a member's bridge token."""
+    from company_brain.bridge.tokens import BridgeTokenStore
+
+    if BridgeTokenStore().revoke(member):
+        click.secho(f"Revoked token for {member}.", fg="green")
+    else:
+        click.secho(f"No active token for {member}.", fg="yellow")
+
+
+@bridge.command("rebuild-index")
+def bridge_rebuild_index() -> None:
+    """Rebuild the bridge search/skills index from wiki pages."""
+    from company_brain.bridge.index import rebuild_index
+
+    index = rebuild_index()
+    click.echo(
+        f"Index rebuilt: {len(index.entries)} entries, {len(index.skills)} dept skill lists."
+    )
+
+
+@bridge.command("manager")
+@click.option("--once", is_flag=True, help="Single poll (materialize + optional rollup).")
+def bridge_manager(once: bool) -> None:
+    """Run bridge_manager (ledger poll + daily rollup scheduler)."""
+    from company_brain.agents.bridge.bridge_manager import BridgeManagerAgent
+
+    config = load_config()
+    BridgeManagerAgent(config).run(once=once)
+
+
+@bridge.command("rollup")
+def bridge_rollup() -> None:
+    """Run blocker rollup once (engineering priorities snapshot)."""
+    from company_brain.agents.bridge.blocker_rollup import BlockerRollupAgent
+
+    config = load_config()
+    result = BlockerRollupAgent(config).execute()
+    click.echo(result)

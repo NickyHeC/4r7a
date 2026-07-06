@@ -1,0 +1,39 @@
+# Member bridge MCP — scoped access for coding agents (HTTP MCP on wiki host).
+# Secrets: bridge-tokens.json (gitignored), never commit plaintext tokens.
+
+ledger_path: bridge_events.jsonl
+index_path: bridge_index.json
+tokens_path: bridge-tokens.json
+audit_log_path: bridge-audit.jsonl
+
+poll_interval_minutes: 5
+
+rate_limits:
+  reads_per_minute: 60
+  report_blocker_per_day: 20
+
+rollup:
+  time: "08:00"
+  blockers_path: engineering/priorities/blockers.md
+  lead_focus_path: engineering/priorities/lead-focus.md
+  department: engineering
+  blockers_sync: location:engineering
+
+# Path prefixes the bridge may consider (still gated by sync: frontmatter).
+allow_prefixes:
+  company:
+    - engineering/priorities/lead-focus.md
+  departments:
+    engineering:
+      - engineering/
+    finance:
+      - finance/
+    operations:
+      - operations/
+
+skills_manifest:
+  engineering: engineering/practices/skills/_index.yaml
+
+serve:
+  host: "127.0.0.1"
+  port: 8790

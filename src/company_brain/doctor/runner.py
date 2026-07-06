@@ -15,6 +15,7 @@ from company_brain.config import (
     resolve_wiki_dir,
 )
 from company_brain.doctor.agents import run_agents_doctor
+from company_brain.doctor.bridge import run_bridge_doctor
 from company_brain.doctor.connect import run_connect_doctor
 from company_brain.doctor.llm import run_llm_doctor
 from company_brain.doctor.naming import run_naming_doctor
@@ -33,6 +34,7 @@ DOCTORS: dict[str, DoctorFn] = {
     "ops": run_ops_doctor,
     "naming": run_naming_doctor,
     "llm": run_llm_doctor,
+    "bridge": run_bridge_doctor,
 }
 
 

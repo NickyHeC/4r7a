@@ -7,6 +7,11 @@ GitHub and Linear agents under `src/company_brain/agents/engineering/`. GitHub a
 Linear team defaults live in [`config/engineering.yaml`](../../config/engineering.yaml)
 (`linear.team_key` / `linear.team_id`).
 
+**Wiki sync:** Engineering agent pages use **`sync: location:engineering`** (engineering
+Notion teamspace). Member AI agents read them via bridge MCP only when
+`bridge.departments` includes `engineering` at onboarding. Company-wide pages
+(e.g. cross-department priority master table) use `sync: company` explicitly.
+
 ---
 
 ## Linear — how it runs
