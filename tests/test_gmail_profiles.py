@@ -38,7 +38,7 @@ def test_employee_profile_flat_cold_and_newsletters(monkeypatch):
     assert not agent_enabled("investor_tracker")
     assert not agent_enabled("inbound_crm")
     assert not agent_enabled("receipt_router")
-    assert agent_enabled("customer_support")
+    assert agent_enabled("customer_mail_notify")
     assert agent_enabled("decision_propagate")
 
 

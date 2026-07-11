@@ -20,7 +20,13 @@ class _SlackChannel:
 
     def __init__(self, channel: str, token: str | None = None):
         self.channel = channel
-        self._token = token or os.getenv("SLACK_BOT_TOKEN", "")
+        if token:
+            self._token = token
+        else:
+            self._token = (
+                os.getenv("SLACK_WIKI_BOT_TOKEN", "").strip()
+                or os.getenv("SLACK_BOT_TOKEN", "").strip()
+            )
         self._client = None
 
     @property
@@ -29,7 +35,7 @@ class _SlackChannel:
             from slack_sdk import WebClient
 
             if not self._token:
-                raise RuntimeError("SLACK_BOT_TOKEN not set — see .env")
+                raise RuntimeError("SLACK_WIKI_BOT_TOKEN not set — see .env")
             self._client = WebClient(token=self._token)
         return self._client
 

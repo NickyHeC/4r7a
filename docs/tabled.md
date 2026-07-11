@@ -18,7 +18,8 @@ Format for new rows:
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
-| Batch absorb by urgency | operations/slack + notion | Slack/Notion agent design session | Split immediate (tasks/platforms) vs deferred (informational); keep current absorb schedules until then |
+| Batch absorb by urgency | operations/slack + notion | **Slack platform build** (`docs/plans/slack.md`) | Design locked — three-tier lanes + optional absorb on backfill; implement during Slack sessions |
+| Weave hot-reload / agent pause-resume | admin/weave | Weave PR-only v1 stable | Option B from Slack design — pause persistent agents, edit, resume; after structure ships |
 | Ramp LLM vendor reconcile | Finance / LLM | Ramp MCP stable in reconcile path | Mercury card vendor bills wired; add Ramp card txns to `llm/reconcile.py` |
 | Process artifacts (Architect/Doer) | Cross | Agents living on cloud VMs | Compile reusable Processes (steps, inputs, temporal deps) from observed workflows; second-order automation per Ramp Labs |
 | Self-maintaining monitor-driven ops | Cross / runtime | Agents living on cloud VMs | PR-merge monitor generation, alert → sandbox reproduce → propose fix; includes cloud builder agent maintenance loop |
@@ -72,12 +73,13 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| **Overall agent scheduling design** | operations/slack (+ fleet-wide) | **Slack platform agent build session** | Revisit work-ahead windows, manager cadence, weekend/overnight runs on always-on fleet, batch LLM timing, two-phase verify; `work_ahead.py` + Linear stale audit are v1 only |
-| Agent filename rename pass | `operations/slack` | Slack platform build / spec session | `slack_action_items` → `action_items`, `slack_thread_watcher` → `thread_watcher`; naming doctor warns until then |
-| Internal meeting scheduler | `operations/slack` | Slack scheduling pain | Distinct from gcal ext_meeting_scheduler |
-| Open threads pending response | `operations/slack` | Watcher + action-item flow proven | Extend `slack_thread_watcher` |
-| Feedback intake | `operations/slack` | Ops channel for system feedback | Route to wiki or Linear |
-| Question the wiki | `operations/slack` | Query UX defined | Read-only; wiki store only |
+| **Slack platform (full)** | operations/slack + admin/weave + hr | **In progress** — [`docs/plans/slack.md`](../plans/slack.md) | Events API, @wiki, @weave, customer support, onboarding, open threads |
+| **Overall agent scheduling design** | operations/slack (+ fleet-wide) | Slack Session 1+ | Addressed in plan; `work_ahead.py` + Linear stale audit remain v1 |
+| Agent filename rename pass | `operations/slack` | **Shipped** Session 1 | `action_items`, `thread_watcher`; `customer_mail_notify` |
+| Internal meeting scheduler | `operations/slack` | Slack Session 5 | Distinct from gcal ext_meeting_scheduler |
+| Open threads pending response | `operations/slack` | Slack Session 3 | Routing records + reactions + employee wiki pages |
+| Feedback intake | `operations/slack` / admin | Slack Session 7 | `@weave` + change-request DB |
+| Question the wiki | `operations/slack` | Slack Session 5 | `ask_wiki` — internal channels only |
 
 ---
 
@@ -119,7 +121,11 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Hiring log auto-track | `hr` or `operations/gmail` | CRM inbound stable | Extend **`inbound_crm`** candidate type |
+| Hiring log (`hr/hiring-log.md`) | `hr` | **Slack platform build** (`docs/plans/slack.md`) | CRM-style append log: trial, intern, W2, past states; ties to roster promote + offboarding |
+| Roster scopes by employment type | `hr` / `config/roster.yaml` | Hiring log + member promote stable | `config/roster.yaml` for trial/intern/contractor; `members.yaml` W2 only; scopes TBD in HR session |
+| Google Workspace offboard signal | `hr` | `employee_offboarding` v1 shipped | Cross-check alongside Slack deactivation; stub OK in v1 |
+| Notion user removal signal | `hr` | `employee_offboarding` v1 shipped | Cross-check for member departures |
+| Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Extend **`inbound_crm`** candidate type |
 
 ---
 

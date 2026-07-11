@@ -1,4 +1,4 @@
-"""Gmail Customer Support Agent — Slack summary for Customer mail.
+"""Gmail Customer Mail Notify — Slack summary for Customer mail.
 
 Dispatched by gmail_manager. Posts a concise summary (with source mailbox) to
 #customer-support for each unhandled ``Customer`` routing record.
@@ -19,13 +19,13 @@ from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
 from company_brain.notify import ACTIONABLE, Signal
 
-SPECIALIST_KEY = "customer_support"
+SPECIALIST_KEY = "customer_mail_notify"
 
 
-class CustomerSupportAgent(BaseAgent):
+class CustomerMailNotifyAgent(BaseAgent):
     """Notify #customer-support about customer-tagged mail."""
 
-    name = "customer_support"
+    name = "customer_mail_notify"
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -63,5 +63,5 @@ class CustomerSupportAgent(BaseAgent):
                     posted += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
             except Exception:
-                self.logger.exception("Customer support notify failed for %s", record.message_id)
+                self.logger.exception("Customer mail notify failed for %s", record.message_id)
         return {"posted": posted}

@@ -56,7 +56,7 @@ gmail:
         - ingest
         - ingest_queue_review
         - attachment_router
-        - customer_support
+        - customer_mail_notify
         - customer_crm
         - vendor_tracker
         - connection

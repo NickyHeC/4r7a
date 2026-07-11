@@ -98,7 +98,7 @@ VENDOR_TITLE_PATTERN = (re.compile(r"^Vendor — (.+)$"), _vendor_title)
 # Gmail routing ``handled`` keys renamed with the 2026-06 naming pass.
 SPECIALIST_KEY_RENAMES: dict[str, str] = {
     "gmail_ingest": "ingest",
-    "gmail_customer_support": "customer_support",
+    "gmail_customer_support": "customer_mail_notify",
     "gmail_crm": "connection",
     "growth_inbound": "inbound_crm",
     "partnership_digest": "inbound_crm",

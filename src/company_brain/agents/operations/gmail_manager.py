@@ -136,8 +136,8 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.attachment_router import AttachmentRouterAgent
     from company_brain.agents.operations.gmail.connection import ConnectionAgent
     from company_brain.agents.operations.gmail.customer_crm import CustomerCRMAgent
-    from company_brain.agents.operations.gmail.customer_support import (
-        CustomerSupportAgent,
+    from company_brain.agents.operations.gmail.customer_mail_notify import (
+        CustomerMailNotifyAgent,
     )
     from company_brain.agents.operations.gmail.draft_reply import DraftReplyAgent
     from company_brain.agents.operations.gmail.duplicate_across_mailboxes import (
@@ -164,7 +164,7 @@ def _dispatch_agent_classes() -> dict[str, type]:
         "ingest": IngestAgent,
         "attachment_router": AttachmentRouterAgent,
         "investor_tracker": InvestorTrackerAgent,
-        "customer_support": CustomerSupportAgent,
+        "customer_mail_notify": CustomerMailNotifyAgent,
         "customer_crm": CustomerCRMAgent,
         "inbound_crm": InboundCrmAgent,
         "vendor_tracker": VendorTrackerAgent,

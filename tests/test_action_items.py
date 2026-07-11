@@ -1,4 +1,4 @@
-"""Tests for Slack action items and Linear completion reply."""
+"""Tests for Slack action items, thread watcher, manager, and routing store."""
 
 from unittest.mock import MagicMock, patch
 
@@ -10,11 +10,13 @@ from company_brain.agents.engineering.linear.linear_completed.slack_thread_respo
 )
 from company_brain.agents.engineering.linear.task_bindings import TaskBinding, TaskBindingStore
 from company_brain.agents.operations.slack.action_items import (
+    ActionItemsAgent,
     extract_action_title,
     message_has_action_item,
 )
-from company_brain.agents.operations.slack.slack_action_items import SlackActionItemsAgent
-from company_brain.agents.operations.slack.slack_thread_watcher import SlackThreadWatcherAgent
+from company_brain.agents.operations.slack.routing import SlackRoutingStore
+from company_brain.agents.operations.slack.thread_watcher import ThreadWatcherAgent
+from company_brain.agents.operations.slack_manager import SlackManager
 
 
 def test_message_has_action_item():
@@ -27,7 +29,7 @@ def test_extract_action_title():
     assert "Alice" in title
 
 
-def test_slack_action_items_creates_binding(tmp_path, monkeypatch):
+def test_action_items_creates_binding(tmp_path, monkeypatch):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     monkeypatch.setattr(
@@ -35,19 +37,19 @@ def test_slack_action_items_creates_binding(tmp_path, monkeypatch):
         config_dir,
     )
     config = MagicMock()
-    agent = SlackActionItemsAgent(config)
+    agent = ActionItemsAgent(config)
 
     with (
         patch(
-            "company_brain.agents.operations.slack.slack_action_items.linear_client.create_issue",
+            "company_brain.agents.operations.slack.action_items.linear_client.create_issue",
             return_value={"id": "l1", "identifier": "ENG-7", "url": "https://linear/x"},
         ),
         patch(
-            "company_brain.agents.operations.slack.slack_action_items.task_class_fan_out",
+            "company_brain.agents.operations.slack.action_items.task_class_fan_out",
             return_value=["linear", "slack"],
         ),
         patch(
-            "company_brain.agents.operations.slack.slack_action_items.slack_client.permalink",
+            "company_brain.agents.operations.slack.action_items.slack_client.permalink",
             return_value="https://slack/x",
         ),
     ):
@@ -122,29 +124,29 @@ def test_linear_completed_routes_slack():
 
 
 def test_thread_watcher_dispatches_on_action_item():
-    agent = SlackThreadWatcherAgent(MagicMock())
+    agent = ThreadWatcherAgent(MagicMock())
     msg = {"ts": "1.1", "text": "TODO: fix onboarding"}
 
     with (
         patch(
-            "company_brain.agents.operations.slack.slack_thread_watcher.cfg.watched_channels",
+            "company_brain.agents.operations.slack.thread_watcher.cfg.watched_channels",
             return_value=["#team-ops"],
         ),
         patch.object(agent, "_since_timestamp", return_value=MagicMock()),
         patch(
-            "company_brain.agents.operations.slack.slack_thread_watcher.slack_client.fetch_channel_messages",
+            "company_brain.agents.operations.slack.thread_watcher.slack_client.fetch_channel_messages",
             return_value=[msg],
         ),
         patch(
-            "company_brain.agents.operations.slack.slack_thread_watcher.slack_client.datetime_to_slack_ts",
+            "company_brain.agents.operations.slack.thread_watcher.slack_client.datetime_to_slack_ts",
             return_value=0.0,
         ),
         patch(
-            "company_brain.agents.operations.slack.slack_thread_watcher.is_handled",
+            "company_brain.agents.operations.slack.thread_watcher.is_handled",
             return_value=False,
         ),
         patch(
-            "company_brain.agents.operations.slack.slack_thread_watcher.mark_handled",
+            "company_brain.agents.operations.slack.thread_watcher.mark_handled",
         ),
         patch.object(
             agent,
@@ -157,3 +159,48 @@ def test_thread_watcher_dispatches_on_action_item():
     assert scanned == 1
     assert hits == 1
     mock_dispatch.assert_called_once()
+
+
+def test_slack_routing_store_roundtrip(tmp_path):
+    wiki = tmp_path / "wiki"
+    store = SlackRoutingStore(wiki_dir=wiki)
+    record = store.upsert(
+        "#team-ops",
+        "1234.5678",
+        kind="action_pending",
+        attention="1. Action",
+    )
+    assert record.channel == "#team-ops"
+    loaded = store.read("#team-ops", "1234.5678")
+    assert loaded is not None
+    assert loaded.kind == "action_pending"
+    store.mark_handled(loaded, "action_items")
+    again = store.read("#team-ops", "1234.5678")
+    assert again is not None
+    assert "action_items" in again.handled
+
+
+def test_slack_manager_dispatches_thread_watcher(monkeypatch):
+    manager = SlackManager(MagicMock())
+    mock_runtime = MagicMock()
+
+    with (
+        patch("company_brain.runtime.get_runtime", return_value=mock_runtime),
+        patch.object(manager, "_should_run_channel_registry", return_value=False),
+    ):
+        import asyncio
+
+        asyncio.run(manager._run_pass())
+
+    assert mock_runtime.run.call_count == 1
+
+
+def test_wiki_bot_token_fallback(monkeypatch):
+    from company_brain.agents.operations.slack import slack_client
+
+    monkeypatch.delenv("SLACK_WIKI_BOT_TOKEN", raising=False)
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-legacy")
+    assert slack_client.wiki_bot_token() == "xoxb-legacy"
+
+    monkeypatch.setenv("SLACK_WIKI_BOT_TOKEN", "xoxb-wiki")
+    assert slack_client.wiki_bot_token() == "xoxb-wiki"

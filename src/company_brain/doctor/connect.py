@@ -48,9 +48,19 @@ def run_connect_doctor() -> DoctorReport:
     add("ramp_token", bool(os.getenv("RAMP_TOKEN")), "Ramp token set", "set RAMP_TOKEN")
     add(
         "slack_token",
-        bool(os.getenv("SLACK_BOT_TOKEN")),
-        "Slack bot token set",
-        "set SLACK_BOT_TOKEN",
+        bool(
+            os.getenv("SLACK_WIKI_BOT_TOKEN", "").strip()
+            or os.getenv("SLACK_BOT_TOKEN", "").strip()
+        ),
+        "Slack wiki bot token set",
+        "set SLACK_WIKI_BOT_TOKEN (legacy: SLACK_BOT_TOKEN)",
+    )
+    add(
+        "slack_weave_token",
+        bool(os.getenv("SLACK_WEAVE_BOT_TOKEN", "").strip()),
+        "Slack Weave bot token set (optional add-on)",
+        "set SLACK_WEAVE_BOT_TOKEN + SLACK_WEAVE_APP_TOKEN for @weave",
+        optional=True,
     )
 
     provider = resolve_llm_provider()

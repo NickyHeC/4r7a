@@ -1,20 +1,19 @@
 """Slack Thread Watcher — poll watched channels for action-item threads.
 
-Persistent agent: dispatches ``slack_action_items`` when new action-item language
-appears in open threads. Designed to extend later with pending-response detection.
+Ephemeral specialist dispatched by ``slack_manager`` on each poll pass. Scans
+channels and dispatches ``action_items`` when new action-item language appears.
+Designed to extend later with pending-response detection.
 
 SDK: Neither (Slack SDK + orchestration).
 """
 
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import StateStore, is_handled, mark_handled
-from company_brain.agents.operations.shared.scheduling import is_workday, next_interval
 from company_brain.agents.operations.slack import slack_client
 from company_brain.agents.operations.slack import slack_config as cfg
 from company_brain.agents.operations.slack.action_items import message_has_action_item
@@ -23,10 +22,10 @@ from company_brain.config import AppConfig
 POLL_KEY_PREFIX = "slack_thread_watch:"
 
 
-class SlackThreadWatcherAgent(BaseAgent):
+class ThreadWatcherAgent(BaseAgent):
     """Poll Slack channels and dispatch action-item specialists."""
 
-    name = "slack_thread_watcher"
+    name = "thread_watcher"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -35,23 +34,8 @@ class SlackThreadWatcherAgent(BaseAgent):
     def should_run(self, **kwargs: Any) -> bool:
         return slack_client.slack_is_configured() and bool(cfg.watched_channels())
 
-    def run(self, *, once: bool = False, **kwargs: Any) -> Any:
-        if once:
-            return self.run_once()
-        asyncio.run(self._loop())
-
-    async def _loop(self) -> None:
-        interval = cfg.poll_interval_minutes()
-        self.logger.info("Slack thread watcher starting (every %d min)", interval)
-        while True:
-            now = datetime.now()
-            if not cfg.workdays_only() or is_workday(now):
-                try:
-                    self.run_once()
-                except Exception:
-                    self.logger.exception("Slack thread watcher failed")
-            nxt = next_interval(datetime.now(), interval, workdays_only=cfg.workdays_only())
-            await asyncio.sleep(max((nxt - datetime.now()).total_seconds(), 60))
+    def run(self, *, once: bool = True, **kwargs: Any) -> dict[str, Any]:
+        return self.run_once()
 
     def run_once(self) -> dict[str, Any]:
         dispatched = 0
@@ -120,11 +104,11 @@ class SlackThreadWatcherAgent(BaseAgent):
         text: str,
         slack_user_id: str,
     ) -> dict[str, Any]:
-        from company_brain.agents.operations.slack.slack_action_items import SlackActionItemsAgent
+        from company_brain.agents.operations.slack.action_items import ActionItemsAgent
         from company_brain.runtime import get_runtime
 
         return get_runtime().run(
-            SlackActionItemsAgent,
+            ActionItemsAgent,
             self.config,
             channel=channel,
             thread_ts=thread_ts,

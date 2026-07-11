@@ -12,7 +12,7 @@ happens automatically once each mailbox is onboarded.
 
 **Config:** [`config/operations.yaml`](../../config/operations.yaml) — profile
 definitions in `gmail.profiles`, active default in `gmail.profile`, per-mailbox
-overrides in `gmail.mailbox_profiles`. **Env:** `GMAIL_*`, `GRANOLA_*`, `LINEAR_*`, `SLACK_BOT_TOKEN`
+overrides in `gmail.mailbox_profiles`. **Env:** `GMAIL_*`, `GRANOLA_*`, `LINEAR_*`, `SLACK_WIKI_BOT_TOKEN`
 
 **Posture:** Gmail agents **read, label, and draft only — never send**. Finance platforms
 stay read-only at the source (see [Finance handbook](finance.md)).
@@ -351,14 +351,15 @@ Replaces the retired log-page agents (`growth_inbound`, `recruiting_inbound`,
 
 Index list: **`crm/investor/_index.md`**.
 
-### `customer_support.py`
+### `customer_mail_notify.py`
 
 | | |
 |---|---|
 | **Tags** | `Customer` |
 | **Destination** | Slack `#customer-support` |
 
-Posts summary with source mailbox per customer message.
+Posts summary with source mailbox per customer message (notifier only; cross-platform
+triage lands in Session 4 `customer_support` orchestrator).
 
 ### `customer_crm.py`
 
@@ -544,13 +545,15 @@ Config: `config/operations.yaml` → `granola.schedule` (`watch_interval_minutes
 
 ## Slack — how it runs
 
-Polls watched channels for threads with action-item language; creates Linear issues
-via `task_bindings`. Linear Done → thread completion reply (system propagation).
+**`slack_manager`** polls watched channels on a workday schedule and dispatches
+specialists. Linear Done → thread completion reply (system propagation).
 
 ```mermaid
 flowchart TD
-  STW[slack_thread_watcher persistent] -->|30min poll| SAI[slack_action_items]
-  SAI --> TB[(task_bindings + Linear)]
+  SM[slack_manager persistent] -->|poll interval| TW[thread_watcher]
+  SM -->|daily| CR[channel_registry]
+  TW --> AI[action_items]
+  AI --> TB[(task_bindings + Linear)]
   LM[linear_manager] -->|Done| LC[linear_completed]
   LC --> STR[slack_thread_respond]
   STR --> TB
@@ -558,15 +561,18 @@ flowchart TD
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `slack_thread_watcher.py` | Persistent (30 min poll) | Scan `slack_platform.watched_channels`; dispatch action-item specialist |
-| `slack_action_items.py` | Via watcher | Action thread → Linear issue + wiki binding |
-| `slack_client.py` | — | Slack Web API (not an agent) |
+| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches `thread_watcher` each pass; `channel_registry` once per workday |
+| `thread_watcher.py` | Via manager | Scan `slack_platform.watched_channels`; dispatch `action_items` |
+| `action_items.py` | Via watcher | Action thread → Linear issue + wiki binding |
+| `channel_registry.py` | Daily via manager | Maintains `config/slack_channels.json` (skeleton) |
+| `slack_client.py` | — | Slack Web API (wiki bot; not an agent) |
 
-Config: `config/operations.yaml` → `slack_platform` (`watched_channels`, `action_keywords`,
-`poll_interval_minutes`). Requires `SLACK_BOT_TOKEN` with channel history + `chat:write`.
+Config: `config/operations.yaml` → `slack_platform`; `config/slack_channels.json`
+for per-channel ingest scope. Env: `SLACK_WIKI_BOT_TOKEN` (required; legacy
+`SLACK_BOT_TOKEN` supported), optional `SLACK_WEAVE_BOT_TOKEN` for `@weave`.
 
-Completion replies: `engineering/linear/linear_completed/slack_thread_respond.py` (dispatched
-when a bound Slack task reaches Done in Linear).
+Completion replies: `engineering/linear/linear_completed/slack_thread_respond.py`
+(dispatched when a bound Slack task reaches Done in Linear).
 
 ---
 

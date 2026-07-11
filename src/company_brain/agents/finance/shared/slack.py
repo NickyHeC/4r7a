@@ -3,8 +3,8 @@
 Uses the Slack SDK to access the Slack API directly (per project convention —
 no MCP wrapper). Posts to a configurable channel (default ``#finance``).
 
-Requires ``SLACK_BOT_TOKEN`` in the environment. The target channel is read
-from ``config/finance.yaml`` (``slack.channel`` / ``slack.channel_id``).
+Requires ``SLACK_WIKI_BOT_TOKEN`` (or legacy ``SLACK_BOT_TOKEN``) in the environment.
+The target channel is read from ``config/finance.yaml`` (``slack.channel`` / ``slack.channel_id``).
 """
 
 from __future__ import annotations
@@ -21,7 +21,13 @@ class SlackNotifier:
 
     def __init__(self, channel: str, token: str | None = None):
         self.channel = channel
-        self._token = token or os.getenv("SLACK_BOT_TOKEN", "")
+        if token:
+            self._token = token
+        else:
+            self._token = (
+                os.getenv("SLACK_WIKI_BOT_TOKEN", "").strip()
+                or os.getenv("SLACK_BOT_TOKEN", "").strip()
+            )
         self._client = None
 
     @property
@@ -34,7 +40,7 @@ class SlackNotifier:
                     "slack-sdk not installed. Add it to dependencies: pip install slack-sdk"
                 ) from e
             if not self._token:
-                raise RuntimeError("SLACK_BOT_TOKEN not set — see .env")
+                raise RuntimeError("SLACK_WIKI_BOT_TOKEN not set — see .env")
             self._client = WebClient(token=self._token)
         return self._client
 

@@ -2,6 +2,10 @@
 
 Human-facing notifications still go through ``Notifier`` / ``Signal``.
 Thread replies from ``linear_completed`` are system propagation, not alerts.
+
+Token resolution: ``SLACK_WIKI_BOT_TOKEN`` (required for company-brain), with
+legacy fallback to ``SLACK_BOT_TOKEN``. Optional ``SLACK_WEAVE_BOT_TOKEN`` for
+the Weave app (Session 7+).
 """
 
 from __future__ import annotations
@@ -15,21 +19,45 @@ class SlackClientError(RuntimeError):
     pass
 
 
-def bot_token() -> str:
-    token = os.getenv("SLACK_BOT_TOKEN", "").strip()
+def wiki_bot_token() -> str:
+    token = os.getenv("SLACK_WIKI_BOT_TOKEN", "").strip()
     if not token:
-        raise SlackClientError("SLACK_BOT_TOKEN not set — see project_install.md")
+        token = os.getenv("SLACK_BOT_TOKEN", "").strip()
+    if not token:
+        raise SlackClientError(
+            "SLACK_WIKI_BOT_TOKEN not set — see project_install.md (legacy: SLACK_BOT_TOKEN)"
+        )
     return token
 
 
-def client() -> Any:
+def weave_bot_token() -> str:
+    return os.getenv("SLACK_WEAVE_BOT_TOKEN", "").strip()
+
+
+def bot_token() -> str:
+    """Default wiki bot token for platform agents and notifiers."""
+    return wiki_bot_token()
+
+
+def client(*, app: str = "wiki") -> Any:
     from slack_sdk import WebClient
 
-    return WebClient(token=bot_token())
+    if app == "weave":
+        token = weave_bot_token()
+        if not token:
+            raise SlackClientError("SLACK_WEAVE_BOT_TOKEN not set")
+        return WebClient(token=token)
+    return WebClient(token=wiki_bot_token())
 
 
 def slack_is_configured() -> bool:
-    return bool(os.getenv("SLACK_BOT_TOKEN", "").strip())
+    return bool(
+        os.getenv("SLACK_WIKI_BOT_TOKEN", "").strip() or os.getenv("SLACK_BOT_TOKEN", "").strip()
+    )
+
+
+def weave_is_configured() -> bool:
+    return bool(os.getenv("SLACK_WEAVE_BOT_TOKEN", "").strip())
 
 
 def resolve_channel_id(channel: str) -> str:

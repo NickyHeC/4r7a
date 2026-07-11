@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from company_brain.agents.operations.shared.config import load_operations_config
@@ -40,4 +39,6 @@ def action_keywords() -> list[str]:
 
 
 def slack_is_configured() -> bool:
-    return bool(os.getenv("SLACK_BOT_TOKEN", "").strip())
+    from company_brain.agents.operations.slack import slack_client
+
+    return slack_client.slack_is_configured()
