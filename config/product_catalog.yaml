@@ -1,0 +1,17 @@
+products:
+  - slug: company-brain
+    name: Company Brain
+    status: available
+    features:
+      - "Markdown wiki with Notion mirror"
+      - "Slack ingest triage"
+    in_build:
+      - "Member bridge MCP"
+      - "Discord community ingest"
+  - slug: smol-machines
+    name: Smol Machines
+    status: available
+    features:
+      - "Smolfile VM spec"
+      - "smolvm local microVMs"
+    in_build: []

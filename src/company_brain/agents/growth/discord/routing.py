@@ -122,6 +122,15 @@ class DiscordRoutingStore:
             except (OSError, json.JSONDecodeError, KeyError):
                 continue
 
+    def iter_all(self) -> Iterable[DiscordRoutingRecord]:
+        if not self._root.is_dir():
+            return
+        for path in sorted(self._root.rglob("*.json")):
+            try:
+                yield DiscordRoutingRecord.from_dict(json.loads(path.read_text()))
+            except (OSError, json.JSONDecodeError, KeyError):
+                continue
+
     def iter_open(self, *, kind: str | None = None) -> Iterable[DiscordRoutingRecord]:
         if not self._root.is_dir():
             return

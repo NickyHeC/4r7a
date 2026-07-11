@@ -1,8 +1,9 @@
 """Customer Support orchestrator — classify customer intake and route.
 
-Single cross-platform entry for Slack Connect, internal customer channels, and
-Gmail ``Customer`` mail. Bugs → ``engineering/issue/`` + Linear; feature requests
-→ product ledger + ranked snapshot; discussions → open threads only.
+Single cross-platform entry for Slack Connect, internal customer channels,
+Gmail ``Customer`` mail, and Discord community intake. Bugs →
+``engineering/issue/`` + Linear; feature requests → product ledger + ranked
+snapshot; discussions → open threads (Slack) or open-conversation tracker (Discord).
 
 SDK: Neither (heuristics + wiki writes + optional Linear).
 """
@@ -32,6 +33,7 @@ FEATURE_REQUEST_RANKED = "product/feature-request.md"
 FEATURE_REQUEST_LOG_TITLE = "Feature Request Log"
 FEATURE_REQUEST_RANKED_TITLE = "Feature Requests"
 ISSUE_DIR = "engineering/issue"
+GENERAL_PRODUCT = "general"
 
 BUG_SIGNALS = (
     "bug",
@@ -71,6 +73,22 @@ class CustomerIntake:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class CommunityIntake:
+    source: str = "discord"
+    title: str = ""
+    body: str = ""
+    requester_handle: str = ""
+    requester_id: str = ""
+    permalink: str = ""
+    channel_id: str = ""
+    thread_id: str = ""
+    message_id: str = ""
+    parent_channel_id: str = ""
+    category: str = ""
+    extra: dict[str, Any] = field(default_factory=dict)
+
+
 def classify_customer_intake(intake: CustomerIntake) -> str:
     """Return ``bug``, ``feature``, or ``discussion`` ($0 heuristics)."""
     text = f"{intake.title}\n{intake.body}".lower()
@@ -98,13 +116,15 @@ def notion_link_from_page_id(page_id: str | None) -> str:
 class CustomerSupportOrchestrator:
     """Route classified customer intake to wiki + optional Linear."""
 
-    def process(self, intake: CustomerIntake) -> dict[str, Any]:
+    def process(self, intake: CustomerIntake, *, community: bool = False) -> dict[str, Any]:
+        if community:
+            raise TypeError("use process_community() for CommunityIntake")
         category = classify_customer_intake(intake)
         crm_slug = self._record_crm(intake)
         if category == "bug":
-            routed = self._route_bug(intake)
+            routed = self._route_bug(intake, community=False)
         elif category == "feature":
-            routed = self._route_feature(intake)
+            routed = self._route_feature(intake, product_slug=GENERAL_PRODUCT)
         else:
             routed = self._route_discussion(intake)
 
@@ -115,6 +135,29 @@ class CustomerSupportOrchestrator:
             "notified": notified,
             **routed,
         }
+
+    def process_community(self, intake: CommunityIntake) -> dict[str, Any]:
+        from company_brain.agents.growth.discord.triage_heuristics import is_spam
+
+        text = f"{intake.title}\n{intake.body}".strip()
+        if is_spam(text):
+            return {"category": "noise", "skipped": True, "reason": "spam"}
+
+        category = intake.category or classify_customer_intake(
+            CustomerIntake(source=intake.source, title=intake.title, body=intake.body)
+        )
+        if category == "bug":
+            routed = self._route_bug(_community_as_customer(intake), community=True)
+            notified = self._notify_community(intake, category, routed)
+            return {"category": category, "notified": notified, **routed}
+
+        if category == "feature":
+            routed = self._route_community_feature(intake)
+            notified = self._notify_community(intake, category, routed)
+            return {"category": category, "notified": notified, **routed}
+
+        routed = self._route_community_discussion(intake)
+        return {"category": category, **routed}
 
     def _record_crm(self, intake: CustomerIntake) -> str | None:
         from_hdr = intake.requester_email or intake.requester_name
@@ -131,12 +174,13 @@ class CustomerSupportOrchestrator:
         except Exception:
             return None
 
-    def _route_bug(self, intake: CustomerIntake) -> dict[str, Any]:
+    def _route_bug(self, intake: CustomerIntake, *, community: bool) -> dict[str, Any]:
         linear_issue: dict[str, Any] = {}
         if linear_client.linear_is_configured():
             try:
+                bug_title = "Community bug report" if community else "Customer bug report"
                 linear_issue = linear_client.create_issue(
-                    title=intake.title[:200] or "Customer bug report",
+                    title=intake.title[:200] or bug_title,
                     description=_issue_description(intake),
                     team_id=team_id() or None,
                     team_key=team_key() or None,
@@ -155,10 +199,10 @@ class CustomerSupportOrchestrator:
 
         slug = issue_slug(intake.title, number=gh_number)
         rel_path = f"{ISSUE_DIR}/{slug}.md"
-        body = _issue_page_body(intake, linear_issue)
+        body = _issue_page_body(intake, linear_issue, community=community)
         page_id = write_wiki_page(
             rel_path,
-            intake.title[:120] or "Customer Issue",
+            intake.title[:120] or ("Community Issue" if community else "Customer Issue"),
             body,
             mode=UPDATE,
             section="engineering",
@@ -167,7 +211,7 @@ class CustomerSupportOrchestrator:
                 "origin": intake.source,
                 "linear_id": linear_issue.get("identifier", ""),
                 "linear_url": linear_issue.get("url", ""),
-                "customer": True,
+                "customer": not community,
             },
         )
         rebuild_issue_index()
@@ -178,11 +222,16 @@ class CustomerSupportOrchestrator:
             "notion_page_id": page_id,
         }
 
-    def _route_feature(self, intake: CustomerIntake) -> dict[str, Any]:
+    def _route_feature(
+        self,
+        intake: CustomerIntake,
+        *,
+        product_slug: str = GENERAL_PRODUCT,
+    ) -> dict[str, Any]:
         heading = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         section = format_append_section(
             heading,
-            _feature_log_body(intake),
+            _feature_log_body(intake, product_slug=product_slug),
             trigger=f"customer_support:{intake.source}",
             why=intake.title[:120],
         )
@@ -204,6 +253,95 @@ class CustomerSupportOrchestrator:
             type_="report",
         )
         return {"wiki_path": FEATURE_REQUEST_RANKED}
+
+    def _route_community_feature(self, intake: CommunityIntake) -> dict[str, Any]:
+        from company_brain.agents.growth.discord import discord_client
+        from company_brain.agents.growth.discord.product_catalog import (
+            draft_technical_reply,
+            find_catalog_match,
+            infer_product_slug,
+            load_product_catalog,
+        )
+        from company_brain.agents.growth.discord.routing import DiscordRoutingStore
+        from company_brain.agents.growth.shared.growth_slack import discord_review_notifier
+        from company_brain.members_config import load_members_config
+
+        catalog = load_product_catalog()
+        text = f"{intake.title}\n{intake.body}"
+        match = find_catalog_match(text, catalog)
+        parent = intake.parent_channel_id or intake.channel_id
+        team_ids = load_members_config().team_discord_ids()
+        author_ids = discord_client.conversation_author_ids(parent, intake.thread_id)
+        team_engaged = bool(team_ids & author_ids)
+
+        store = DiscordRoutingStore()
+        record = store.read(parent, intake.thread_id)
+        if match:
+            if team_engaged or (record and record.handled.get("discord_draft")):
+                return {
+                    "wiki_path": None,
+                    "duplicate": True,
+                    "draft_skipped": True,
+                    "reason": "team_engaged_or_already_drafted",
+                }
+            draft = draft_technical_reply(
+                title=intake.title,
+                body=intake.body,
+                match=match,
+                permalink=intake.permalink,
+            )
+            lines = [
+                "*Discord draft reply (human review)*",
+                f"*Product:* {match.product_name}",
+                f"*Match:* {match.matched_text} ({match.match_kind})",
+                f"*Thread:* {intake.permalink or intake.thread_id}",
+                "",
+                draft,
+            ]
+            discord_review_notifier().emit(Signal(text="\n".join(lines), severity=ACTIONABLE))
+            store.upsert(
+                parent,
+                intake.thread_id,
+                kind="feature_pending",
+                community=True,
+                extracted={
+                    **((record.extracted if record else {}) or {}),
+                    "permalink": intake.permalink,
+                    "title_preview": intake.title[:200],
+                },
+            )
+            updated = store.read(parent, intake.thread_id)
+            if updated:
+                store.mark_handled(updated, "discord_draft")
+            return {"duplicate": True, "draft_sent": True, "match_kind": match.match_kind}
+
+        product_slug = infer_product_slug(intake.title, intake.body, catalog)
+        customer = _community_as_customer(intake)
+        return self._route_feature(customer, product_slug=product_slug)
+
+    def _route_community_discussion(self, intake: CommunityIntake) -> dict[str, Any]:
+        from company_brain.agents.growth.discord.routing import DiscordRoutingStore
+
+        parent = intake.parent_channel_id or intake.channel_id
+        store = DiscordRoutingStore()
+        store.upsert(
+            parent,
+            intake.thread_id,
+            parent_channel_id=parent,
+            kind="discussion_open",
+            attention="2. Reply",
+            community=True,
+            extracted={
+                "message_id": intake.message_id,
+                "channel_id": intake.channel_id,
+                "permalink": intake.permalink,
+                "author_handle": intake.requester_handle,
+                "author_id": intake.requester_id,
+                "title_preview": intake.title[:200],
+                "category": intake.category or "discussion",
+            },
+        )
+        return {"open_conversation": True}
 
     def _route_discussion(self, intake: CustomerIntake) -> dict[str, Any]:
         if intake.source == "slack" and intake.channel and intake.thread_ts:
@@ -244,6 +382,33 @@ class CustomerSupportOrchestrator:
             lines.extend(["", preview])
         return customer_support_notifier().emit(Signal(text="\n".join(lines), severity=ACTIONABLE))
 
+    def _notify_community(
+        self,
+        intake: CommunityIntake,
+        category: str,
+        routed: dict[str, Any],
+    ) -> bool:
+        if routed.get("draft_sent") or routed.get("draft_skipped"):
+            return bool(routed.get("draft_sent"))
+        from company_brain.agents.growth.shared.growth_slack import growth_notifier
+
+        lines = [
+            f"*Community {category}* (discord)",
+            f"*{intake.title}*",
+        ]
+        if intake.requester_handle:
+            lines.append(f"*From:* {intake.requester_handle}")
+        if intake.permalink:
+            lines.append(f"*Link:* {intake.permalink}")
+        if routed.get("linear_url"):
+            lines.append(f"*Linear:* {routed['linear_url']}")
+        if routed.get("wiki_path"):
+            lines.append(f"*Wiki:* `{routed['wiki_path']}`")
+        preview = (intake.body or "").strip()[:400]
+        if preview:
+            lines.extend(["", preview])
+        return growth_notifier().emit(Signal(text="\n".join(lines), severity=ACTIONABLE))
+
     def _rebuild_issue_index(self) -> None:
         rebuild_issue_index()
 
@@ -280,12 +445,20 @@ def rebuild_issue_index() -> None:
 
 
 def rebuild_feature_request_ranked() -> str:
-    """Parse the feature request log and return a ranked snapshot body."""
+    """Parse the feature request log and return a ranked snapshot by product section."""
+    from company_brain.agents.growth.discord.product_catalog import (
+        GENERAL_SLUG,
+        load_product_catalog,
+    )
     from company_brain.wiki.publish import read_wiki_page
 
-    log = read_wiki_page(FEATURE_REQUEST_LOG)
-    counts: dict[str, int] = {}
-    samples: dict[str, str] = {}
+    catalog = load_product_catalog()
+    try:
+        log = read_wiki_page(FEATURE_REQUEST_LOG)
+    except FileNotFoundError:
+        log = ""
+
+    sections: dict[str, dict[str, tuple[int, str]]] = {}
     for block in re.split(r"\n## ", log):
         if not block.strip():
             continue
@@ -293,20 +466,32 @@ def rebuild_feature_request_ranked() -> str:
         if not title_match:
             continue
         title = title_match.group(1).strip()
+        product_match = re.search(r"\*\*Product:\*\*\s*(.+)", block)
+        product_slug = product_match.group(1).strip().lower() if product_match else GENERAL_SLUG
+        section_name = catalog.display_name(product_slug)
+        bucket = sections.setdefault(section_name, {})
         key = title.lower()
-        counts[key] = counts.get(key, 0) + 1
-        samples.setdefault(key, title)
+        count, _ = bucket.get(key, (0, title))
+        bucket[key] = (count + 1, title)
 
-    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
     lines = ["# Feature Requests", "", "Ranked by repeat mentions in the request log.", ""]
-    if not ranked:
+    if not sections:
         lines.append("_No feature requests yet._\n")
         return "\n".join(lines)
-    lines.append("| Rank | Requests | Title |")
-    lines.append("| --- | --- | --- |")
-    for idx, (key, count) in enumerate(ranked[:50], start=1):
-        lines.append(f"| {idx} | {count} | {samples.get(key, key)} |")
-    lines.append("")
+
+    ordered_names = sorted(sections.keys(), key=lambda n: (n != "General", n.lower()))
+    for section_name in ordered_names:
+        bucket = sections[section_name]
+        ranked = sorted(bucket.items(), key=lambda kv: (-kv[1][0], kv[0]))
+        lines.extend([f"## {section_name}", ""])
+        if not ranked:
+            lines.append("_No requests._\n")
+            continue
+        lines.append("| Rank | Requests | Title |")
+        lines.append("| --- | --- | --- |")
+        for idx, (_key, (count, title)) in enumerate(ranked[:50], start=1):
+            lines.append(f"| {idx} | {count} | {title} |")
+        lines.append("")
     return "\n".join(lines)
 
 
@@ -332,13 +517,20 @@ def _issue_description(intake: CustomerIntake) -> str:
     return "\n".join(parts).strip()
 
 
-def _issue_page_body(intake: CustomerIntake, linear_issue: dict[str, Any]) -> str:
+def _issue_page_body(
+    intake: CustomerIntake,
+    linear_issue: dict[str, Any],
+    *,
+    community: bool = False,
+) -> str:
     lines = [
         f"# {intake.title}",
         "",
         f"**Origin:** {intake.source}",
         "**Category:** bug",
     ]
+    if community:
+        lines.append("**Community:** true")
     if linear_issue.get("url"):
         lines.append(f"**Linear:** [{linear_issue.get('identifier')}]({linear_issue['url']})")
     if intake.permalink:
@@ -347,10 +539,11 @@ def _issue_page_body(intake: CustomerIntake, linear_issue: dict[str, Any]) -> st
     return "\n".join(lines)
 
 
-def _feature_log_body(intake: CustomerIntake) -> str:
+def _feature_log_body(intake: CustomerIntake, *, product_slug: str = GENERAL_PRODUCT) -> str:
     lines = [
         f"**Title:** {intake.title}",
         f"**Source:** {intake.source}",
+        f"**Product:** {product_slug}",
     ]
     if intake.requester_name or intake.requester_email:
         who = intake.requester_name or display_name_from_from_header(intake.requester_email)
@@ -359,6 +552,19 @@ def _feature_log_body(intake: CustomerIntake) -> str:
         lines.append(f"**Link:** {intake.permalink}")
     lines.extend(["", intake.body[:2000] if intake.body else ""])
     return "\n".join(lines)
+
+
+def _community_as_customer(intake: CommunityIntake) -> CustomerIntake:
+    return CustomerIntake(
+        source=intake.source,
+        title=intake.title,
+        body=intake.body,
+        requester_name=intake.requester_handle,
+        permalink=intake.permalink,
+        channel=intake.channel_id,
+        thread_ts=intake.thread_id,
+        message_ts=intake.message_id,
+    )
 
 
 class CustomerSupportAgent(BaseAgent):
@@ -370,7 +576,17 @@ class CustomerSupportAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self._orchestrator = CustomerSupportOrchestrator()
 
-    def run(self, *, intake: CustomerIntake | None = None, **kwargs: Any) -> dict[str, Any]:
+    def run(
+        self,
+        *,
+        intake: CustomerIntake | CommunityIntake | None = None,
+        community: bool = False,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         if intake is None:
             return {"status": "skipped", "reason": "no_intake"}
+        if isinstance(intake, CommunityIntake) or community:
+            if not isinstance(intake, CommunityIntake):
+                return {"status": "skipped", "reason": "community_intake_required"}
+            return self._orchestrator.process_community(intake)
         return self._orchestrator.process(intake)

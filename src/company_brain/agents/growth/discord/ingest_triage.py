@@ -162,11 +162,33 @@ class IngestTriageAgent(BaseAgent):
             name=channels_config.channel_name(parent_channel_id),
         )
 
+        community_dispatch: dict[str, Any] | None = None
+        if (
+            record.community
+            and result.kind
+            in {
+                "bug_pending",
+                "feature_pending",
+            }
+            and not record.handled.get("community_intake")
+        ):
+            from company_brain.agents.growth.discord.community_intake import (
+                maybe_dispatch_community_intake,
+            )
+
+            community_dispatch = maybe_dispatch_community_intake(
+                self.config,
+                channel_id=parent_channel_id,
+                thread_id=thread_id,
+                record=record,
+            )
+
         return {
             "status": "routed",
             "kind": record.kind,
             "attention": record.attention,
             "category": result.category,
+            "community_dispatch": community_dispatch,
         }
 
     def _parent_channel_id(self, channel_id: str, channel_type: int | None) -> str | None:

@@ -14,6 +14,8 @@ class MemberBindings(BaseModel):
     granola_label: str = ""
     gmail_mailbox: str = ""
     slack_user_id: str = ""
+    discord_id: str = ""
+    discord_handle: str = ""
     linear_user_id: str = ""
 
 
@@ -94,6 +96,23 @@ class MembersConfig(BaseModel):
             if spec.bindings.slack_user_id == ref:
                 return key
         return None
+
+    def find_by_discord_id(self, discord_id: str) -> str | None:
+        ref = (discord_id or "").strip()
+        if not ref:
+            return None
+        for key, spec in self.members.items():
+            if spec.bindings.discord_id == ref:
+                return key
+        return None
+
+    def team_discord_ids(self) -> set[str]:
+        ids: set[str] = set()
+        for spec in self.active_members().values():
+            ref = (spec.bindings.discord_id or "").strip()
+            if ref:
+                ids.add(ref)
+        return ids
 
 
 def resolve_member_for_binding(binding: Any, cfg: MembersConfig | None = None) -> str | None:

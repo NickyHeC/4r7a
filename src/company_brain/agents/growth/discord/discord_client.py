@@ -200,3 +200,39 @@ def datetime_to_snowflake_after(dt: datetime) -> str | None:
     ms = int(dt.timestamp() * 1000)
     snowflake = (ms - 1420070400000) << 22
     return str(snowflake) if snowflake > 0 else None
+
+
+def fetch_conversation_messages(parent_channel_id: str, thread_id: str) -> list[dict[str, Any]]:
+    """Return messages in a Discord conversation (thread channel or inline replies)."""
+    if thread_id and thread_id != parent_channel_id:
+        try:
+            thread_msgs = fetch_channel_messages(thread_id, limit=50)
+            if thread_msgs:
+                return thread_msgs
+        except DiscordClientError:
+            pass
+    try:
+        batch = fetch_channel_messages(parent_channel_id, limit=100)
+    except DiscordClientError:
+        return []
+    roots = [m for m in batch if str(m.get("id") or "") == thread_id]
+    replies = [
+        m
+        for m in batch
+        if str((m.get("message_reference") or {}).get("message_id") or "") == thread_id
+    ]
+    if roots or replies:
+        return roots + replies
+    if str(batch[0].get("id") if batch else "") == thread_id:
+        return batch[:1]
+    return batch[:1] if batch else []
+
+
+def conversation_author_ids(parent_channel_id: str, thread_id: str) -> set[str]:
+    ids: set[str] = set()
+    for msg in fetch_conversation_messages(parent_channel_id, thread_id):
+        author = msg.get("author") or {}
+        ref = str(author.get("id") or "")
+        if ref:
+            ids.add(ref)
+    return ids
