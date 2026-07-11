@@ -73,8 +73,6 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Discord customer intake | Community | Superseded by `growth/discord` plan | Remove on ship — see `docs/plans/discord.md` |
-
 ## Operations — Notion
 
 | Item | Department / platform | Trigger to build | Notes |
@@ -104,7 +102,6 @@ Format for new rows:
 |------|----------------------|------------------|-------|
 | Google Ads agent | `growth/google_ads` | Ads account connected | |
 | Company activity agent | Growth | Event sources defined | |
-| Discord | `growth/discord` | Plan locked — see `docs/plans/discord.md` | Build in progress; remove row on ship |
 | X / Twitter | Growth | API access | |
 
 ---

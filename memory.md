@@ -11,6 +11,22 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-11 — Discord platform Session 9 (docs ship | working tree)
+
+- **Docs:** `docs/agents/growth.md` handbook; README Growth section + data-flow diagram;
+  `agent_list.md`, `project_install.md` steady-state connect steps; removed Discord rows
+  from `docs/tabled.md`; deleted `docs/plans/discord.md`.
+- **Ship checklist:** ruff, pytest, `company-brain doctor code`.
+
+## 2026-07-11 — Discord platform sessions 6–8
+
+- **Absorb + poll:** `technical_absorb.py` daily batch → `raw/entries`; `poll_watcher.py`
+  REST backup on each manager pass.
+- **Member scoring:** `member_scoring.py` monthly LLM batch → `growth/discord/member/{handle}.md`;
+  `#growth` alert when score ≥ threshold.
+- **Manager + onboarding:** `discord_manager.py` persistent loop; `discord_onboarding.py`
+  backfill + runtime handoff; CLI `discord manager`, `discord onboarding estimate|run`.
+
 ## 2026-07-11 — VM defaults: provider-agnostic with smol machines as default
 
 - **Posture:** FourSeven runs on any cloud VM service that meets the fleet

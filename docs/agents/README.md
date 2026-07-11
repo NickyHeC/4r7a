@@ -9,6 +9,7 @@ flowchart LR
   ENG[Engineering] --> WIKI[wiki MD]
   FIN[Finance] --> WIKI
   OPS[Operations] --> WIKI
+  GRO[Growth] --> WIKI
   WIKI --> Notion[Notion mirror]
 ```
 
@@ -18,6 +19,7 @@ flowchart LR
 |------------|-------|----------|
 | **Engineering** | GitHub — PRs, branches, feature updates | [engineering.md](engineering.md) |
 | **Finance** | Mercury + Ramp — expenses, quarterly metrics, subscriptions | [finance.md](finance.md) |
+| **Growth** | Discord — open-source community ingest | [growth.md](growth.md) |
 | **Operations** | Gmail executive assistant, Linear task workflows | [operations.md](operations.md) |
 | **Admin** | Weave system-change requests (`@weave`) | [admin.md](admin.md) |
 | **HR** | Roster promotion, offboarding proposals | [hr.md](hr.md) |

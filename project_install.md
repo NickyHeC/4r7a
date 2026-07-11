@@ -135,7 +135,7 @@ Verify with `doctor` (Slack wiki / Weave lines). Handbook:
 ### Discord (growth department) — read-only community bot
 
 Open-source developer community ingest. The bot **reads only** — it never posts to
-Discord. Draft replies for humans go to Slack `#discord` (session 4+).
+Discord. Draft replies for humans go to Slack `#discord`.
 
 1. Create a Discord application + bot at https://discord.com/developers/applications
 2. Enable **Message Content Intent** (privileged) under Bot settings
@@ -144,15 +144,17 @@ Discord. Draft replies for humans go to Slack `#discord` (session 4+).
 5. Set `discord.guild_id` in `config/growth.yaml` (right-click server → Copy Server ID)
 6. Adjust `discord.exclude_channels` (default includes `off-topic`)
 7. Sync channel registry: `company-brain discord sync-channels`
-8. Start Gateway: `company-brain discord gateway`
+8. Estimate backfill: `company-brain discord onboarding estimate`
+9. Run onboarding: `company-brain discord onboarding run` (default 30-day backfill; starts `discord_manager`)
+10. Start Gateway: `company-brain discord gateway` (WebSocket hot lane — run alongside manager)
 
 Add per-member `bindings.discord_id` (and optional `discord_handle`) in
 `config/members.yaml` so the system can detect when a team member is already in a thread.
 
-**CLI:** `discord gateway`, `discord sync-channels`, `discord channel list`, `discord manager`,
-`discord onboarding estimate|run`.
+**CLI:** `discord gateway`, `discord manager`, `discord sync-channels`, `discord channel list`,
+`discord onboarding estimate|run` (`--days`, `--all`, `--no-manager`, `--absorb`).
 
-Handbook: `docs/agents/growth.md` (forthcoming).
+Handbook: [`docs/agents/growth.md`](docs/agents/growth.md).
 
 ### Gmail (operations department) — read + labels + DRAFT only, never send
 Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `official`):

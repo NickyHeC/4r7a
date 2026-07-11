@@ -50,6 +50,7 @@ flowchart TD
     ENG[Engineering\nGitHub · Linear]
     FIN[Finance\nMercury · Ramp]
     OPS[Operations\nGmail · GCal · Granola]
+    GRO[Growth\nDiscord]
     EW[Employee Wiki\nper-member work logs]
   end
 
@@ -60,6 +61,7 @@ flowchart TD
   ENG -->|write_wiki_page| WIKI
   FIN -->|write_wiki_page| WIKI
   OPS -->|write_wiki_page| WIKI
+  GRO -->|write_wiki_page| WIKI
   ABS --> WIKI
   ENG -. work events .-> EW
   OPS -. work events .-> EW
@@ -113,6 +115,17 @@ department (Gmail, Slack ops, Notion ops, ...).
   still bind to Linear via `action_items.py`. See [operations handbook](docs/agents/operations.md)
   Slack section; Weave (`@weave` system changes) lives under **Admin**.
 - **Notion** — multi-database task registry: links existing task rows into `task_bindings` by Linear ID (read-first) and propagates Linear status back to the correct database row.
+
+### Growth
+
+Open-source **developer community** platforms. v1 ships **Discord** only.
+
+- **Discord** — read-only community bot: Gateway ingest + poll backup, triage routing records,
+  community intake (bugs → wiki + Linear, features → shared product log with catalog dedup),
+  open-conversation tracker, daily activity snapshot, monthly member scoring, and daily
+  technical-absorb batch. Draft replies for duplicate/in-progress features go to Slack `#discord`;
+  valid features and interesting members notify `#growth`. Dispatched by `discord_manager.py`.
+  See [growth handbook](docs/agents/growth.md).
 
 ### Admin
 
