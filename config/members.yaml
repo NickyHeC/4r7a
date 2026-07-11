@@ -5,6 +5,7 @@ members: {}
 # Example:
 #   alice:
 #     email: alice@company.com
+#     role: admin                 # admin | member (rate-limit exempt when admin)
 #     status: active              # active | departed
 #     notion_teamspace: member_alice
 #     bridge:

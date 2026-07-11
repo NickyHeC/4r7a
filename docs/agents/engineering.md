@@ -180,12 +180,24 @@ weekly section of major implementations (newest on top).
 | **State** | ephemeral |
 | **Schedule** | Dispatched when commits advanced since last run |
 | **Source** | GitHub commits (recent window) |
-| **Destination** | `engineering/github/product-feature.md` |
+| **Destination** | `product/feature.md` |
 | **Notion** | Product Features |
 | **Write mode** | append |
 
 Classifies commits into user-facing features; prepends newly detected ones to a ranked
 list for end users.
+
+### `issue_sync.py`
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **Schedule** | Daily via `github_manager` (when `repo` configured) |
+| **Source** | `gh issue list` (open issues) |
+| **Destination** | `engineering/issue/{slug}.md` + `engineering/issue/_index.md` |
+| **Write mode** | update |
+
+Mirrors GitHub issues into the unified issue wiki home.
 
 ---
 

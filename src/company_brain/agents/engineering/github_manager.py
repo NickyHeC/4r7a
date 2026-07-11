@@ -48,6 +48,7 @@ class GitHubManager(BaseAgent):
             return self._specialists[key]
         from company_brain.agents.engineering.github.branch_monitor import BranchMonitorAgent
         from company_brain.agents.engineering.github.feature_update import FeatureUpdateAgent
+        from company_brain.agents.engineering.github.issue_sync import IssueSyncAgent
         from company_brain.agents.engineering.github.open_pr import OpenPRAgent
         from company_brain.agents.engineering.github.product_features import ProductFeaturesAgent
 
@@ -56,6 +57,7 @@ class GitHubManager(BaseAgent):
             "feature_update": FeatureUpdateAgent,
             "product_features": ProductFeaturesAgent,
             "branch_monitor": BranchMonitorAgent,
+            "issue_sync": IssueSyncAgent,
         }.get(key)
 
     def run(self, **kwargs: Any) -> Any:
@@ -91,6 +93,9 @@ class GitHubManager(BaseAgent):
 
         if self._has_commit_activity_since_last_run():
             self._dispatch("product_features")
+
+        if self.repo:
+            self._dispatch("issue_sync")
 
     def _dispatch(self, specialist_key: str) -> None:
         agent_cls = self._specialist_class(specialist_key)

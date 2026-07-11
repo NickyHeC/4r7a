@@ -29,6 +29,7 @@ class MemberBridgeConfig(BaseModel):
 
 class MemberSpec(BaseModel):
     email: str = ""
+    role: str = "member"
     status: str = "active"
     notion_teamspace: str = ""
     bridge: MemberBridgeConfig = Field(default_factory=MemberBridgeConfig)
@@ -39,6 +40,10 @@ class MemberSpec(BaseModel):
     @property
     def is_active(self) -> bool:
         return (self.status or "active").strip().lower() == "active"
+
+    @property
+    def is_admin(self) -> bool:
+        return (self.role or "member").strip().lower() == "admin"
 
     def employee_wiki_rel(self, member_key: str) -> str:
         """Relative path prefix under the employee wiki root (``{member}/``)."""

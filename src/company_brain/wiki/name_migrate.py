@@ -22,6 +22,7 @@ EXACT_PATH_RENAMES: dict[str, str] = {
     "engineering/github/open-prs.md": "engineering/github/open-pr.md",
     "engineering/github/feature-updates.md": "engineering/github/feature-update.md",
     "engineering/github/product-features.md": "engineering/github/product-feature.md",
+    "engineering/github/product-feature.md": "product/feature.md",
     "engineering/linear/stale-projects.md": "engineering/linear/stale-audit.md",
     "finance/expense-reports.md": "finance/expense-report.md",
     "finance/budget-summary.md": "finance/budget-summary.md",

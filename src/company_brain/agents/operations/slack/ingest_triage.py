@@ -141,11 +141,25 @@ class IngestTriageAgent(BaseAgent):
                 record,
             )
 
+        customer_dispatch: dict[str, Any] | None = None
+        if record.customer and not record.handled.get("customer_intake"):
+            from company_brain.agents.operations.slack.customer_intake import (
+                maybe_dispatch_customer_intake,
+            )
+
+            customer_dispatch = maybe_dispatch_customer_intake(
+                self.config,
+                channel=channel_label,
+                thread_ts=thread_ts,
+                record=record,
+            )
+
         return {
             "status": "routed",
             "kind": record.kind,
             "attention": record.attention,
             "dispatch": dispatch_result,
+            "customer_dispatch": customer_dispatch,
         }
 
     def _maybe_dispatch_action_items(

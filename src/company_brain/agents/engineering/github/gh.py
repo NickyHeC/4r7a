@@ -94,6 +94,28 @@ def list_recent_commits(repo: str | None = None, since: str | None = None) -> li
     return gh_json(["api", query, "--paginate"])
 
 
+def list_issues(
+    repo: str | None = None,
+    *,
+    state: str = "open",
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """List GitHub issues (excludes pull requests)."""
+    args = [
+        "issue",
+        "list",
+        "--state",
+        state,
+        "--json",
+        "number,title,body,url,state,labels,createdAt,updatedAt,author",
+        "--limit",
+        str(limit),
+    ]
+    if repo:
+        args.extend(["--repo", repo])
+    return gh_json(args)
+
+
 def list_repos(org: str | None = None) -> list[dict[str, Any]]:
     """List repositories for the authenticated user or an org."""
     args = ["repo", "list", "--json", "name,url,description,pushedAt,isPrivate"]

@@ -1,9 +1,10 @@
-"""Gmail Customer Mail Notify — Slack summary for Customer mail.
+"""Gmail Customer Mail Notify — routes Customer mail to customer_support.
 
-Dispatched by gmail_manager. Posts a concise summary (with source mailbox) to
-#customer-support for each unhandled ``Customer`` routing record.
+Dispatched by gmail_manager. Builds a ``CustomerIntake`` for each unhandled
+``Customer`` routing record and hands off to the cross-platform orchestrator
+(which posts to #customer-support).
 
-SDK: Neither (Slack SDK via operations_slack).
+SDK: Neither (orchestration + Gmail read).
 """
 
 from __future__ import annotations
@@ -11,19 +12,22 @@ from __future__ import annotations
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.operations.customer_support import (
+    CustomerIntake,
+    CustomerSupportOrchestrator,
+)
 from company_brain.agents.operations.gmail import gmail_rest as rest
 from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.mail_body import plain_text
-from company_brain.agents.operations.shared.operations_slack import customer_support_notifier
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.config import AppConfig
-from company_brain.notify import ACTIONABLE, Signal
+from company_brain.crm.contacts import display_name_from_from_header, email_from_from_header
 
 SPECIALIST_KEY = "customer_mail_notify"
 
 
 class CustomerMailNotifyAgent(BaseAgent):
-    """Notify #customer-support about customer-tagged mail."""
+    """Route customer-tagged mail through the customer_support orchestrator."""
 
     name = "customer_mail_notify"
 
@@ -31,6 +35,7 @@ class CustomerMailNotifyAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.mailbox = mailbox or mailbox_id()
         self._store = RoutingStore()
+        self._orchestrator = CustomerSupportOrchestrator()
 
     def should_run(self, **kwargs: Any) -> bool:
         return bool(
@@ -42,7 +47,7 @@ class CustomerMailNotifyAgent(BaseAgent):
         )
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
-        posted = 0
+        processed = 0
         for record in self._store.unhandled_for(
             SPECIALIST_KEY,
             mailbox=self.mailbox,
@@ -52,16 +57,20 @@ class CustomerMailNotifyAgent(BaseAgent):
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
                 subject = record.extracted.get("subject") or rest.message_subject_from(message)
                 from_ = record.extracted.get("from") or rest.message_from(message)
-                preview = plain_text(message, max_chars=400)
-                text = (
-                    f"*Customer mail* ({self.mailbox})\n"
-                    f"*Subject:* {subject}\n"
-                    f"*From:* {from_}\n\n"
-                    f"{preview[:400]}"
+                preview = plain_text(message, max_chars=2000)
+                email = email_from_from_header(from_)
+                intake = CustomerIntake(
+                    source="gmail",
+                    title=subject or "Customer mail",
+                    body=preview,
+                    requester_email=email,
+                    requester_name=display_name_from_from_header(from_),
+                    mailbox=self.mailbox,
+                    extra={"message_id": record.message_id, "thread_id": record.thread_id},
                 )
-                if customer_support_notifier().emit(Signal(text=text, severity=ACTIONABLE)):
-                    posted += 1
+                self._orchestrator.process(intake)
+                processed += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
             except Exception:
                 self.logger.exception("Customer mail notify failed for %s", record.message_id)
-        return {"posted": posted}
+        return {"processed": processed}

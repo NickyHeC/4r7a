@@ -234,6 +234,9 @@ slack_platform:
     - will do
     - assigned to
   debounce_minutes: 3
+  rate_limits:
+    wiki_queries_per_user_hour: 30
+    weave_submissions_per_user_day: 5
   events:
     mode: socket
     http_path: /slack/events/wiki

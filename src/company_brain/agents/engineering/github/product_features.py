@@ -22,7 +22,7 @@ from company_brain.wiki.publish import APPEND, format_append_section, write_wiki
 
 logger = logging.getLogger(__name__)
 
-WIKI_PATH = "engineering/github/product-feature.md"
+WIKI_PATH = "product/feature.md"
 TITLE = "Product Features"
 
 
@@ -60,7 +60,7 @@ class ProductFeaturesAgent(BaseAgent):
             TITLE,
             section,
             mode=self.WRITE_MODE,
-            section="engineering/github",
+            section="product",
             type_="report",
         )
         return {"new_features": len(features), "notion_page_id": page_id}

@@ -1,17 +1,25 @@
-"""Slack Events API router — message and reaction dispatch."""
+"""Slack Events API router — message, reaction, and app_mention dispatch."""
 
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from company_brain.agents.operations.slack import channels_config, slack_client
 from company_brain.agents.operations.slack.ingest_triage import IngestTriageAgent
+from company_brain.agents.operations.slack.internal_meeting_scheduler import (
+    handle_internal_meeting_request,
+    is_meeting_request,
+)
 from company_brain.agents.operations.slack.open_threads import handle_reaction_added
 from company_brain.agents.operations.slack.routing import SlackRoutingStore
+from company_brain.agents.operations.slack.wiki_commands import handle_wiki_command
 from company_brain.config import AppConfig
 
 logger = logging.getLogger(__name__)
+
+MENTION_BODY_RE = re.compile(r"<@[^>]+>\s*(.*)", re.S)
 
 
 class SlackEventsRouter:
@@ -35,6 +43,8 @@ class SlackEventsRouter:
             return self._handle_message(event)
         if inner == "reaction_added":
             return self._handle_reaction(event)
+        if inner == "app_mention":
+            return self._handle_app_mention(event)
         if inner == "member_joined_channel":
             return self._handle_member_joined(event)
         return {"status": "ignored", "reason": inner or "unknown"}
@@ -53,6 +63,53 @@ class SlackEventsRouter:
 
         agent = IngestTriageAgent(self.config)
         return agent.process_message(channel_id, event)
+
+    def _handle_app_mention(self, event: dict[str, Any]) -> dict[str, Any]:
+        channel_id = str(event.get("channel") or "")
+        thread_ts = str(event.get("thread_ts") or event.get("ts") or "")
+        user_id = str(event.get("user") or "")
+        text = str(event.get("text") or "")
+        if not channel_id or not thread_ts:
+            return {"status": "skipped", "reason": "missing_target"}
+
+        match = MENTION_BODY_RE.match(text.strip())
+        query = (match.group(1) if match else text).strip()
+        first_token = (query.split(None, 1)[0] if query else "").lower()
+
+        first_token = (query.split(None, 1)[0] if query else "").lower()
+        if first_token in {"threads", "help", "?"}:
+            cmd_result = handle_wiki_command(
+                channel_id=channel_id,
+                thread_ts=thread_ts,
+                command=first_token,
+                slack_user_id=user_id,
+            )
+        else:
+            cmd_result = {"status": "not_command"}
+        if cmd_result.get("status") != "not_command":
+            return {"status": "wiki_command", "result": cmd_result}
+
+        if is_meeting_request(query):
+            meeting = handle_internal_meeting_request(
+                channel_id=channel_id,
+                thread_ts=thread_ts,
+                text=query,
+                slack_user_id=user_id,
+            )
+            return {"status": "meeting_scheduler", "result": meeting}
+
+        from company_brain.agents.operations.slack.ask_wiki import AskWikiAgent
+        from company_brain.runtime import get_runtime
+
+        result = get_runtime().run(
+            AskWikiAgent,
+            self.config,
+            channel_id=channel_id,
+            thread_ts=thread_ts,
+            query=query,
+            slack_user_id=user_id,
+        )
+        return {"status": "ask_wiki", "result": result}
 
     def _handle_reaction(self, event: dict[str, Any]) -> dict[str, Any]:
         item = event.get("item") or {}

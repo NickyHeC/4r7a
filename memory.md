@@ -3,6 +3,18 @@
 **Purpose: read this first.** This file is the fast path to development context so
 an AI coding agent does not have to read the entire project to understand how it
 got here. Skim the recent entries to learn the current architecture and recent
+
+## 2026-07-11 — Slack platform sessions 4–6
+
+- **Customer support:** `operations/customer_support.py` orchestrator classifies
+  intake (bug/feature/discussion) → `engineering/issue/`, Linear, `product/feature-request*.md`,
+  or open threads; `#customer-support` via `customer_support_notifier()`.
+  `slack/customer_intake.py` + wired `gmail/customer_mail_notify.py`.
+- **@wiki interactive:** `ask_wiki.py` (ACL + Notion citations), `wiki_commands.py`,
+  `rate_limits.py` (`members.yaml` `role: admin` exempt), `internal_meeting_scheduler.py`;
+  `events_router.py` handles `app_mention`.
+- **Product + issues:** `product_features` → `product/feature.md`; `issue_sync.py` daily
+  via `github_manager`; `config/notion.yaml` `product` teamspace; `name_migrate` entry added.
 decisions, then dive into specific files only as needed (saves tokens/time).
 
 A running log of significant actions, decisions, and changes. Newest entries on

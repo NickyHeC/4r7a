@@ -208,7 +208,7 @@ def test_slack_manager_dispatches_thread_watcher(monkeypatch):
 
         asyncio.run(manager._run_pass())
 
-    assert mock_runtime.run.call_count == 2
+    assert mock_runtime.run.call_count == 3
 
 
 def test_wiki_bot_token_fallback(monkeypatch):

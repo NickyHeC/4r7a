@@ -372,30 +372,30 @@ Add to `.cursor/rules/agent-organization.mdc`:
 
 **Goal:** Unified classify → wiki → route.
 
-- [ ] `operations/customer_support.py` orchestrator
-- [ ] `slack/customer_intake.py` specialist (Connect + internal customer channels)
-- [ ] Wire `customer_mail_notify` → orchestrator (notifier path)
-- [ ] Bug → `engineering/issue/` + Linear; feature request → ledger + ranker; discussion → open thread
-- [ ] `#customer-support` notifier via `customer_support_notifier()`
-- [ ] `product/feature-request.md` + `product/feature-request-log.md`
+- [x] `operations/customer_support.py` orchestrator
+- [x] `slack/customer_intake.py` specialist (Connect + internal customer channels)
+- [x] Wire `customer_mail_notify` → orchestrator (notifier path)
+- [x] Bug → `engineering/issue/` + Linear; feature request → ledger + ranker; discussion → open thread
+- [x] `#customer-support` notifier via `customer_support_notifier()`
+- [x] `product/feature-request.md` + `product/feature-request-log.md`
 
 ### Session 5 — `@wiki` interactive
 
 **Goal:** ask_wiki + commands + rate limits.
 
-- [ ] `ask_wiki.py` — channel ACL, read wiki, answer with Notion citations (OpenAI Agents SDK + `oa.make_model()`)
-- [ ] `wiki_commands.py` — `threads`, help; block in Connect channels
-- [ ] Rate limits per `members.yaml` role (admin exempt)
-- [ ] `internal_meeting_scheduler.py` — partial calendar (option 2); gcal via member bindings
+- [x] `ask_wiki.py` — channel ACL, read wiki, answer with Notion citations (OpenAI Agents SDK + `oa.make_model()`)
+- [x] `wiki_commands.py` — `threads`, help; block in Connect channels
+- [x] Rate limits per `members.yaml` role (admin exempt)
+- [x] `internal_meeting_scheduler.py` — partial calendar (option 2); gcal via member bindings
 
 ### Session 6 — Product move + issue sync
 
 **Goal:** Unified issue home + product section.
 
-- [ ] Move `product-feature.md` → `product/feature.md`; update `product_features` agent, handbook, `name_migrate.py`
-- [ ] `engineering/github/issue_sync.py` — daily `gh issue list`, upsert `engineering/issue/{slug}.md`, rebuild index
-- [ ] Register in `github_manager` daily dispatch
-- [ ] `config/notion.yaml` `product` teamspace + `section_teamspace`
+- [x] Move `product-feature.md` → `product/feature.md`; update `product_features` agent, handbook, `name_migrate.py`
+- [x] `engineering/github/issue_sync.py` — daily `gh issue list`, upsert `engineering/issue/{slug}.md`, rebuild index
+- [x] Register in `github_manager` daily dispatch
+- [x] `config/notion.yaml` `product` teamspace + `section_teamspace`
 
 ### Session 7 — Weave (structure v1)
 

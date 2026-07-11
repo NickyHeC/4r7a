@@ -358,8 +358,18 @@ Index list: **`crm/investor/_index.md`**.
 | **Tags** | `Customer` |
 | **Destination** | Slack `#customer-support` |
 
-Posts summary with source mailbox per customer message (notifier only; cross-platform
-triage lands in Session 4 `customer_support` orchestrator).
+Posts summary with source mailbox per customer message via the
+**`customer_support`** orchestrator (classify → wiki → `#customer-support` notify).
+
+### `customer_support.py` *(cross-platform)*
+
+| | |
+|---|---|
+| **Sources** | `slack/customer_intake`, `gmail/customer_mail_notify` |
+| **Destination** | Bugs → `engineering/issue/` + Linear; features → `product/feature-request*.md`; discussions → open threads |
+| **Slack** | `#customer-support` via `customer_support_notifier()` |
+
+Single orchestrator for customer intake classification and routing.
 
 ### `customer_crm.py`
 
@@ -552,12 +562,16 @@ HTTP cloud). Poll via **`thread_watcher`** remains backup.
 ```mermaid
 flowchart TD
   EV[slack events listener] -->|message| TRI[ingest_triage]
+  EV -->|app_mention| AW[ask_wiki / wiki_commands]
   EV -->|reaction| OT[open_threads]
   SM[slack_manager persistent] -->|poll interval| TW[thread_watcher]
   SM -->|each pass| OTM[open_thread_monitor]
+  SM -->|each pass| CI[customer_intake]
   SM -->|daily| CR[channel_registry]
   TW --> TRI
   TW --> AI[action_items]
+  TRI --> CS[customer_support orchestrator]
+  CI --> CS
   TRI --> RR[(slack routing records)]
   OTM --> EW[employee_wiki open-thread.md]
   AI --> TB[(task_bindings + Linear)]
@@ -568,8 +582,13 @@ flowchart TD
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches `thread_watcher`, `open_thread_monitor`; `channel_registry` daily |
-| `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; hot lane dispatches `action_items` |
+| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches `thread_watcher`, `open_thread_monitor`, `customer_intake`; `channel_registry` daily |
+| `customer_support.py` | Via intake specialists | Classify customer mail/Slack → wiki + Linear + `#customer-support` |
+| `customer_intake.py` | Events hot lane + manager | Slack Connect / customer channels → orchestrator |
+| `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; dispatches `action_items` / `customer_intake` |
+| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL wiki Q&A with Notion citations |
+| `wiki_commands.py` | `@wiki` mention | `threads`, `help`; blocked in Connect channels |
+| `internal_meeting_scheduler.py` | `@wiki` meeting keywords | Propose/book slots on primary calendar |
 | `thread_watcher.py` | Via manager | Poll backup; runs triage on each message |
 | `open_thread_monitor.py` | Via manager | Rebuild `employee_wiki/{member}/open-thread.md` from open routing records |
 | `action_items.py` | Via triage / watcher | Action thread → Linear + routing record |

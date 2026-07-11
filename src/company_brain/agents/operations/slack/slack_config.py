@@ -76,6 +76,26 @@ def reaction_names(kind: str) -> list[str]:
     return defaults.get(kind, [])
 
 
+def rate_limits_cfg() -> dict[str, Any]:
+    return dict(slack_platform_cfg().get("rate_limits") or {})
+
+
+def wiki_queries_per_user_hour() -> int:
+    raw = rate_limits_cfg().get("wiki_queries_per_user_hour", 30)
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return 30
+
+
+def weave_submissions_per_user_day() -> int:
+    raw = rate_limits_cfg().get("weave_submissions_per_user_day", 5)
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return 5
+
+
 def slack_is_configured() -> bool:
     from company_brain.agents.operations.slack import slack_client
 
