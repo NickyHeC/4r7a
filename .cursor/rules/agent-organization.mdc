@@ -61,6 +61,19 @@ agents/
     ramp/
       ramp_client.py
       card_spend.py
+  admin/
+    weave_triage.py
+    weave.py
+  hr/
+    employee_offboarding.py
+    hiring_log.py
+  operations/
+    slack_manager.py
+    customer_support.py
+    slack/
+      slack_onboarding.py
+      ingest_triage.py
+      ask_wiki.py
 ```
 
 ## Placement Rules

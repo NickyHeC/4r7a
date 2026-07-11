@@ -8,6 +8,8 @@ per department with architecture, schedules, labeling schemas, and per-agent run
 | Engineering | [docs/agents/engineering.md](docs/agents/engineering.md) |
 | Finance | [docs/agents/finance.md](docs/agents/finance.md) |
 | Operations | [docs/agents/operations.md](docs/agents/operations.md) |
+| Admin | [docs/agents/admin.md](docs/agents/admin.md) |
+| HR | [docs/agents/hr.md](docs/agents/hr.md) |
 | Employee Wiki | [docs/agents/employee_wiki.md](docs/agents/employee_wiki.md) |
 | External Wiki | [docs/agents/external_wiki.md](docs/agents/external_wiki.md) |
 

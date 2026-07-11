@@ -80,8 +80,42 @@ run `company-brain doctor` to confirm.
    `RAMP_MCP_URL`). See https://docs.ramp.com/developer-api/v1/ramp-mcp.
 
 ### Slack (finance notifications)
-1. Create a Slack bot token; set `SLACK_BOT_TOKEN`.
-2. Set the finance channel id in `config/finance.yaml` (`slack.channel_id`).
+
+Finance agents post to Slack via `config/operations.yaml` → `gmail.slack` channel
+names (e.g. `#customer-support`). They reuse the wiki bot token below.
+
+### Slack (operations platform) — **required wiki bot**; Weave optional
+
+Two Slack apps:
+
+| App | Env | Purpose |
+|-----|-----|---------|
+| **Wiki bot** | `SLACK_WIKI_BOT_TOKEN` (required) | Passive ingest, `@wiki`, customer support, open threads |
+| | `SLACK_WIKI_APP_TOKEN` | Socket Mode (local default) for `company-brain slack events` |
+| | `SLACK_WIKI_SIGNING_SECRET` | HTTP mode only |
+| **Weave bot** (optional) | `SLACK_WEAVE_BOT_TOKEN`, `SLACK_WEAVE_APP_TOKEN` | `@weave` system-change requests |
+
+Legacy `SLACK_BOT_TOKEN` is accepted as a fallback for the wiki bot only.
+
+1. Create the **wiki** Slack app with Events + `app_mention`, `message`, `reaction_added`,
+   `member_joined_channel`, `user_change` (for offboard signals). Install to workspace.
+2. Set `SLACK_WIKI_BOT_TOKEN` and `SLACK_WIKI_APP_TOKEN` (Socket Mode).
+3. `company-brain slack sync-channels` — populate `config/slack_channels.json`.
+4. `company-brain slack onboarding estimate` then `company-brain slack onboarding run`
+   (default 30-day backfill; optional `--absorb`).
+5. Start hot lane: `company-brain slack events` (persistent listener).
+6. Start steady-state manager: `slack_manager` (or rely on onboarding handoff).
+
+**Weave (optional):** second Slack app with `app_mention` only → set `SLACK_WEAVE_*`
+tokens → `company-brain weave events`. Populate `config/notion.yaml`
+`change_request_database` after Notion connect. W2 members in `members.yaml` only;
+roster (`config/roster.yaml`) cannot invoke Weave.
+
+**Admin CLI:** `slack channel list|tag|enable-connect`, `weave poll-approvals`,
+`hr promote {roster_key}`, `hr offboard {member_key}`.
+
+Verify with `doctor` (Slack wiki / Weave lines). Handbook:
+`docs/agents/operations.md` (Slack), `docs/agents/admin.md` (Weave), `docs/agents/hr.md`.
 
 ### Gmail (operations department) — read + labels + DRAFT only, never send
 Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `official`):
@@ -258,6 +292,9 @@ Run the one-time onboarding agents to backfill history for platforms the user
 connected (these seed the wiki + Notion):
 - GitHub: the `github_onboarding` agent.
 - Finance: the `finance_onboarding` agent (backfills monthly + quarterly reports).
+- Granola: **`granola_onboarding`** (default 30-day backfill, starts `meeting_watch`).
+- Slack: **`slack_onboarding`** (`company-brain slack onboarding run` — estimate,
+  backfill, starts `slack_manager`; run `company-brain slack events` for the hot lane).
 - Employee wiki (optional): for each person in `config/members.yaml`, run the
   `employee_wiki_onboarding` agent — it creates the company `people/` stub and the
   member's `employee_wiki/{member}/_index.md`, then discovers/creates their Notion

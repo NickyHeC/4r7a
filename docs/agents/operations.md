@@ -609,6 +609,23 @@ for per-channel ingest scope. Env: `SLACK_WIKI_BOT_TOKEN`, `SLACK_WIKI_APP_TOKEN
 Completion replies: `engineering/linear/linear_completed/slack_thread_respond.py`
 (dispatched when a bound Slack task reaches Done in Linear).
 
+**Onboarding** (`slack_onboarding.py`):
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **Schedule** | Once, on first Slack connection |
+| **CLI** | `company-brain slack onboarding estimate` ($0 count), `slack onboarding run [--days N] [--all] [--absorb]` |
+
+Backfills routing records via `ingest_triage`, optionally runs absorb on raw entries,
+then starts `slack_manager` via `get_runtime().start()`.
+
+**Weave** — see [admin handbook](admin.md). **`company-brain weave events`** for the
+Weave app listener; change requests at `admin/change-request/{id}.md`.
+
+**HR** — see [HR handbook](hr.md). Roster in `config/roster.yaml`; W2 in `members.yaml`.
+`company-brain hr promote` / `hr offboard`.
+
 ---
 
 ## Notion — how it runs

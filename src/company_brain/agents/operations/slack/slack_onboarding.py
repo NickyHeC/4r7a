@@ -39,9 +39,7 @@ class SlackOnboardingAgent(BaseAgent):
             return {"status": "not_configured"}
 
         days = (
-            backfill_days
-            if backfill_days is not None
-            else cfg.onboarding_default_backfill_days()
+            backfill_days if backfill_days is not None else cfg.onboarding_default_backfill_days()
         )
         estimate = estimate_backfill(
             days=days if not all_history else None,

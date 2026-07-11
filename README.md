@@ -107,8 +107,26 @@ department (Gmail, Slack ops, Notion ops, ...).
 - **Gmail** — MCP + REST executive assistant (Phases 0–5): triage, CRM, Linear task creation (via the engineering Linear client), receipt routing, meeting scheduling (`ext_meeting_scheduler` + GCal), and **service profiles** (EA / employee / service account). Posture: **read + labels + draft compose only — never send**.
 - **Google Calendar** — availability lookup, meeting booking (with Meet links), optional morning Slack agenda DM (off by default).
 - **Granola** — meeting notes ingested after each meeting ends (calendar-driven), with a weekly miss check as backstop (business: per-member API keys; enterprise: single company-wide key); meeting action items become Linear tasks. Read-only at the source.
-- **Slack** — watches configured channels for action-item threads and turns them into Linear tasks; replies to the thread when the task is completed.
+- **Slack** — full operations platform: Events API ingest (tier 0/1 triage), open threads,
+  `@wiki` Q&A (channel ACL + Notion citations), customer support orchestrator (Gmail +
+  Connect fan-in), onboarding backfill, and HR offboard signals. Action-item threads
+  still bind to Linear via `action_items.py`. See [operations handbook](docs/agents/operations.md)
+  Slack section; Weave (`@weave` system changes) lives under **Admin**.
 - **Notion** — multi-database task registry: links existing task rows into `task_bindings` by Linear ID (read-first) and propagates Linear status back to the correct database row.
+
+### Admin
+
+- **Weave** — separate Slack app for system-change requests (`@weave`). Triage writes
+  `admin/change-request/{id}.md`, mirrors to a Notion change-request DB when configured,
+  and dispatches draft PRs for approved `config_only` changes (W2 `members.yaml` only;
+  `config/roster.yaml` cannot invoke). See [admin handbook](docs/agents/admin.md).
+
+### HR
+
+- **Roster + offboarding** — `config/roster.yaml` for trial/intern/contractor; promote to
+  `members.yaml` via `company-brain hr promote`. Offboarding is proposal-only at
+  `hr/offboard-proposal/{member}.md` (Workspace/Notion removal stubs in v1). See
+  [HR handbook](docs/agents/hr.md).
 
 ### Employee Wiki
 

@@ -68,9 +68,7 @@ class WeaveAgent(BaseAgent):
         if pr_url:
             weave_admin_notifier().emit(
                 Signal(
-                    text=(
-                        f"*Weave PR opened*\n*{request.title}*\n{pr_url}"
-                    ),
+                    text=(f"*Weave PR opened*\n*{request.title}*\n{pr_url}"),
                     severity=ACTIONABLE,
                 )
             )

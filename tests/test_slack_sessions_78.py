@@ -22,9 +22,7 @@ def test_classify_change_class_security():
 
 
 def test_roster_cannot_invoke_weave(monkeypatch):
-    roster = RosterConfig(
-        people={"jane": RosterPerson(email="j@co.com", slack_user_id="UROSTER")}
-    )
+    roster = RosterConfig(people={"jane": RosterPerson(email="j@co.com", slack_user_id="UROSTER")})
     monkeypatch.setattr(
         "company_brain.agents.admin.weave_auth.load_roster_config",
         lambda: roster,
@@ -110,9 +108,7 @@ def test_weave_events_router_mention(monkeypatch):
 def test_promote_roster_to_member(tmp_path, monkeypatch):
     roster_path = tmp_path / "roster.yaml"
     members_path = tmp_path / "members.yaml"
-    roster_path.write_text(
-        "people:\n  jane:\n    email: jane@co.com\n    slack_user_id: U1\n"
-    )
+    roster_path.write_text("people:\n  jane:\n    email: jane@co.com\n    slack_user_id: U1\n")
     members_path.write_text("members: {}\n")
     monkeypatch.setattr("company_brain.roster_config.CONFIG_DIR", tmp_path)
     monkeypatch.setattr("company_brain.roster_config.ROSTER_FILE", roster_path)

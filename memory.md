@@ -3,6 +3,21 @@
 **Purpose: read this first.** This file is the fast path to development context so
 an AI coding agent does not have to read the entire project to understand how it
 got here. Skim the recent entries to learn the current architecture and recent
+decisions, then dive into specific files only as needed (saves tokens/time).
+
+A running log of significant actions, decisions, and changes. Newest entries on
+top. Each entry: date, summary, key changes, and the commit it landed in (or
+"working tree" if not yet committed). After meaningful work, prepend a new entry.
+
+---
+
+## 2026-07-11 — Slack platform Session 9 (docs ship | working tree)
+
+- **Docs:** Expanded `README.md`, `agent_list.md`, `project_install.md` (wiki bot required,
+  Weave optional); `operations.md` onboarding/Weave/HR cross-links; `admin.md` + `hr.md`
+  handbooks; `.cursor/rules/access-control.mdc` + `agent-organization.mdc` updated.
+- **Hygiene:** Removed shipped rows from `docs/tabled.md`; deleted `docs/plans/slack.md`.
+- **Ship checklist:** ruff, pytest, `company-brain doctor code`.
 
 ## 2026-07-11 — Slack platform sessions 7–8
 
@@ -26,11 +41,6 @@ got here. Skim the recent entries to learn the current architecture and recent
   `events_router.py` handles `app_mention`.
 - **Product + issues:** `product_features` → `product/feature.md`; `issue_sync.py` daily
   via `github_manager`; `config/notion.yaml` `product` teamspace; `name_migrate` entry added.
-decisions, then dive into specific files only as needed (saves tokens/time).
-
-A running log of significant actions, decisions, and changes. Newest entries on
-top. Each entry: date, summary, key changes, and the commit it landed in (or
-"working tree" if not yet committed). After meaningful work, prepend a new entry.
 
 ---
 

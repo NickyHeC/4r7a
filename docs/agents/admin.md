@@ -25,4 +25,9 @@ flowchart LR
 
 **Auth:** Active `members.yaml` W2 only — `config/roster.yaml` cannot invoke Weave.
 
+**Change classes:** `config_only` (auto PR for W2), `agent_behavior`, `security_ingest`
+(admin Notion approval via `weave poll-approvals`).
+
 Config: `config/notion.yaml` → `change_request_database`; `config/operations.yaml` → `slack_platform.weave`.
+
+**Tabled:** Weave hot-reload / agent pause-resume (option B) — see `docs/tabled.md`.

@@ -158,8 +158,7 @@ class WeaveTriageAgent(BaseAgent):
             severity = ACTIONABLE
         else:
             text = (
-                f"*Weave submitted* (`{req.change_class}`)\n"
-                f"*{req.title}* by {req.requester_member}"
+                f"*Weave submitted* (`{req.change_class}`)\n*{req.title}* by {req.requester_member}"
             )
             severity = ACTIONABLE
         weave_admin_notifier().emit(Signal(text=text, severity=severity))

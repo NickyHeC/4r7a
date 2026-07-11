@@ -81,6 +81,20 @@ Admin initiates only; members cannot mount external wikis.
   employee building counts, and audit pages — view-only; regenerate via `company-brain catalog`.
 - **Section routing:** `section_teamspace` maps top-level `admin` → admin teamspace.
 
+## Slack interactive access (`@wiki` and `@weave`)
+
+**`@wiki` (wiki bot):** Humans only; internal channels only. Connect channels are
+ingest/read-only — no Q&A. Channel ACL in `config/slack_channels.json` maps each
+enabled channel to wiki read prefixes and a Notion teamspace for citations.
+`members.yaml` `role: admin` bypasses per-user rate limits. Answers cite Notion
+mirror URLs, not raw MD paths.
+
+**`@weave` (Weave bot, optional):** System-change requests only. Active W2 members
+in `config/members.yaml` may invoke; `config/roster.yaml` entries **cannot**.
+`config_only` changes auto-dispatch a draft PR; `agent_behavior` / `security_ingest`
+require admin approval in the Notion change-request database. Weave never widens
+wiki or bridge read scope.
+
 ## Member bridge MCP (planned)
 
 Bridge process runs **co-located with the wiki** on the same host (cloud VM or

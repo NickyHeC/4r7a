@@ -73,18 +73,13 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Weave hot-reload / agent pause-resume | admin/weave | Weave PR-only v1 stable | Option B — after structure ships |
 | Discord customer intake | Community | Discord bot scope defined | Interface deferred |
-| Google Workspace offboard signal | hr | Full Workspace API integration | v1 stub on offboard proposal |
-| Notion user removal signal | hr | Notion admin API integration | v1 stub on offboard proposal |
-| HR roster scopes by employment type | hr | HR design session | Deferred |
 
 ## Operations — Notion
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Conflict resolution / source of truth | `operations/notion` | Multi-DB task sync in production | MD wins; Notion mirrors |
-| Feedback & system modification intake | `operations/notion` | Builder dispatch pattern | Meta: dispatch builder agent |
 | Human-added pages ingest | `operations/notion` | Notion-first teams | Pull → MD path TBD |
 | Version control | Wiki | Same as cross-cutting versioning | |
 | Sign-in / account management | Product | Multi-member deploy | Admin vs member model exists |
@@ -117,10 +112,9 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Hiring log (`hr/hiring-log.md`) | `hr` | **Slack platform build** (`docs/plans/slack.md`) | CRM-style append log: trial, intern, W2, past states; ties to roster promote + offboarding |
-| Roster scopes by employment type | `hr` / `config/roster.yaml` | Hiring log + member promote stable | `config/roster.yaml` for trial/intern/contractor; `members.yaml` W2 only; scopes TBD in HR session |
-| Google Workspace offboard signal | `hr` | `employee_offboarding` v1 shipped | Cross-check alongside Slack deactivation; stub OK in v1 |
-| Notion user removal signal | `hr` | `employee_offboarding` v1 shipped | Cross-check for member departures |
+| Roster scopes by employment type | `hr` / `config/roster.yaml` | HR design session | Roster + promote shipped; per-type scopes TBD |
+| Google Workspace offboard signal | `hr` | Full Workspace API integration | v1 stub on offboard proposal |
+| Notion user removal signal | `hr` | Notion admin API integration | v1 stub on offboard proposal |
 | Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Extend **`inbound_crm`** candidate type |
 
 ---
