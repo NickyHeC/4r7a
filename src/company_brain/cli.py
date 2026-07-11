@@ -838,6 +838,54 @@ def weave_poll_approvals() -> None:
 
 
 @main.group()
+def discord() -> None:
+    """Discord community platform — Gateway listener and channel registry."""
+
+
+@discord.command("gateway")
+def discord_gateway() -> None:
+    """Run the Discord Gateway WebSocket listener (hot lane)."""
+    from company_brain.agents.growth.discord.discord_gateway import serve_gateway
+
+    serve_gateway()
+
+
+@discord.command("sync-channels")
+def discord_sync_channels() -> None:
+    """Sync Discord guild channels into ``config/discord_channels.json``."""
+    from company_brain.agents.growth.discord import discord_config as cfg
+    from company_brain.agents.growth.discord.events_router import sync_guild_channels
+
+    guild_id = cfg.guild_id()
+    if not guild_id:
+        raise click.ClickException("Set discord.guild_id in config/growth.yaml")
+    result = sync_guild_channels(guild_id)
+    click.echo(result)
+
+
+@discord.group("channel")
+def discord_channel() -> None:
+    """Admin Discord channel registry commands."""
+
+
+@discord_channel.command("list")
+def discord_channel_list() -> None:
+    """List channels in ``config/discord_channels.json``."""
+    from company_brain.agents.growth.discord import channels_config
+
+    rows = channels_config.list_channels_summary()
+    if not rows:
+        click.echo("No channels in registry. Run: company-brain discord sync-channels")
+        return
+    for row in rows:
+        click.echo(
+            f"{row.get('id')}\t{row.get('name', '')}\t"
+            f"mode={row.get('ingest_mode', 'hot')}\t"
+            f"type={row.get('type', '')}"
+        )
+
+
+@main.group()
 def hr() -> None:
     """HR roster and offboarding helpers."""
 

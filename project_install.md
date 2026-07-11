@@ -132,6 +132,28 @@ roster (`config/roster.yaml`) cannot invoke Weave.
 Verify with `doctor` (Slack wiki / Weave lines). Handbook:
 `docs/agents/operations.md` (Slack), `docs/agents/admin.md` (Weave), `docs/agents/hr.md`.
 
+### Discord (growth department) — read-only community bot
+
+Open-source developer community ingest. The bot **reads only** — it never posts to
+Discord. Draft replies for humans go to Slack `#discord` (session 4+).
+
+1. Create a Discord application + bot at https://discord.com/developers/applications
+2. Enable **Message Content Intent** (privileged) under Bot settings
+3. Invite the bot to your community server with read/view permissions
+4. Set `DISCORD_BOT_TOKEN` in `.env`
+5. Set `discord.guild_id` in `config/growth.yaml` (right-click server → Copy Server ID)
+6. Adjust `discord.exclude_channels` (default includes `off-topic`)
+7. Sync channel registry: `company-brain discord sync-channels`
+8. Start Gateway: `company-brain discord gateway`
+
+Add per-member `bindings.discord_id` (and optional `discord_handle`) in
+`config/members.yaml` so the system can detect when a team member is already in a thread.
+
+**CLI:** `discord gateway`, `discord sync-channels`, `discord channel list`.
+Onboarding (session 8): `company-brain discord onboarding estimate|run`.
+
+Handbook: `docs/agents/growth.md` (forthcoming).
+
 ### Gmail (operations department) — read + labels + DRAFT only, never send
 Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `official`):
 

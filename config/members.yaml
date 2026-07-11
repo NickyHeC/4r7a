@@ -15,6 +15,8 @@ members: {}
 #       granola_label: alice
 #       gmail_mailbox: alice@company.com
 #       slack_user_id: U0123ABC
+#       discord_id: "123456789012345678"
+#       discord_handle: "nickym"
 #       linear_user_id: ""
 #     ingest:
 #       granola: full             # full | action_items_only | off

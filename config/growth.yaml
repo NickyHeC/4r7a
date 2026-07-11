@@ -1,0 +1,16 @@
+# Growth department platform settings (non-secret).
+# Secrets: DISCORD_BOT_TOKEN in the environment only.
+
+discord:
+  guild_id: ""
+  poll_interval_minutes: 15
+  workdays_only: false
+  exclude_channels:
+    - off-topic
+  onboarding_default_backfill_days: 30
+  member_scoring_min_messages: 3
+  interesting_score_threshold: 4
+  absorb_batch_hour_utc: 6
+
+slack:
+  discord_channel: "#discord"

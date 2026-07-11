@@ -16,6 +16,7 @@ dependencies = [
     "requests>=2.33.0",      # CVE-2026-25645 patched
     "python-dotenv>=1.2.2",  # CVE-2026-28684 patched
     "slack-sdk>=3.27",
+    "websockets>=12.0",
     "claude-agent-sdk>=0.1",
     # OpenAI Agents SDK is the provider-flexible path (OpenAI, Anthropic via
     # LiteLLM, or a self-hosted/remote open-source GLM-5 OpenAI-compatible
