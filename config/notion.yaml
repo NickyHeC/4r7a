@@ -127,3 +127,13 @@ task_routing:
 
 # Finance agent page/database bindings (discover-or-create, populated on first run).
 finance_pages: {}
+
+change_request_database:
+  database_id: ""
+  columns:
+    title: Title
+    status: Status
+    requester: Requester
+    change_class: Class
+    slack_thread: Slack thread
+    pr_url: PR

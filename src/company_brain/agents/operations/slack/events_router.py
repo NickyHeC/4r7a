@@ -45,6 +45,8 @@ class SlackEventsRouter:
             return self._handle_reaction(event)
         if inner == "app_mention":
             return self._handle_app_mention(event)
+        if inner == "user_change":
+            return self._handle_user_change(event)
         if inner == "member_joined_channel":
             return self._handle_member_joined(event)
         return {"status": "ignored", "reason": inner or "unknown"}
@@ -110,6 +112,11 @@ class SlackEventsRouter:
             slack_user_id=user_id,
         )
         return {"status": "ask_wiki", "result": result}
+
+    def _handle_user_change(self, event: dict[str, Any]) -> dict[str, Any]:
+        from company_brain.agents.operations.slack.offboard_signal import handle_user_change_event
+
+        return handle_user_change_event(event, self.config)
 
     def _handle_reaction(self, event: dict[str, Any]) -> dict[str, Any]:
         item = event.get("item") or {}

@@ -71,6 +71,18 @@ def wiki_signing_secret() -> str:
     return os.getenv("SLACK_WIKI_SIGNING_SECRET", "").strip()
 
 
+def weave_app_token() -> str:
+    return os.getenv("SLACK_WEAVE_APP_TOKEN", "").strip()
+
+
+def weave_signing_secret() -> str:
+    return os.getenv("SLACK_WEAVE_SIGNING_SECRET", "").strip()
+
+
+def weave_socket_mode_configured() -> bool:
+    return weave_is_configured() and bool(weave_app_token())
+
+
 def socket_mode_configured() -> bool:
     return slack_is_configured() and bool(wiki_app_token())
 
@@ -231,24 +243,34 @@ def fetch_thread_replies(channel: str, thread_ts: str) -> list[dict[str, Any]]:
         raise SlackClientError(f"conversations.replies failed: {exc}") from exc
 
 
-def post_thread_reply(channel: str, thread_ts: str, text: str) -> str | None:
+def post_thread_reply(
+    channel: str,
+    thread_ts: str,
+    text: str,
+    *,
+    app: str = "wiki",
+) -> str | None:
     """Post a reply in a thread (system propagation — not human notifications)."""
     from slack_sdk.errors import SlackApiError
 
     channel_id = resolve_channel_id(channel)
     try:
-        resp = client().chat_postMessage(channel=channel_id, thread_ts=thread_ts, text=text)
+        resp = client(app=app).chat_postMessage(
+            channel=channel_id,
+            thread_ts=thread_ts,
+            text=text,
+        )
         return resp.get("ts")
     except SlackApiError as exc:
         raise SlackClientError(f"chat.postMessage failed: {exc}") from exc
 
 
-def permalink(channel: str, message_ts: str) -> str:
+def permalink(channel: str, message_ts: str, *, app: str = "wiki") -> str:
     from slack_sdk.errors import SlackApiError
 
     channel_id = resolve_channel_id(channel)
     try:
-        resp = client().chat_getPermalink(channel=channel_id, message_ts=message_ts)
+        resp = client(app=app).chat_getPermalink(channel=channel_id, message_ts=message_ts)
         return str(resp.get("permalink") or "")
     except SlackApiError:
         return ""

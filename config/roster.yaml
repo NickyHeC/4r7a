@@ -1,0 +1,12 @@
+# Non-W2 roster (trial / intern / contractor). Cannot invoke @weave.
+# Promote to members.yaml: company-brain hr promote {key}
+
+people: {}
+# Example:
+#   jane_contractor:
+#     email: jane@contractor.com
+#     employment_type: contractor
+#     slack_user_id: U0123ABC
+#     bindings: {}
+#     ingest:
+#       slack: limited

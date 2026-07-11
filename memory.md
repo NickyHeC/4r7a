@@ -4,6 +4,17 @@
 an AI coding agent does not have to read the entire project to understand how it
 got here. Skim the recent entries to learn the current architecture and recent
 
+## 2026-07-11 — Slack platform sessions 7–8
+
+- **Weave (admin/):** `weave_triage.py` + `weave.py` — `@weave` Events app, change-request MD,
+  Notion DB mirror, `config_only` auto-dispatch for W2 members, approval poll via
+  `company-brain weave poll-approvals`, draft PR path + optional `verify_in_sandbox`.
+  Roster (`config/roster.yaml`) cannot invoke Weave.
+- **Onboarding + HR:** `slack_onboarding.py` ($0 estimate + backfill + optional absorb),
+  hands off `slack_manager` via `get_runtime().start()`; `hr/employee_offboarding.py`,
+  `hiring_log.py`, `slack/offboard_signal.py` (proposal-only offboard); CLI `hr promote|offboard`,
+  `slack onboarding estimate|run`.
+
 ## 2026-07-11 — Slack platform sessions 4–6
 
 - **Customer support:** `operations/customer_support.py` orchestrator classifies

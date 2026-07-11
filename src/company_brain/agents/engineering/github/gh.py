@@ -123,3 +123,39 @@ def list_repos(org: str | None = None) -> list[dict[str, Any]]:
         args.insert(2, org)
     args.extend(["--limit", "200"])
     return gh_json(args)
+
+
+def gh_available() -> bool:
+    import shutil
+
+    return shutil.which("gh") is not None
+
+
+def create_pull_request(
+    *,
+    title: str,
+    body: str,
+    head: str,
+    base: str = "main",
+    repo: str | None = None,
+    draft: bool = True,
+) -> dict[str, Any]:
+    """Create a pull request (Weave dispatch only)."""
+    args = [
+        "pr",
+        "create",
+        "--title",
+        title[:255],
+        "--body",
+        body,
+        "--head",
+        head,
+        "--base",
+        base,
+    ]
+    if draft:
+        args.append("--draft")
+    if repo:
+        args.extend(["--repo", repo])
+    args.extend(["--json", "url,number,title"])
+    return gh_json(args)

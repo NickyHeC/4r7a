@@ -764,3 +764,110 @@ def slack_sync_channels() -> None:
     config = load_config()
     result = ChannelRegistryAgent(config).run()
     click.echo(result)
+
+
+@slack.group("onboarding")
+def slack_onboarding_group() -> None:
+    """Slack platform onboarding — estimate and backfill."""
+
+
+@slack_onboarding_group.command("estimate")
+@click.option(
+    "--days",
+    type=int,
+    default=None,
+    help="Backfill window in days (default from config).",
+)
+@click.option("--all", "all_history", is_flag=True, help="Estimate full channel history.")
+def slack_onboarding_estimate(days: int | None, all_history: bool) -> None:
+    """$0 message count estimate for Slack onboarding."""
+    from company_brain.agents.operations.slack.slack_onboarding import estimate_backfill
+
+    result = estimate_backfill(days=days, all_history=all_history)
+    click.echo(result)
+
+
+@slack_onboarding_group.command("run")
+@click.option("--days", type=int, default=None, help="Operational backfill window.")
+@click.option("--all", "all_history", is_flag=True, help="Backfill full history.")
+@click.option("--absorb", is_flag=True, help="Run absorb on raw entries after backfill.")
+@click.option("--no-manager", is_flag=True, help="Skip starting slack_manager.")
+def slack_onboarding_run(
+    days: int | None,
+    all_history: bool,
+    absorb: bool,
+    no_manager: bool,
+) -> None:
+    """Run Slack onboarding backfill and hand off to slack_manager."""
+    from company_brain.agents.operations.slack.slack_onboarding import SlackOnboardingAgent
+
+    config = load_config()
+    result = SlackOnboardingAgent(config).run(
+        start_manager=not no_manager,
+        backfill_days=days,
+        all_history=all_history,
+        absorb=absorb,
+    )
+    click.echo(result)
+
+
+@main.group()
+def weave() -> None:
+    """Weave system-change dispatch."""
+
+
+@weave.command("events")
+@click.option("--http", is_flag=True, help="Use HTTP mode instead of Socket Mode.")
+@click.option("--host", default="0.0.0.0", help="HTTP bind host.")
+@click.option("--port", type=int, default=3001, help="HTTP bind port.")
+def weave_events(http: bool, host: str, port: int) -> None:
+    """Run the Weave Slack Events API listener."""
+    from company_brain.agents.operations.slack.weave_events_server import serve_weave_events
+
+    serve_weave_events(http=http, host=host, port=port)
+
+
+@weave.command("poll-approvals")
+def weave_poll_approvals() -> None:
+    """Dispatch weave for Notion-approved change requests."""
+    from company_brain.agents.admin.weave_triage import WeaveTriageAgent
+
+    config = load_config()
+    result = WeaveTriageAgent(config).run(poll_approvals=True)
+    click.echo(result)
+
+
+@main.group()
+def hr() -> None:
+    """HR roster and offboarding helpers."""
+
+
+@hr.command("promote")
+@click.argument("roster_key")
+@click.option("--member-key", default=None, help="members.yaml key (default: roster key).")
+@click.option("--role", default="member", type=click.Choice(["admin", "member"]))
+def hr_promote(roster_key: str, member_key: str | None, role: str) -> None:
+    """Promote a roster person into members.yaml (W2)."""
+    from company_brain.agents.hr.hiring_log import append_hiring_log
+    from company_brain.roster_config import promote_roster_to_member
+
+    key = promote_roster_to_member(roster_key, member_key=member_key, role=role)
+    append_hiring_log(
+        f"Promoted {roster_key} → {key}",
+        f"Roster key `{roster_key}` promoted to members.yaml as `{key}` (`role={role}`).",
+        trigger="hr_promote",
+        why=roster_key,
+    )
+    click.secho(f"Promoted to members.yaml: {key}", fg="green")
+
+
+@hr.command("offboard")
+@click.argument("member_key")
+@click.option("--reason", default="manual", help="Offboarding reason label.")
+def hr_offboard(member_key: str, reason: str) -> None:
+    """Create an offboarding proposal for a member."""
+    from company_brain.agents.hr.employee_offboarding import EmployeeOffboardingAgent
+
+    config = load_config()
+    result = EmployeeOffboardingAgent(config).run(member_key=member_key, reason=reason)
+    click.echo(result)

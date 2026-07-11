@@ -401,24 +401,24 @@ Add to `.cursor/rules/agent-organization.mdc`:
 
 **Goal:** Two-app weave path; PR-only dispatch.
 
-- [ ] Weave Slack app + `events_router` weave branch
-- [ ] `admin/weave_triage.py` — classify change class, write `admin/change-request/{id}.md`, Notion DB row
-- [ ] Roster cannot invoke; members.yaml W2 can auto-dispatch `config_only`
-- [ ] `admin/weave.py` — open PR on private repo; `verify_in_sandbox` when `COMPANY_BRAIN_SANDBOX=vm`
-- [ ] Notion approval webhook/poll for `agent_behavior` / `security_ingest` → dispatch weave
-- [ ] Notifier on PR opened / approval needed
+- [x] Weave Slack app + `events_router` weave branch
+- [x] `admin/weave_triage.py` — classify change class, write `admin/change-request/{id}.md`, Notion DB row
+- [x] Roster cannot invoke; members.yaml W2 can auto-dispatch `config_only`
+- [x] `admin/weave.py` — open PR on private repo; `verify_in_sandbox` when `COMPANY_BRAIN_SANDBOX=vm`
+- [x] Notion approval webhook/poll for `agent_behavior` / `security_ingest` → dispatch weave
+- [x] Notifier on PR opened / approval needed
 
 ### Session 8 — Onboarding + HR signals
 
 **Goal:** Backfill + offboarding structure.
 
-- [ ] `slack_onboarding.py` — estimate ($0 count), 30-day default / `--all`, optional `--absorb`
-- [ ] Hand off to `slack_manager` via `get_runtime().start()`
-- [ ] `config/roster.yaml` + `company-brain hr promote`
-- [ ] `hr/employee_offboarding.py` + `hr/hiring-log.md` materializer
-- [ ] `slack/offboard_signal.py` — Slack deactivation → HR agent (proposal only)
-- [ ] Table Google Workspace + Notion removal signals (stubs OK in v1)
-- [ ] `docs/tabled.md`: bridge token revoke stays until offboard ships
+- [x] `slack_onboarding.py` — estimate ($0 count), 30-day default / `--all`, optional `--absorb`
+- [x] Hand off to `slack_manager` via `get_runtime().start()`
+- [x] `config/roster.yaml` + `company-brain hr promote`
+- [x] `hr/employee_offboarding.py` + `hr/hiring-log.md` materializer
+- [x] `slack/offboard_signal.py` — Slack deactivation → HR agent (proposal only)
+- [x] Table Google Workspace + Notion removal signals (stubs OK in v1)
+- [x] `docs/tabled.md`: bridge token revoke stays until offboard ships
 
 ### Session 9 — Docs + hygiene
 

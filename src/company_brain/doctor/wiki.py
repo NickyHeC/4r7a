@@ -15,6 +15,7 @@ _NOTION_ALLOW = frozenset(
         "operations/notion/task_sync.py",
         "operations/notion/task_scanner.py",
         "employee_wiki/employee_wiki_onboarding.py",
+        "admin/weave_notion.py",
     }
 )
 _WIKI_WRITE_RE = re.compile(

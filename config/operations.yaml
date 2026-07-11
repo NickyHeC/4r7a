@@ -246,6 +246,14 @@ slack_platform:
       - ok_hand
     done:
       - white_check_mark
+  weave:
+    admin_channel: "#admin"
+    events:
+      mode: socket
+      http_path: /slack/events/weave
+  onboarding:
+    default_backfill_days: 30
+    absorb_on_backfill: false
 
 # Notion platform (operations/notion/) — task DB scanner + propagation.
 notion_platform:

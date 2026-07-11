@@ -96,6 +96,43 @@ def weave_submissions_per_user_day() -> int:
         return 5
 
 
+def weave_cfg() -> dict[str, Any]:
+    return dict(slack_platform_cfg().get("weave") or {})
+
+
+def weave_admin_channel() -> str:
+    return str(weave_cfg().get("admin_channel") or "#admin")
+
+
+def weave_events_cfg() -> dict[str, Any]:
+    return dict(weave_cfg().get("events") or {})
+
+
+def weave_events_mode() -> str:
+    mode = str(weave_events_cfg().get("mode") or "socket").strip().lower()
+    return mode if mode in {"socket", "http"} else "socket"
+
+
+def weave_events_http_path() -> str:
+    return str(weave_events_cfg().get("http_path") or "/slack/events/weave")
+
+
+def onboarding_cfg() -> dict[str, Any]:
+    return dict(slack_platform_cfg().get("onboarding") or {})
+
+
+def onboarding_default_backfill_days() -> int:
+    raw = onboarding_cfg().get("default_backfill_days", 30)
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return 30
+
+
+def onboarding_absorb_default() -> bool:
+    return bool(onboarding_cfg().get("absorb_on_backfill", False))
+
+
 def slack_is_configured() -> bool:
     from company_brain.agents.operations.slack import slack_client
 

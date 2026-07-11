@@ -594,9 +594,13 @@ flowchart TD
 | `action_items.py` | Via triage / watcher | Action thread → Linear + routing record |
 | `channel_registry.py` | Daily via manager | Sync `config/slack_channels.json`; auto-join internal channels |
 | `events_router.py` / `events_server.py` | CLI `slack events` | Socket Mode or HTTP Events API |
+| `weave_events_router.py` / `weave_events_server.py` | CLI `weave events` | Weave app `@weave` mentions |
+| `slack_onboarding.py` | Once (`slack onboarding run`) | $0 estimate + backfill; starts `slack_manager` |
+| `offboard_signal.py` | `user_change` Events + CLI | Slack deactivation → HR offboard proposal |
 | `slack_client.py` | — | Slack Web API (wiki bot; not an agent) |
 
-**CLI:** `company-brain slack events`, `slack sync-channels`, `slack channel list|tag|enable-connect`
+**CLI:** `company-brain slack events`, `slack sync-channels`, `slack channel list|tag|enable-connect`,
+`slack onboarding estimate|run`, `weave events`, `weave poll-approvals`, `hr promote|offboard`
 
 Config: `config/operations.yaml` → `slack_platform`; `config/slack_channels.json`
 for per-channel ingest scope. Env: `SLACK_WIKI_BOT_TOKEN`, `SLACK_WIKI_APP_TOKEN`

@@ -18,7 +18,7 @@ Format for new rows:
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
-| Batch absorb by urgency | operations/slack + notion | **Slack platform build** (`docs/plans/slack.md`) | Design locked — three-tier lanes + optional absorb on backfill; implement during Slack sessions |
+| Batch absorb by urgency | operations/slack + notion | Optional `--absorb` on Slack onboarding | Three-tier lanes shipped; encyclopedia absorb opt-in at backfill |
 | Weave hot-reload / agent pause-resume | admin/weave | Weave PR-only v1 stable | Option B from Slack design — pause persistent agents, edit, resume; after structure ships |
 | Ramp LLM vendor reconcile | Finance / LLM | Ramp MCP stable in reconcile path | Mercury card vendor bills wired; add Ramp card txns to `llm/reconcile.py` |
 | Process artifacts (Architect/Doer) | Cross | Agents living on cloud VMs | Compile reusable Processes (steps, inputs, temporal deps) from observed workflows; second-order automation per Ramp Labs |
@@ -36,7 +36,7 @@ Format for new rows:
 |------|----------------------|------------------|-------|
 | Member bridge MCP | Cross / `bridge/` | First multi-member deploy using coding agents | Co-located with wiki; private mesh; token hashes; ledger → `bridge_manager` → materializer → rollup 08:00; **no Linear**; per-dept bridge index; skills `_index.yaml` per dept; rate limits 60 reads/min + 20 report/day; **read: dept-scoped** — `bridge.departments` required; engineering uses `sync: location:engineering`; `sync: company` only for cross-dept pages (master table); own employee tree; `bridge_readiness` doctor |
 | Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP implementation lands | After employee wiki onboarding; Tailscale; `company-brain bridge issue-token`; env-var token in Cursor |
-| Bridge token revoke on offboard | operations/slack | Slack offboarding agent built | Detects departure → revoke token in `bridge-tokens.json` |
+| Bridge token revoke on offboard | operations/slack | Offboard actuation ships | `employee_offboarding` proposal exists; auto-revoke after actuation |
 | Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | Tabled — rsync, re-issue tokens, URL change |
 | Senior `propose_practice_update` via MCP | Engineering / bridge | Read-only bridge stable | Tabled |
 | Human vs agent Notion/MD sync lag | Bridge / Notion | Product decision | Agent reads MD via bridge; humans read Notion — lag TBD |
@@ -73,15 +73,11 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| **Slack platform (full)** | operations/slack + admin/weave + hr | **In progress** — [`docs/plans/slack.md`](../plans/slack.md) | Events API, @wiki, @weave, customer support, onboarding, open threads |
-| **Overall agent scheduling design** | operations/slack (+ fleet-wide) | Slack Session 1+ | Addressed in plan; `work_ahead.py` + Linear stale audit remain v1 |
-| Agent filename rename pass | `operations/slack` | **Shipped** Session 1 | `action_items`, `thread_watcher`; `customer_mail_notify` |
-| Internal meeting scheduler | `operations/slack` | Slack Session 5 | Distinct from gcal ext_meeting_scheduler |
-| Open threads pending response | `operations/slack` | **Shipped** Session 3 | Routing records + reactions + employee wiki pages |
-| Feedback intake | `operations/slack` / admin | Slack Session 7 | `@weave` + change-request DB |
-| Question the wiki | `operations/slack` | Slack Session 5 | `ask_wiki` — internal channels only |
-
----
+| Weave hot-reload / agent pause-resume | admin/weave | Weave PR-only v1 stable | Option B — after structure ships |
+| Discord customer intake | Community | Discord bot scope defined | Interface deferred |
+| Google Workspace offboard signal | hr | Full Workspace API integration | v1 stub on offboard proposal |
+| Notion user removal signal | hr | Notion admin API integration | v1 stub on offboard proposal |
+| HR roster scopes by employment type | hr | HR design session | Deferred |
 
 ## Operations — Notion
 
@@ -101,7 +97,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| `employee_offboarding` | Cross | Member offboarding runbook | Revoke ingest, archive building |
+| Bridge token revoke on offboard | hr / bridge | Offboard actuation ships | Proposal agent exists; auto-revoke tabled |
 | Bookface integration | Growth | Platform connected | Department TBD |
 
 ---
