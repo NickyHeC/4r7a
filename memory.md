@@ -11,6 +11,14 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-11 — Slack platform Sessions 2–3 (ingest + open threads | working tree)
+
+- **What:** Events API hot lane, tier 0/1 ingest triage, open-thread monitor with reactions.
+- **Key changes:** `ingest_triage`, `events_router`, `events_server`, `triage_heuristics`, `open_thread_monitor`, `open_threads`; CLI `slack events|channel|sync-channels`; `thread_watcher` poll backup runs triage; `action_items` writes routing records; `StateStore.delete`.
+- **Tests:** 204 passing (`tests/test_slack_ingest.py`).
+
+---
+
 ## 2026-07-06 — Member bridge MCP (v1 implementation)
 
 - **`src/company_brain/bridge/`** — HTTP MCP (JSON-RPC), read gate

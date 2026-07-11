@@ -77,6 +77,13 @@ class ActionItemsAgent(BaseAgent):
         if "linear" not in task_class_fan_out("slack_action"):
             return {"status": "skipped", "reason": "fan_out"}
 
+        from company_brain.agents.operations.slack.routing import SlackRoutingStore
+
+        routing = SlackRoutingStore()
+        existing_record = routing.read(channel, thread_ts)
+        if existing_record and existing_record.handled.get("action_items"):
+            return {"status": "skipped", "reason": "routing_handled"}
+
         if self._bindings.find_by_slack_thread(channel, thread_ts):
             return {"status": "skipped", "reason": "already_bound"}
 
@@ -85,6 +92,19 @@ class ActionItemsAgent(BaseAgent):
         link = ""
         if message_ts:
             link = slack_client.permalink(channel, message_ts)
+
+        routing.upsert(
+            channel,
+            thread_ts,
+            kind="action_pending",
+            attention=cfg.ATTENTION_ACTION,
+            assignees=[slack_user_id] if slack_user_id else [],
+            extracted={
+                "message_ts": message_ts or thread_ts,
+                "text_preview": body[:400],
+                "permalink": link,
+            },
+        )
 
         description = f"From Slack thread in `{channel}`.\n\n**Thread:** `{thread_ts}`\n\n{body}\n"
         if link:
@@ -106,6 +126,9 @@ class ActionItemsAgent(BaseAgent):
             task_class="slack_action",
             sync_notion=False,
         )
+        record = routing.read(channel, thread_ts)
+        if record:
+            routing.mark_handled(record, "action_items")
         self._record_employee_work_event(
             channel=channel,
             thread_ts=thread_ts,

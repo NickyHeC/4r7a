@@ -1,7 +1,7 @@
 """Slack Channel Registry — maintain channel metadata and activity records.
 
-Specialist dispatched by ``slack_manager`` (daily). Session 1 skeleton: ensures
-``config/slack_channels.json`` exists and reports channel count.
+Syncs Slack API channel list into ``config/slack_channels.json`` and auto-joins
+internal channels when configured.
 
 SDK: Neither (Slack SDK + config).
 """
@@ -22,11 +22,15 @@ class ChannelRegistryAgent(BaseAgent):
     def should_run(self, **kwargs: Any) -> bool:
         return slack_client.slack_is_configured()
 
-    def run(self, **kwargs: Any) -> dict[str, Any]:
+    def run(self, *, join_internal: bool = True, **kwargs: Any) -> dict[str, Any]:
+        channels = slack_client.list_channels()
+        synced = channels_config.sync_from_slack_api(channels)
+        joined = slack_client.join_internal_channels() if join_internal else {"joined": 0}
         data = channels_config.load_channels_registry()
-        channels = data.get("channels") or {}
         return {
             "status": "ok",
-            "channels": len(channels),
+            "channels": len(data.get("channels") or {}),
+            "synced": synced,
+            "joined": joined.get("joined", 0),
             "registry_path": str(channels_config.CHANNELS_FILE),
         }

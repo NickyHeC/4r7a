@@ -545,14 +545,21 @@ Config: `config/operations.yaml` → `granola.schedule` (`watch_interval_minutes
 
 ## Slack — how it runs
 
-**`slack_manager`** polls watched channels on a workday schedule and dispatches
-specialists. Linear Done → thread completion reply (system propagation).
+**`slack_manager`** polls on a workday schedule and dispatches specialists.
+**`company-brain slack events`** runs the Events API hot lane (Socket Mode local,
+HTTP cloud). Poll via **`thread_watcher`** remains backup.
 
 ```mermaid
 flowchart TD
+  EV[slack events listener] -->|message| TRI[ingest_triage]
+  EV -->|reaction| OT[open_threads]
   SM[slack_manager persistent] -->|poll interval| TW[thread_watcher]
+  SM -->|each pass| OTM[open_thread_monitor]
   SM -->|daily| CR[channel_registry]
+  TW --> TRI
   TW --> AI[action_items]
+  TRI --> RR[(slack routing records)]
+  OTM --> EW[employee_wiki open-thread.md]
   AI --> TB[(task_bindings + Linear)]
   LM[linear_manager] -->|Done| LC[linear_completed]
   LC --> STR[slack_thread_respond]
@@ -561,15 +568,20 @@ flowchart TD
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches `thread_watcher` each pass; `channel_registry` once per workday |
-| `thread_watcher.py` | Via manager | Scan `slack_platform.watched_channels`; dispatch `action_items` |
-| `action_items.py` | Via watcher | Action thread → Linear issue + wiki binding |
-| `channel_registry.py` | Daily via manager | Maintains `config/slack_channels.json` (skeleton) |
+| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches `thread_watcher`, `open_thread_monitor`; `channel_registry` daily |
+| `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; hot lane dispatches `action_items` |
+| `thread_watcher.py` | Via manager | Poll backup; runs triage on each message |
+| `open_thread_monitor.py` | Via manager | Rebuild `employee_wiki/{member}/open-thread.md` from open routing records |
+| `action_items.py` | Via triage / watcher | Action thread → Linear + routing record |
+| `channel_registry.py` | Daily via manager | Sync `config/slack_channels.json`; auto-join internal channels |
+| `events_router.py` / `events_server.py` | CLI `slack events` | Socket Mode or HTTP Events API |
 | `slack_client.py` | — | Slack Web API (wiki bot; not an agent) |
 
+**CLI:** `company-brain slack events`, `slack sync-channels`, `slack channel list|tag|enable-connect`
+
 Config: `config/operations.yaml` → `slack_platform`; `config/slack_channels.json`
-for per-channel ingest scope. Env: `SLACK_WIKI_BOT_TOKEN` (required; legacy
-`SLACK_BOT_TOKEN` supported), optional `SLACK_WEAVE_BOT_TOKEN` for `@weave`.
+for per-channel ingest scope. Env: `SLACK_WIKI_BOT_TOKEN`, `SLACK_WIKI_APP_TOKEN`
+(Socket Mode), optional `SLACK_WIKI_SIGNING_SECRET` (HTTP).
 
 Completion replies: `engineering/linear/linear_completed/slack_thread_respond.py`
 (dispatched when a bound Slack task reaches Done in Linear).

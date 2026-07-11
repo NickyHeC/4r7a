@@ -352,21 +352,21 @@ Add to `.cursor/rules/agent-organization.mdc`:
 
 **Goal:** Hot lane, tier 0+1, out-of-scope respect.
 
-- [ ] `events_router.py` — Socket Mode + HTTP handlers for wiki app
-- [ ] `ingest_triage.py` — tier 0 signals, debounced tier 1 batch classify
-- [ ] Auto-join internal channels on `member_joined_channel` / startup scan
-- [ ] Admin CLI: channel list, tag out-of-scope, enable-connect
-- [ ] Wire passive messages → routing records; respect `ingest_mode`
-- [ ] Poll remains backup path in `thread_watcher`
+- [x] `events_router.py` — Socket Mode + HTTP handlers for wiki app
+- [x] `ingest_triage.py` — tier 0 signals, debounced tier 1 batch classify
+- [x] Auto-join internal channels on `member_joined_channel` / startup scan
+- [x] Admin CLI: channel list, tag out-of-scope, enable-connect
+- [x] Wire passive messages → routing records; respect `ingest_mode`
+- [x] Poll remains backup path in `thread_watcher`
 
 ### Session 3 — Open threads + attention tiers
 
 **Goal:** Pending response / action pending / reactions.
 
-- [ ] `open_thread_monitor.py` — scan routing records, attention tiers (mirror Gmail 1–4)
-- [ ] Reaction handlers via Events API (`thumbsup`, `ok_hand`, `white_check_mark`)
-- [ ] `employee_wiki/{member}/open-thread.md` writer + Notion sync
-- [ ] Extend `action_items` to use routing records (dedup with open threads)
+- [x] `open_thread_monitor.py` — scan routing records, attention tiers (mirror Gmail 1–4)
+- [x] Reaction handlers via Events API (`thumbsup`, `ok_hand`, `white_check_mark`)
+- [x] `employee_wiki/{member}/open-thread.md` writer + Notion sync
+- [x] Extend `action_items` to use routing records (dedup with open threads)
 
 ### Session 4 — Customer support orchestrator
 

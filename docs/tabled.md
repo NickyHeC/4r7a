@@ -77,7 +77,7 @@ Format for new rows:
 | **Overall agent scheduling design** | operations/slack (+ fleet-wide) | Slack Session 1+ | Addressed in plan; `work_ahead.py` + Linear stale audit remain v1 |
 | Agent filename rename pass | `operations/slack` | **Shipped** Session 1 | `action_items`, `thread_watcher`; `customer_mail_notify` |
 | Internal meeting scheduler | `operations/slack` | Slack Session 5 | Distinct from gcal ext_meeting_scheduler |
-| Open threads pending response | `operations/slack` | Slack Session 3 | Routing records + reactions + employee wiki pages |
+| Open threads pending response | `operations/slack` | **Shipped** Session 3 | Routing records + reactions + employee wiki pages |
 | Feedback intake | `operations/slack` / admin | Slack Session 7 | `@weave` + change-request DB |
 | Question the wiki | `operations/slack` | Slack Session 5 | `ask_wiki` — internal channels only |
 

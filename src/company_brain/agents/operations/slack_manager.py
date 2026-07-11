@@ -52,11 +52,13 @@ class SlackManager(BaseAgent):
 
     async def _run_pass(self) -> None:
         from company_brain.agents.operations.slack.channel_registry import ChannelRegistryAgent
+        from company_brain.agents.operations.slack.open_thread_monitor import OpenThreadMonitorAgent
         from company_brain.agents.operations.slack.thread_watcher import ThreadWatcherAgent
         from company_brain.runtime import get_runtime
 
         runtime = get_runtime()
         self._run_agent(runtime, ThreadWatcherAgent, once=True)
+        self._run_agent(runtime, OpenThreadMonitorAgent)
         if self._should_run_channel_registry():
             self._run_agent(runtime, ChannelRegistryAgent)
             self._state.set(CHANNEL_REGISTRY_DAILY_KEY, datetime.now().date().isoformat())

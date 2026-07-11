@@ -10,7 +10,10 @@ the Weave app (Session 7+).
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import os
+import time
 from datetime import datetime
 from typing import Any
 
@@ -60,6 +63,104 @@ def weave_is_configured() -> bool:
     return bool(os.getenv("SLACK_WEAVE_BOT_TOKEN", "").strip())
 
 
+def wiki_app_token() -> str:
+    return os.getenv("SLACK_WIKI_APP_TOKEN", "").strip()
+
+
+def wiki_signing_secret() -> str:
+    return os.getenv("SLACK_WIKI_SIGNING_SECRET", "").strip()
+
+
+def socket_mode_configured() -> bool:
+    return slack_is_configured() and bool(wiki_app_token())
+
+
+def verify_http_signature(
+    body: bytes,
+    timestamp: str,
+    signature: str,
+    *,
+    signing_secret: str | None = None,
+) -> bool:
+    secret = (signing_secret or wiki_signing_secret()).strip()
+    if not secret or not signature:
+        return False
+    try:
+        ts = int(timestamp)
+    except (TypeError, ValueError):
+        return False
+    if abs(time.time() - ts) > 60 * 5:
+        return False
+    base = f"v0:{timestamp}:{body.decode('utf-8')}"
+    digest = hmac.new(secret.encode(), base.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(f"v0={digest}", signature)
+
+
+def list_channels(*, types: str = "public_channel,private_channel") -> list[dict[str, Any]]:
+    """Paginate ``conversations.list``."""
+    from slack_sdk.errors import SlackApiError
+
+    channels: list[dict[str, Any]] = []
+    cursor: str | None = None
+    try:
+        while True:
+            kwargs: dict[str, Any] = {"types": types, "limit": 200}
+            if cursor:
+                kwargs["cursor"] = cursor
+            resp = client().conversations_list(**kwargs)
+            channels.extend(resp.get("channels") or [])
+            cursor = (resp.get("response_metadata") or {}).get("next_cursor") or ""
+            if not cursor:
+                break
+    except SlackApiError as exc:
+        raise SlackClientError(f"conversations.list failed: {exc}") from exc
+    return channels
+
+
+def join_channel(channel_id: str) -> bool:
+    from slack_sdk.errors import SlackApiError
+
+    try:
+        client().conversations_join(channel=channel_id)
+        return True
+    except SlackApiError:
+        return False
+
+
+def join_internal_channels() -> dict[str, int]:
+    """Join all non–Slack Connect channels the bot is not already in."""
+    joined = 0
+    skipped = 0
+    for ch in list_channels():
+        if ch.get("is_ext_shared") or ch.get("is_member"):
+            skipped += 1
+            continue
+        if join_channel(str(ch.get("id") or "")):
+            joined += 1
+    return {"joined": joined, "skipped": skipped}
+
+
+def auth_test() -> dict[str, Any]:
+    from slack_sdk.errors import SlackApiError
+
+    try:
+        return dict(client().auth_test())
+    except SlackApiError as exc:
+        raise SlackClientError(f"auth.test failed: {exc}") from exc
+
+
+def bot_user_id() -> str:
+    return str(auth_test().get("user_id") or "")
+
+
+def channel_label(channel_id: str, *, name: str | None = None) -> str:
+    if name:
+        return f"#{name.lstrip('#')}"
+    if channel_id.startswith("C"):
+        return channel_id
+    return channel_id
+
+
 def resolve_channel_id(channel: str) -> str:
     """Resolve ``#name`` or channel ID to a channel ID."""
     from slack_sdk.errors import SlackApiError
@@ -88,9 +189,24 @@ def fetch_channel_messages(
     limit: int = 100,
 ) -> list[dict[str, Any]]:
     """Return channel messages (includes thread roots)."""
+    channel_id = resolve_channel_id(channel)
+    return fetch_channel_messages_by_id(
+        channel_id,
+        oldest=oldest,
+        latest=latest,
+        limit=limit,
+    )
+
+
+def fetch_channel_messages_by_id(
+    channel_id: str,
+    *,
+    oldest: float | None = None,
+    latest: float | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
     from slack_sdk.errors import SlackApiError
 
-    channel_id = resolve_channel_id(channel)
     kwargs: dict[str, Any] = {"channel": channel_id, "limit": limit}
     if oldest is not None:
         kwargs["oldest"] = str(oldest)

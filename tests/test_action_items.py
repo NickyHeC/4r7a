@@ -32,9 +32,15 @@ def test_extract_action_title():
 def test_action_items_creates_binding(tmp_path, monkeypatch):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
+    wiki = tmp_path / "wiki"
+    wiki.mkdir()
     monkeypatch.setattr(
         "company_brain.agents.engineering.linear.task_bindings.CONFIG_DIR",
         config_dir,
+    )
+    monkeypatch.setattr(
+        "company_brain.agents.operations.slack.routing.resolve_wiki_dir",
+        lambda: wiki,
     )
     config = MagicMock()
     agent = ActionItemsAgent(config)
@@ -132,6 +138,14 @@ def test_thread_watcher_dispatches_on_action_item():
             "company_brain.agents.operations.slack.thread_watcher.cfg.watched_channels",
             return_value=["#team-ops"],
         ),
+        patch(
+            "company_brain.agents.operations.slack.thread_watcher.slack_client.resolve_channel_id",
+            return_value="C1",
+        ),
+        patch(
+            "company_brain.agents.operations.slack.thread_watcher.channels_config.is_out_of_scope",
+            return_value=False,
+        ),
         patch.object(agent, "_since_timestamp", return_value=MagicMock()),
         patch(
             "company_brain.agents.operations.slack.thread_watcher.slack_client.fetch_channel_messages",
@@ -141,6 +155,7 @@ def test_thread_watcher_dispatches_on_action_item():
             "company_brain.agents.operations.slack.thread_watcher.slack_client.datetime_to_slack_ts",
             return_value=0.0,
         ),
+        patch.object(agent._triage, "process_message", return_value={"status": "routed"}),
         patch(
             "company_brain.agents.operations.slack.thread_watcher.is_handled",
             return_value=False,
@@ -154,10 +169,11 @@ def test_thread_watcher_dispatches_on_action_item():
             return_value={"status": "created"},
         ) as mock_dispatch,
     ):
-        scanned, hits = agent._scan_channel("#team-ops")
+        scanned, hits, triaged = agent._scan_channel("#team-ops")
 
     assert scanned == 1
     assert hits == 1
+    assert triaged == 1
     mock_dispatch.assert_called_once()
 
 
@@ -192,7 +208,7 @@ def test_slack_manager_dispatches_thread_watcher(monkeypatch):
 
         asyncio.run(manager._run_pass())
 
-    assert mock_runtime.run.call_count == 1
+    assert mock_runtime.run.call_count == 2
 
 
 def test_wiki_bot_token_fallback(monkeypatch):

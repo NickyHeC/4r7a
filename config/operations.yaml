@@ -233,6 +233,16 @@ slack_platform:
     - follow up
     - will do
     - assigned to
+  debounce_minutes: 3
+  events:
+    mode: socket
+    http_path: /slack/events/wiki
+  reactions:
+    acknowledge:
+      - thumbsup
+      - ok_hand
+    done:
+      - white_check_mark
 
 # Notion platform (operations/notion/) — task DB scanner + propagation.
 notion_platform:

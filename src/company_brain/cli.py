@@ -691,3 +691,76 @@ def bridge_rollup() -> None:
     config = load_config()
     result = BlockerRollupAgent(config).execute()
     click.echo(result)
+
+
+@main.group()
+def slack() -> None:
+    """Slack platform — events listener and channel registry admin."""
+
+
+@slack.group("channel")
+def slack_channel() -> None:
+    """Admin channel registry commands."""
+
+
+@slack_channel.command("list")
+def slack_channel_list() -> None:
+    """List channels in ``config/slack_channels.json``."""
+    from company_brain.agents.operations.slack import channels_config
+
+    rows = channels_config.list_channels_summary()
+    if not rows:
+        click.echo("No channels in registry.")
+        return
+    for row in rows:
+        click.echo(
+            f"{row.get('id')}\t{row.get('name', '')}\t"
+            f"mode={row.get('ingest_mode', 'hot')}\t"
+            f"connect={row.get('is_connect', False)}"
+        )
+
+
+@slack_channel.command("tag")
+@click.argument("channel_id")
+@click.argument("mode", type=click.Choice(["out-of-scope", "hot", "cold"]))
+def slack_channel_tag(channel_id: str, mode: str) -> None:
+    """Set channel ingest mode (admin)."""
+    from company_brain.agents.operations.slack import channels_config
+
+    normalized = mode.replace("-", "_")
+    entry = channels_config.set_ingest_mode(channel_id, normalized)
+    click.secho(f"Tagged {channel_id} as {entry.get('ingest_mode')}", fg="green")
+
+
+@slack_channel.command("enable-connect")
+@click.argument("channel_id")
+@click.option("--name", default=None, help="Channel display name.")
+def slack_channel_enable_connect(channel_id: str, name: str | None) -> None:
+    """Enable Slack Connect channel for customer ingest (admin)."""
+    from company_brain.agents.operations.slack import channels_config, slack_client
+
+    channels_config.enable_connect_channel(channel_id, name=name)
+    if slack_client.join_channel(channel_id):
+        channels_config.upsert_channel(channel_id, is_member=True)
+    click.secho(f"Enabled Connect ingest for {channel_id}", fg="green")
+
+
+@slack.command("events")
+@click.option("--http", is_flag=True, help="Use HTTP mode instead of Socket Mode.")
+@click.option("--host", default="0.0.0.0", help="HTTP bind host.")
+@click.option("--port", type=int, default=3000, help="HTTP bind port.")
+def slack_events(http: bool, host: str, port: int) -> None:
+    """Run the wiki Slack Events API listener (hot lane)."""
+    from company_brain.agents.operations.slack.events_server import serve_events
+
+    serve_events(http=http, host=host, port=port)
+
+
+@slack.command("sync-channels")
+def slack_sync_channels() -> None:
+    """Sync Slack API channel list into the registry and join internal channels."""
+    from company_brain.agents.operations.slack.channel_registry import ChannelRegistryAgent
+
+    config = load_config()
+    result = ChannelRegistryAgent(config).run()
+    click.echo(result)

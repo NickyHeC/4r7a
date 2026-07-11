@@ -54,6 +54,12 @@ class StateStore:
         data[key] = value
         self._save(data)
 
+    def delete(self, key: str) -> None:
+        data = self._load()
+        if key in data:
+            del data[key]
+            self._save(data)
+
 
 def changed_since(
     key: str, signature: Any, *, store: StateStore | None = None, update: bool = True
