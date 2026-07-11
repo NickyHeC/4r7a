@@ -885,6 +885,60 @@ def discord_channel_list() -> None:
         )
 
 
+@discord.command("manager")
+def discord_manager_cmd() -> None:
+    """Run the persistent Discord manager loop."""
+    from company_brain.agents.growth.discord_manager import DiscordManager
+
+    config = load_config()
+    DiscordManager(config).run()
+
+
+@discord.group("onboarding")
+def discord_onboarding_group() -> None:
+    """Discord platform onboarding — estimate and backfill."""
+
+
+@discord_onboarding_group.command("estimate")
+@click.option(
+    "--days",
+    type=int,
+    default=None,
+    help="Backfill window in days (default from config).",
+)
+@click.option("--all", "all_history", is_flag=True, help="Estimate full channel history.")
+def discord_onboarding_estimate(days: int | None, all_history: bool) -> None:
+    """$0 message count estimate for Discord onboarding."""
+    from company_brain.agents.growth.discord.discord_onboarding import estimate_backfill
+
+    result = estimate_backfill(days=days, all_history=all_history)
+    click.echo(result)
+
+
+@discord_onboarding_group.command("run")
+@click.option("--days", type=int, default=None, help="Backfill window in days.")
+@click.option("--all", "all_history", is_flag=True, help="Backfill full channel history.")
+@click.option("--no-manager", is_flag=True, help="Skip starting discord_manager.")
+@click.option("--absorb", is_flag=True, help="Queue technical threads and run absorb.")
+def discord_onboarding_run(
+    days: int | None,
+    all_history: bool,
+    no_manager: bool,
+    absorb: bool,
+) -> None:
+    """Run Discord onboarding backfill and start the manager."""
+    from company_brain.agents.growth.discord.discord_onboarding import DiscordOnboardingAgent
+
+    config = load_config()
+    result = DiscordOnboardingAgent(config).run(
+        start_manager=not no_manager,
+        backfill_days=days,
+        all_history=all_history,
+        absorb=absorb,
+    )
+    click.echo(result)
+
+
 @main.group()
 def hr() -> None:
     """HR roster and offboarding helpers."""

@@ -149,8 +149,8 @@ Discord. Draft replies for humans go to Slack `#discord` (session 4+).
 Add per-member `bindings.discord_id` (and optional `discord_handle`) in
 `config/members.yaml` so the system can detect when a team member is already in a thread.
 
-**CLI:** `discord gateway`, `discord sync-channels`, `discord channel list`.
-Onboarding (session 8): `company-brain discord onboarding estimate|run`.
+**CLI:** `discord gateway`, `discord sync-channels`, `discord channel list`, `discord manager`,
+`discord onboarding estimate|run`.
 
 Handbook: `docs/agents/growth.md` (forthcoming).
 
