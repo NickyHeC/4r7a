@@ -13,7 +13,7 @@ Every agent runs the loop in `BaseAgent.execute()`:
 
 - State-changing or quality-sensitive agents should override `verify(output) -> AgentResult` to triage the result as `ok` | `rework` | `noise`.
 - To iterate on weak output, raise `max_iterations` (the loop re-runs until `verify` passes or the cap is hit). Deterministic agents keep `max_iterations = 1`.
-- For consequential changes, verify in a sandbox: `runtime.verify_in_sandbox(cmd, mount=..., allow_hosts=...)` runs the check in an ephemeral cloud VM when `COMPANY_BRAIN_SANDBOX=vm`; it returns `None` (fall back to in-process) when no sandbox is available. Reproduce, then commit only if it passes.
+- For consequential changes, verify in a sandbox: `runtime.verify_in_sandbox(cmd, mount=..., allow_hosts=...)` runs the check in an ephemeral smolvm microVM when `COMPANY_BRAIN_SANDBOX=smolvm`; it returns `None` (fall back to in-process) when no sandbox is available. Reproduce, then commit only if it passes.
 
 ## Cost gates (be cheap)
 

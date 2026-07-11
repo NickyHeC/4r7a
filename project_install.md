@@ -40,7 +40,9 @@ Ask the user: local or cloud?
   single machine / trying it out.
 - **cloud**: wiki Markdown lives on the cloud VM's persistent storage at
   `/workspace/wiki`. Set `COMPANY_BRAIN_MODE=cloud` and
-  `COMPANY_BRAIN_WIKI_DIR=/workspace/wiki`.
+  `COMPANY_BRAIN_WIKI_DIR=/workspace/wiki`. Default VM provider is
+  **smol cloud** (Smol Machines); install the smolvm CLI and configure smol
+  cloud credentials when using the default fleet.
 
 Copy `.env.example` to `.env` and fill values as you go.
 
@@ -50,6 +52,19 @@ Copy `.env.example` to `.env` and fill values as you go.
 pip install -e .
 company-brain doctor
 ```
+
+For VM-backed runs (sandbox verification or cloud fleet), install the default
+[smolvm](https://github.com/smol-machines/smolvm) CLI (Smol Machines):
+
+```bash
+curl -sSL https://smolmachines.com/install.sh | bash
+smolvm --help
+```
+
+Local sandbox: set `COMPANY_BRAIN_SANDBOX=smolvm`. Cloud fleet (default provider):
+set `COMPANY_BRAIN_MODE=cloud`, `COMPANY_BRAIN_RUNTIME=cloud`, and configure smol
+cloud credentials when the `smol machine` integration ships. To use a different
+cloud VM provider, set `COMPANY_BRAIN_VM_PROVIDER` to your provider key.
 
 `doctor` prints the mode, wiki dir, runtime, and which platforms are connected.
 Re-run it after each step below to confirm progress.
@@ -275,7 +290,7 @@ Confirm API keys with the user.
      OpenAI-compatible endpoint (`http://localhost:11434/v1`); `GLM_API_KEY` can
      be any non-empty value (`ollama` ignores it). Set `COMPANY_BRAIN_LLM_MODEL`
      to the exact Ollama model tag you pulled (e.g. `glm-5`). Add the host to
-     `vmspec.toml` `allow_hosts` only if Ollama runs off-VM.
+     `Smolfile` `[network] allow_hosts` only if Ollama runs off-VM.
   - GLM-5 is large (744B-A40B); run Ollama on a capable GPU VM. For high-throughput
     production serving, SGLang (RadixAttention) or vLLM (`--enable-prefix-caching`)
     remain alternatives — same `glm` provider, just a different `GLM_BASE_URL`.

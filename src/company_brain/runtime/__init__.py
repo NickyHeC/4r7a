@@ -7,9 +7,10 @@ from company_brain.runtime.runtime import (
     CloudRuntime,
     LocalDeployer,
     LocalRuntime,
+    SmolCloudDeployer,
     get_runtime,
 )
-from company_brain.runtime.sandbox import VMSandbox, verify_in_sandbox
+from company_brain.runtime.sandbox import SmolSandbox, VMSandbox, verify_in_sandbox
 
 __all__ = [
     "AgentRuntime",
@@ -18,7 +19,9 @@ __all__ = [
     "LocalDeployer",
     "CloudRuntime",
     "CloudDeployer",
+    "SmolCloudDeployer",
     "get_runtime",
+    "SmolSandbox",
     "VMSandbox",
     "verify_in_sandbox",
 ]

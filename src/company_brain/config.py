@@ -45,8 +45,23 @@ def resolve_raw_dir() -> Path:
 
 
 def resolve_runtime() -> str:
-    """Agent runtime selector: ``local`` (in-process) or ``cloud`` (VM)."""
+    """Agent runtime selector: ``local`` (in-process) or ``cloud`` (VM fleet)."""
     return os.getenv("COMPANY_BRAIN_RUNTIME", "local").strip().lower()
+
+
+def resolve_vm_provider() -> str:
+    """VM backend when agents run inside VMs.
+
+    Defaults: ``smolvm`` in local mode (smolvm microVMs for sandbox/local VM work),
+    ``smolcloud`` in cloud mode (Smol Machines hosted fleet via ``smol machine``).
+    Override with ``COMPANY_BRAIN_VM_PROVIDER`` to use another service that meets
+    the same requirements (CLI, nested VM spin-up, persistent VMs, cron or persistent
+    managers).
+    """
+    explicit = os.getenv("COMPANY_BRAIN_VM_PROVIDER", "").strip().lower()
+    if explicit:
+        return explicit
+    return "smolcloud" if resolve_mode() == "cloud" else "smolvm"
 
 
 def resolve_mode() -> str:
@@ -63,10 +78,10 @@ def resolve_mode() -> str:
 
 
 def resolve_sandbox() -> str:
-    """Sandbox backend for verification: ``off`` (in-process) or ``vm``.
+    """Sandbox backend for verification: ``off`` (in-process) or ``smolvm``.
 
-    When ``vm`` is selected, state-changing agents can verify/reproduce a
-    change inside an ephemeral cloud VM before committing it.
+    When ``smolvm`` is selected, state-changing agents can verify/reproduce a
+    change inside an ephemeral smolvm microVM before committing it.
     """
     return os.getenv("COMPANY_BRAIN_SANDBOX", "off").strip().lower()
 

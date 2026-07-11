@@ -120,6 +120,6 @@ When they say yes, run the three-pass checklist in
    duplicate helpers / orphaned config keys.
 4. **Safety & deps** — secret scan the staged diff (`detect-secrets` / `gitleaks`;
    never commit `.env`/tokens), `pip-audit` when deps changed, new egress hosts in the
-   `vmspec.toml` allow_list. Optional: `mypy`, `pytest --cov`, `codespell`, extended ruff.
+   `Smolfile` allow_list. Optional: `mypy`, `pytest --cov`, `codespell`, extended ruff.
 
 Do not run destructive cleanup without explicit approval.

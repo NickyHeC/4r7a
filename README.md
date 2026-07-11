@@ -157,13 +157,22 @@ A scoped **MCP server** (co-located with the wiki, reached over a private mesh) 
 
 Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (cheap cost gate) -> `run` -> `verify` (triage: ok / rework / noise), up to `max_iterations`.
 
-- **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral VM sandbox (`COMPANY_BRAIN_SANDBOX=vm`) before committing — reproduce, then commit only if it passes.
+- **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral [smolvm](https://github.com/smol-machines/smolvm) sandbox (`COMPANY_BRAIN_SANDBOX=smolvm`) before committing — reproduce, then commit only if it passes.
 - **Cost gates**: expensive agents implement `should_run()` using cheap change-detection (`agents/gates.py`) so no LLM is invoked when nothing changed; re-fires dedup via stored "handled" state.
 - **Notify selectively**: **every** human-facing message goes through `notify.Notifier` / `Signal` (never a direct Slack call) — detect everything, deliver only what's `actionable`/`alert`; `info` and routine ticks are silent.
 
 ## Cloud direction
 
-The target state runs every agent in an isolated cloud VM: company-brain spans a multi-VM fleet, managers spin up specialist VMs on demand via a cloud provider CLI, and all VMs share the wiki volume. Cloud VMs should be persistent with no billing at idle (schedule-based managers live in VMs woken by cron where available, or run persistently otherwise). Agents dispatch through an `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|cloud`) so the same code runs in-process today and on a VM later. VM config lives in `vmspec.toml`.
+FourSeven can run on **any cloud VM service** that meets these requirements: a CLI (or API) to spin up and manage VMs, agents in a manager VM can launch nested VMs for specialists, persistent machines with no billing at idle, and cron-based wake for schedule-driven managers where the provider supports it (otherwise managers run persistently in their VM).
+
+**Defaults** (override with `COMPANY_BRAIN_VM_PROVIDER`):
+
+| Mode | Default backend | Tooling |
+|------|-----------------|---------|
+| Local VM / sandbox | [smolvm](https://github.com/smol-machines/smolvm) (Smol Machines) | `smolvm machine run` with the repo `Smolfile` |
+| Cloud fleet | [smol cloud](https://smolmachines.com/) (Smol Machines hosted) | `smol machine` CLI (integration pending) |
+
+The same `Smolfile` spec describes image, egress allow-list, and shared wiki volume mounts for local smolvm runs and cloud deployment. Agents dispatch through `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|cloud`) so the same code runs in-process today and on a VM later.
 
 ## Setup (agent-assisted)
 
@@ -227,7 +236,7 @@ switches the model:
 ```
 company-brain/
   project_install.md      # Agent-assisted setup runbook
-  vmspec.toml             # Cloud VM image, network allow-list, shared wiki volume
+  Smolfile                # VM spec (Smol Machines Smolfile): image, allow_hosts, volumes
   config/                 # wiki, notion, finance, engineering, operations, models, members, bridge
   src/company_brain/
     cli.py · config.py · runtime/ · wiki/ · notion/ · doctor/ · llm/

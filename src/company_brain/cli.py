@@ -341,7 +341,7 @@ def doctor_connect(as_json: bool, min_score: int | None, no_history: bool) -> No
 @doctor.command("agents")
 @_doctor_options
 def doctor_agents(as_json: bool, min_score: int | None, no_history: bool) -> None:
-    """Agent naming, docs, vmspec.toml allow_hosts, handbook coverage."""
+    """Agent naming, docs, Smolfile allow_hosts, handbook coverage."""
     from company_brain.doctor.runner import main_exit
 
     main_exit(

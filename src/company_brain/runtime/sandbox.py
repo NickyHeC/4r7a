@@ -1,13 +1,15 @@
-"""Sandboxed verification via ephemeral cloud VMs.
+"""Sandboxed verification via smolvm.
 
 Inspired by Ramp's self-maintaining system: reproduce/verify a change inside a
-sandbox and only treat it as good once the check passes. Here the sandbox is an
-ephemeral cloud VM with the wiki (or a copy of it) mounted at ``/workspace`` and
-egress locked to an allow-list.
+sandbox and only treat it as good once the check passes. The default local VM
+backend is an ephemeral [smolvm](https://github.com/smol-machines/smolvm) microVM
+(Smol Machines) with the wiki (or a copy of it) mounted at ``/workspace`` and egress
+locked to an allow-list.
 
-All VM sandbox use is optional: if ``COMPANY_BRAIN_SANDBOX`` is not ``vm`` or the
-VM provider binary is absent, ``VMSandbox.available()`` is False and callers
-fall back to in-process verification.
+All smolvm use is optional: if ``COMPANY_BRAIN_SANDBOX`` is not ``smolvm`` or the
+``smolvm`` binary is absent, ``SmolSandbox.available()`` is False and callers
+fall back to in-process verification. Other VM backends can implement the same
+contract when ``COMPANY_BRAIN_VM_PROVIDER`` points at a different local provider.
 """
 
 from __future__ import annotations
@@ -23,17 +25,17 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_IMAGE = "python:3.12"
 GUEST_MOUNT = "/workspace"
-VM_BINARY = "vm"
+SMOLVM_BINARY = "smolvm"
 
 
-class VMSandbox:
-    """Runs a command in an ephemeral cloud VM with a mounted directory."""
+class SmolSandbox:
+    """Runs a command in an ephemeral smolvm microVM with a mounted directory."""
 
     def __init__(self, image: str = DEFAULT_IMAGE):
         self.image = image
 
     def available(self) -> bool:
-        return resolve_sandbox() == "vm" and shutil.which(VM_BINARY) is not None
+        return resolve_sandbox() == "smolvm" and shutil.which(SMOLVM_BINARY) is not None
 
     def run(
         self,
@@ -47,17 +49,21 @@ class VMSandbox:
 
         Returns (exit_code, combined_output). The VM is cleaned up on exit.
         """
-        args = [VM_BINARY, "run", "--net"]
+        args = [SMOLVM_BINARY, "machine", "run", "--net"]
         for host in allow_hosts or []:
             args += ["--allow-host", host]
         args += ["--image", self.image, "-v", f"{mount}:{GUEST_MOUNT}", "--", *command]
-        logger.debug("VM sandbox: %s", " ".join(args))
+        logger.debug("smolvm sandbox: %s", " ".join(args))
         try:
             proc = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
         except (FileNotFoundError, subprocess.TimeoutExpired) as e:
-            logger.warning("VM sandbox unavailable/timed out: %s", e)
+            logger.warning("smolvm sandbox unavailable/timed out: %s", e)
             return 1, str(e)
         return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
+
+
+# Alias kept for provider-agnostic call sites.
+VMSandbox = SmolSandbox
 
 
 def verify_in_sandbox(
@@ -66,12 +72,12 @@ def verify_in_sandbox(
     mount: Path,
     allow_hosts: list[str] | None = None,
 ) -> bool | None:
-    """Run a verification command in a VM sandbox.
+    """Run a verification command in a VM sandbox (default: smolvm).
 
     Returns True/False on the check result, or None when no sandbox is available
     (caller should then fall back to in-process verification).
     """
-    sandbox = VMSandbox()
+    sandbox = SmolSandbox()
     if not sandbox.available():
         return None
     code, output = sandbox.run(check_command, mount=mount, allow_hosts=allow_hosts)

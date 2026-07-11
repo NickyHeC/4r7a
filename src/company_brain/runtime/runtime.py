@@ -3,9 +3,20 @@
 Managers dispatch specialist agents through an ``AgentRuntime`` instead of
 instantiating and running them directly. Today the only runtime is
 ``LocalRuntime`` (in-process). The target state runs each agent in its own cloud
-VM: ``CloudRuntime`` will use a cloud VM provider CLI to spin up a VM, mount the
-shared wiki volume, deploy the agent, run it, and tear the VM down — all without
-changing agent code.
+VM: ``CloudRuntime`` uses a pluggable ``AgentDeployer`` to spin up a VM, mount
+the shared wiki volume, deploy the agent, run it, and tear the VM down — all
+without changing agent code.
+
+Default VM backends (override with ``COMPANY_BRAIN_VM_PROVIDER``):
+
+- **local mode** — [smolvm](https://github.com/smol-machines/smolvm) (Smol
+  Machines) for ephemeral local microVMs.
+- **cloud mode** — [smol cloud](https://smolmachines.com/) (Smol Machines hosted
+  fleet) via the ``smol machine`` CLI when no other provider is configured.
+
+Any cloud VM service that satisfies the same requirements (CLI, agents can spin
+up nested VMs, persistent machines with no idle billing, cron or persistent
+managers) can be wired in as an alternate deployer.
 
 Because agents keep state only in the shared wiki volume (and env), the same
 agent runs identically in-process or on a spun-up VM.
@@ -18,14 +29,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-from company_brain.config import AppConfig, resolve_runtime
+from company_brain.config import AppConfig, resolve_runtime, resolve_vm_provider
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class VMSpec:
-    """Description of a VM to run an agent in (maps to ``vmspec.toml``)."""
+    """Description of a VM to run an agent in (maps to ``Smolfile`` / ``VMSpec``)."""
 
     name: str
     image: str = "python:3.12"
@@ -109,59 +120,96 @@ class LocalDeployer(AgentDeployer):
 
 
 class CloudDeployer(AgentDeployer):
-    """Deploys agents to cloud VMs via a provider CLI.
+    """Generic cloud VM deployer for non-default providers.
 
-    Placeholder: the cloud VM provider integration is pending. When available
-    this will shell out to the provider CLI to create/start a VM from a VMSpec
-    (vmspec.toml), mount the shared wiki volume, run the agent, and stop/destroy
-    the VM. Invokable from a developer machine or from another cloud VM (a
-    manager VM spinning up specialist VMs on demand).
+    Placeholder for alternate cloud VM services. Subclass or replace when wiring a
+    provider other than smol cloud.
     """
 
     def ensure_vm(self, spec: VMSpec) -> str:
-        raise NotImplementedError(_CLOUD_PENDING)
+        raise NotImplementedError(_cloud_pending(resolve_vm_provider()))
 
     def spin_up(self, spec: VMSpec) -> str:
-        raise NotImplementedError(_CLOUD_PENDING)
+        raise NotImplementedError(_cloud_pending(resolve_vm_provider()))
 
     def deploy(self, agent_cls: type, vm: str, **kwargs: Any) -> Any:
-        raise NotImplementedError(_CLOUD_PENDING)
+        raise NotImplementedError(_cloud_pending(resolve_vm_provider()))
 
     def teardown(self, vm: str) -> None:
-        raise NotImplementedError(_CLOUD_PENDING)
+        raise NotImplementedError(_cloud_pending(resolve_vm_provider()))
+
+
+class SmolCloudDeployer(AgentDeployer):
+    """Deploys agents to smol cloud VMs via the ``smol machine`` CLI.
+
+    Default cloud backend when ``COMPANY_BRAIN_VM_PROVIDER=smolcloud`` (the default
+    in cloud mode). Placeholder until the smol cloud ``smol machine`` CLI is fully
+    integrated: it will create/start a VM from a ``Smolfile``, mount the shared
+    wiki volume, run the agent, and stop/destroy the VM. Invokable from a
+    developer machine or from a manager VM spinning up specialist VMs on demand.
+    """
+
+    def ensure_vm(self, spec: VMSpec) -> str:
+        raise NotImplementedError(_SMOL_CLOUD_PENDING)
+
+    def spin_up(self, spec: VMSpec) -> str:
+        raise NotImplementedError(_SMOL_CLOUD_PENDING)
+
+    def deploy(self, agent_cls: type, vm: str, **kwargs: Any) -> Any:
+        raise NotImplementedError(_SMOL_CLOUD_PENDING)
+
+    def teardown(self, vm: str) -> None:
+        raise NotImplementedError(_SMOL_CLOUD_PENDING)
 
 
 class CloudRuntime(AgentRuntime):
     """Run an agent on a cloud VM (spin up, deploy, run, tear down).
 
-    Placeholder until the cloud VM provider is integrated; falls back to local
-    execution so the system keeps working today.
+    Uses the configured VM provider (default: smol cloud). Falls back to local
+    in-process execution until the provider integration is ready.
     """
 
     def __init__(self, deployer: AgentDeployer | None = None):
-        self._deployer = deployer or CloudDeployer()
+        self._deployer = deployer or _deployer_for_provider(resolve_vm_provider())
 
     def run(self, agent_cls: type, config: AppConfig, /, **kwargs: Any) -> Any:
+        provider = resolve_vm_provider()
         logger.warning(
-            "CloudRuntime not available yet (cloud VM provider pending); "
+            "CloudRuntime not available yet (%s integration pending); "
             "running '%s' locally instead.",
+            provider,
             getattr(agent_cls, "name", agent_cls.__name__),
         )
         return LocalRuntime().run(agent_cls, config, **kwargs)
 
     def start(self, agent_cls: type, config: AppConfig, /, **kwargs: Any) -> Any:
+        provider = resolve_vm_provider()
         logger.warning(
-            "CloudRuntime not available yet (cloud VM provider pending); "
+            "CloudRuntime not available yet (%s integration pending); "
             "starting '%s' in a local background thread instead of a dedicated VM.",
+            provider,
             getattr(agent_cls, "name", agent_cls.__name__),
         )
         return super().start(agent_cls, config, **kwargs)
 
 
-_CLOUD_PENDING = (
-    "Cloud VM deployment is not available yet; the cloud provider integration "
+_SMOL_CLOUD_PENDING = (
+    "smol cloud deployment is not available yet; the `smol machine` CLI integration "
     "is in development. Set COMPANY_BRAIN_RUNTIME=local for now."
 )
+
+
+def _cloud_pending(provider: str) -> str:
+    return (
+        f"Cloud VM deployment via provider '{provider}' is not integrated yet. "
+        "Set COMPANY_BRAIN_RUNTIME=local or COMPANY_BRAIN_VM_PROVIDER=smolcloud."
+    )
+
+
+def _deployer_for_provider(provider: str) -> AgentDeployer:
+    if provider == "smolcloud":
+        return SmolCloudDeployer()
+    return CloudDeployer()
 
 
 def get_runtime(name: str | None = None) -> AgentRuntime:

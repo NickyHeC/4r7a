@@ -1,4 +1,4 @@
-"""Agents doctor — naming, docs, vmspec drift, handbook coverage."""
+"""Agents doctor — naming, docs, Smolfile drift, handbook coverage."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from company_brain.doctor.types import CheckResult, DoctorReport
 
 AGENTS_ROOT = PROJECT_ROOT / "src" / "company_brain" / "agents"
 HANDBOOK_DIR = PROJECT_ROOT / "docs" / "agents"
-VMSPEC = PROJECT_ROOT / "vmspec.toml"
+VMSPEC = PROJECT_ROOT / "Smolfile"
 
 _SKIP_FILES = frozenset({"base.py", "gates.py", "result.py", "__init__.py"})
 _SKIP_SUFFIXES = ("_client.py",)
@@ -64,7 +64,7 @@ def _iter_handbook_agent_files() -> list[Path]:
     return [p for p in _iter_agent_py_files() if _defines_agent_class(p)]
 
 
-def _load_vmspec_hosts() -> set[str]:
+def _load_smolfile_hosts() -> set[str]:
     if not VMSPEC.exists():
         return set()
     text = VMSPEC.read_text()
@@ -124,7 +124,7 @@ def run_agents_doctor() -> DoctorReport:
     agent_files = _iter_agent_py_files()
     handbook_files = _iter_handbook_agent_files()
     handbook = _handbook_text()
-    vmspec_hosts = _load_vmspec_hosts()
+    smolfile_hosts = _load_smolfile_hosts()
 
     hyphen_files = [p.name for p in agent_files if "-" in p.name]
     if hyphen_files:
@@ -184,23 +184,25 @@ def run_agents_doctor() -> DoctorReport:
     api_hosts: set[str] = set()
     for path in AGENTS_ROOT.rglob("*.py"):
         api_hosts |= _extract_api_hosts(path)
-    # Google Calendar REST uses www.googleapis.com; vmspec lists calendar.googleapis.com.
-    if "calendar.googleapis.com" in vmspec_hosts and "www.googleapis.com" in api_hosts:
+    # Google Calendar REST uses www.googleapis.com; Smolfile lists calendar.googleapis.com.
+    if "calendar.googleapis.com" in smolfile_hosts and "www.googleapis.com" in api_hosts:
         api_hosts.discard("www.googleapis.com")
-    drift = sorted(h for h in api_hosts if h not in vmspec_hosts)
+    drift = sorted(h for h in api_hosts if h not in smolfile_hosts)
     if drift:
         report.checks.append(
             CheckResult(
-                "vmspec_allow_hosts",
+                "smolfile_allow_hosts",
                 "warn",
-                f"API hosts in code missing from vmspec.toml: {', '.join(drift)}",
-                "add hosts to vmspec.toml [network] allow_hosts",
+                f"API hosts in code missing from Smolfile: {', '.join(drift)}",
+                "add hosts to Smolfile [network] allow_hosts",
             )
         )
     else:
         report.checks.append(
             CheckResult(
-                "vmspec_allow_hosts", "pass", "vmspec.toml allow_hosts covers agent API hosts"
+                "smolfile_allow_hosts",
+                "pass",
+                "Smolfile allow_hosts covers agent API hosts",
             )
         )
 

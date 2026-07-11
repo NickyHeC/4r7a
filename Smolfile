@@ -1,9 +1,15 @@
-# vmspec.toml — VM specification for running company-brain agents in the cloud.
+# Smolfile — reproducible VM spec for running company-brain agents.
+# Format: https://github.com/smol-machines/smolvm (Smol Machines / smolvm).
+# Docs: https://smolmachines.com/
 #
-# Each agent (or the manager fleet) runs in an isolated cloud VM. The wiki lives
-# on a shared persistent volume mounted at /workspace/wiki so the Markdown source
-# of truth is consistent across every VM in the fleet. Egress is locked to the
-# APIs the agents actually use.
+# Default backends: smolvm locally, smol cloud in production. Any cloud VM service
+# that satisfies the same requirements (CLI, nested VM spin-up, persistent volume,
+# cron or persistent managers) can consume an equivalent spec.
+#
+# Each agent (or the manager fleet) runs in an isolated microVM. The wiki lives
+# on a shared volume mounted at /workspace/wiki so the Markdown source of truth
+# is consistent across every VM in the fleet. Egress is locked to the APIs the
+# agents actually use.
 
 image = "python:3.12"
 net = true

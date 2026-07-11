@@ -34,7 +34,7 @@ score = 100 − 1.5 × fails − 0.75 × warns
 | Doctor | Scope |
 |--------|--------|
 | `connect` | Env tokens, CLI tools, platform auth (read-only) |
-| `agents` | Filename conventions, docstrings, handbook coverage, `vmspec.toml` allow_hosts |
+| `agents` | Filename conventions, docstrings, handbook coverage, `Smolfile` allow_hosts |
 | `wiki` | MD-first flow — no direct Notion imports in agents |
 | `ops` | Notifier transport, receipt forward policy, Gmail send surface |
 | `naming` | Agent/wiki slug conventions, legacy path drift vs `name_migrate.py` |
@@ -135,7 +135,7 @@ git diff --cached                       # eyeball staged diff for tokens before 
 pip-audit                               # or: pipx run pip-audit
 ```
 
-- New API host / egress? Add it to the `vmspec.toml` allow_list (the `agents` doctor checks this).
+- New API host / egress? Add it to the `Smolfile` `[network] allow_hosts` (the `agents` doctor checks this).
 - New dependency? Pin a floor in `pyproject.toml`, confirm it is actually imported
   (no orphan deps), and re-run `pip-audit`.
 
@@ -160,7 +160,7 @@ accepted debt in the PR.
 
 Hard blockers include: platform duplication, Notifier bypass, wiki bypass,
 runtime bypass in managers, Gmail send without dual opt-in, finance writes at
-source, and new API hosts missing from `vmspec.toml` `allow_hosts`.
+source, and new API hosts missing from `Smolfile` `[network] allow_hosts`.
 
 ## Pre-commit
 
