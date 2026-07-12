@@ -132,8 +132,9 @@ class SyncPullAgent(BaseAgent):
             )
             return SyncAction.MERGE
 
-        # CONFLICT — mark frontmatter for Session 4; do not overwrite either side.
+        # CONFLICT — mark frontmatter for Conflict Resolutions; do not overwrite either side.
         fm = mark_sync_conflict(fm, reason=decision.reason)
+        fm["conflict_notion_body"] = notion_body
         fm["last_updated"] = now
         self._store.write(rel_path, MarkdownDoc(frontmatter=fm, body=doc.body))
         self.logger.warning("sync_pull conflict on %s (%s)", rel_path, decision.reason)

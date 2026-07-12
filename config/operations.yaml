@@ -256,9 +256,10 @@ slack_platform:
     absorb_on_backfill: false
 
 # Notion platform (operations/notion_manager + operations/notion/) —
-# bidirectional page sync (sync_pull) + task DB scanner + later specialists.
+# bidirectional page sync, @wiki directives, conflicts, page_system, task DBs.
 notion_platform:
   poll_interval_minutes: 30
+  stub_ttl_days: 7
 
 # External wiki mount (admin one-shot import into wiki/external/{source}/).
 external_wiki:

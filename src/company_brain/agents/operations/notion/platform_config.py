@@ -17,3 +17,7 @@ def _notion_platform_cfg(config_dir: Path | None = None) -> dict[str, Any]:
 
 def poll_interval_minutes(*, config_dir: Path | None = None) -> int:
     return int(_notion_platform_cfg(config_dir).get("poll_interval_minutes") or 30)
+
+
+def stub_ttl_days(*, config_dir: Path | None = None) -> int:
+    return int(_notion_platform_cfg(config_dir).get("stub_ttl_days") or 7)

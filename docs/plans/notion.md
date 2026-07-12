@@ -222,21 +222,21 @@ Frontmatter additions (as needed):
 - `notion_manager` at `operations/notion_manager.py` (dept-level; rule-aligned).
 - Tests: `tests/test_notion_bidirectional_sync.py`.
 
-### Session 3 — `@wiki` in Notion
+### Session 3 — `@wiki` in Notion ✅
 
 - Detect `@wiki` on pulled pages; fill/move current page only; teamspace-scoped context;
   MD first; `external` flag.
 - Tests: ignore without directive; scoped fill; move + path rename.
 
-### Session 4 — Conflict Resolutions
+### Session 4 — Conflict Resolutions ✅
 
-- MD log + Notion DB; evidence gather from Slack / Granola / Gmail; auto-resolve bar;
+- MD log + Notion DB; evidence gather from wiki (Slack/Granola/Gmail absorb); auto-resolve bar;
   `conflict_apply`.
 - Tests: escalate vs auto; apply writes MD.
 
-### Session 5 — `page_system`
+### Session 5 — `page_system` ✅
 
-- Misplaced human pages; stub link + 1-week cleanup.
+- Misplaced human pages (`page_relocate_to`); stub link + `stub_ttl_days` cleanup.
 - Tests: move + stub expiry.
 
 ### Session 6 — Review queue + deprecated collector
@@ -269,7 +269,7 @@ From `docs/tabled.md` (remove or rewrite when the matching session ships):
 
 | Item | Session |
 |------|---------|
-| Conflict resolution / source of truth | 4 |
+| Conflict resolution / source of truth | 4 ✅ shipped |
 | Human-added pages ingest | 2 + 7 |
 | Review queue UX for actionable outputs | 6 (stale/review; may still leave accounting/CRM promotions as follow-on) |
 | Product progress page | Still deferred unless pulled into Session 8+ — keep tabled until product asks |

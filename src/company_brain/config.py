@@ -202,6 +202,7 @@ class NotionConfig(BaseModel):
     section_teamspace: dict[str, str] = Field(default_factory=dict)
     crm_databases: dict[str, CrmDatabaseSpec] = Field(default_factory=dict)
     change_request_database: dict[str, Any] = Field(default_factory=dict)
+    conflict_resolution_database: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def is_initialized(self) -> bool:

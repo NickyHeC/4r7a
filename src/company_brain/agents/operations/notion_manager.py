@@ -1,9 +1,7 @@
 """Notion Manager — persistent dispatcher for the Notion platform.
 
-Polls on ``notion_platform.poll_interval_minutes``. Each pass runs ``sync_pull``
-(bidirectional page sync) and ``task_scanner`` (existing Linear task DB link).
-Later sessions fold page_system, archive, conflicts, CRM, and Weave under this
-manager.
+Polls on ``notion_platform.poll_interval_minutes``. Each pass runs page sync,
+``@wiki`` directives, conflict resolution/apply, page_system, and task_scanner.
 
 SDK: Neither (orchestration only).
 """
@@ -48,13 +46,23 @@ class NotionManager(BaseAgent):
             await asyncio.sleep(max(interval * 60, 60))
 
     def run_once(self) -> dict[str, Any]:
+        from company_brain.agents.operations.notion.conflict_apply import ConflictApplyAgent
+        from company_brain.agents.operations.notion.conflict_resolution import (
+            ConflictResolutionAgent,
+        )
+        from company_brain.agents.operations.notion.page_system import PageSystemAgent
         from company_brain.agents.operations.notion.sync_pull import SyncPullAgent
         from company_brain.agents.operations.notion.task_scanner import TaskScannerAgent
+        from company_brain.agents.operations.notion.wiki_directive import WikiDirectiveAgent
         from company_brain.runtime import get_runtime
 
         runtime = get_runtime()
         results: dict[str, Any] = {}
         results["sync_pull"] = self._run_agent(runtime, SyncPullAgent)
+        results["wiki_directive"] = self._run_agent(runtime, WikiDirectiveAgent)
+        results["conflict_resolution"] = self._run_agent(runtime, ConflictResolutionAgent)
+        results["conflict_apply"] = self._run_agent(runtime, ConflictApplyAgent)
+        results["page_system"] = self._run_agent(runtime, PageSystemAgent)
         results["task_scanner"] = self._run_agent(runtime, TaskScannerAgent, once=True)
         return results
 

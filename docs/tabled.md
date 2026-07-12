@@ -78,7 +78,6 @@ Format for new rows:
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Product progress page (Notion) | `operations/notion` + `product/` | Notion platform agents build | Mirror `product/catalog.yaml` + roadmap; feeds Discord feature dedup v2; design in Notion platform session |
-| Conflict resolution / source of truth | `operations/notion` | Multi-DB task sync in production | MD wins; Notion mirrors |
 | Human-added pages ingest | `operations/notion` | Notion-first teams | Pull → MD path TBD |
 | Version control | Wiki | Same as cross-cutting versioning | |
 | Sign-in / account management | Product | Multi-member deploy | Admin vs member model exists |

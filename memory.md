@@ -11,6 +11,18 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-12 — Notion platform Sessions 3–5 (@wiki, conflicts, page_system | working tree)
+
+- **Session 3:** `wiki_directive` — plain-text `@wiki` fill/move on current page;
+  teamspace-scoped search; `external` gate; MD first.
+- **Session 4:** `conflict_resolution` + `conflict_apply` + `conflict_store`;
+  evidence auto-resolve; `operations/notion/conflict-resolution.md` + optional
+  Notion DB; removed tabled conflict-resolution row.
+- **Session 5:** `page_system` — `page_relocate_to` moves + stub TTL cleanup;
+  Notion parent nudge after relocate.
+- **Manager:** dispatches sync_pull → wiki_directive → conflicts → page_system →
+  task_scanner. Tests: `tests/test_notion_sessions_345.py`.
+
 ## 2026-07-12 — Notion platform Sessions 1–2 (teamspaces + bidirectional sync | working tree)
 
 - **Plan:** `docs/plans/notion.md` (full design); Sessions 1–2 built.

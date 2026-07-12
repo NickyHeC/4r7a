@@ -151,3 +151,13 @@ change_request_database:
     change_class: Class
     slack_thread: Slack thread
     pr_url: PR
+
+# Hard wiki↔Notion conflicts awaiting admin (or evidence auto-resolve).
+conflict_resolution_database:
+  database_id: ""
+  columns:
+    title: Title
+    status: Status
+    rel_path: Path
+    reason: Reason
+    winner: Winner

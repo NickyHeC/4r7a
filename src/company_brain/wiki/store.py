@@ -79,6 +79,9 @@ class WikiStore(ABC):
     @abstractmethod
     def abspath(self, rel_path: str) -> Path: ...
 
+    @abstractmethod
+    def delete(self, rel_path: str) -> None: ...
+
     def read_text(self, rel_path: str) -> str:
         """Read a raw file (e.g. a control file) as text, or '' if missing."""
         path = self.abspath(rel_path)
@@ -124,6 +127,11 @@ class LocalWikiStore(WikiStore):
                 continue
             out.append(path.relative_to(self.root).as_posix())
         return out
+
+    def delete(self, rel_path: str) -> None:
+        path = self.abspath(rel_path)
+        if path.exists():
+            path.unlink()
 
 
 def _atomic_write(path: Path, text: str) -> None:
