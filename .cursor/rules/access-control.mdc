@@ -44,8 +44,10 @@ admin tooling (`company-brain` CLI on the wiki host). Members never receive
 - `config/notion.yaml` `section_teamspace`: wiki section (exact or path prefix)
   -> a teamspace key, or `admin_only` to keep that section **MD-only** (never
   mirrored to Notion). `NotionSync` routes/skips accordingly.
-- Typical tiers: company-wide teamspace, per-department teamspaces (engineering,
-  finance), and admin-only (MD-only or an admin-private teamspace).
+- **Default install:** two teamspaces — `admin` (finance, legal, admin) and
+  `company` (engineering, product, growth). Optional engineering / product /
+  growth parents may be set later; empty split keys fall back to `company`
+  (`resolve_teamspace_parent`). Admin-only sections stay MD-only or admin teamspace.
 
 ## Employee wikis (per-member buildings)
 

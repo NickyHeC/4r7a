@@ -11,6 +11,20 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-12 — Notion platform Sessions 1–2 (teamspaces + bidirectional sync | working tree)
+
+- **Plan:** `docs/plans/notion.md` (full design); Sessions 1–2 built.
+- **Session 1:** Default Notion teamspaces **admin + company**; eng/product/growth
+  `section_teamspace` → company; `resolve_teamspace_parent` falls back for
+  `location:engineering|product|growth` when split parents unset.
+- **Session 2:** `sync_policy.py` (pull/push/merge/conflict + signature gate);
+  `sync_pull.py`; `notion_manager.py` (dept-level) dispatches sync_pull +
+  task_scanner; `NotionSync` signature-gated push with human_override_note;
+  CLI `notion manager|sync-pull`.
+- **Docs/rules:** operations handbook Notion section; wiki-data-flow +
+  access-control defaults; doctor allow-list for sync_pull/manager.
+- **Tests:** `tests/test_notion_bidirectional_sync.py`.
+
 ## 2026-07-11 — Discord platform Session 9 (docs ship | working tree)
 
 - **Docs:** `docs/agents/growth.md` handbook; README Growth section + data-flow diagram;

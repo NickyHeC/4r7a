@@ -14,6 +14,8 @@ _NOTION_ALLOW = frozenset(
         "operations/notion/db.py",
         "operations/notion/task_sync.py",
         "operations/notion/task_scanner.py",
+        "operations/notion/sync_pull.py",
+        "operations/notion_manager.py",
         "employee_wiki/employee_wiki_onboarding.py",
         "admin/weave_notion.py",
     }

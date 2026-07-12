@@ -7,8 +7,8 @@ Notion change-request database mirrors when configured.
 
 ```mermaid
 flowchart LR
-  M[@weave mention] --> WT[weave_triage]
-  WT --> MD[admin/change-request/id.md]
+  M["@weave mention"] --> WT[weave_triage]
+  WT --> MD["admin/change-request/id.md"]
   MD --> NDB[Notion change-request DB]
   WT -->|config_only + W2 member| WV[weave]
   WT -->|agent_behavior / security_ingest| WAIT[await admin approve in Notion]

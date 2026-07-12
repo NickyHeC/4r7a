@@ -630,35 +630,53 @@ Weave app listener; change requests at `admin/change-request/{id}.md`.
 
 ## Notion — how it runs
 
-Multi-database task registry: scans configured Notion task DBs for rows with a Linear ID
-column, links them into `task_bindings`, and propagates Linear status/title back to the
-correct database row on completion.
+Notion is the human visualizer/edit surface for the MD wiki. Default teamspaces:
+**admin** + **company** (engineering/product/growth route to company unless optional
+splits are configured). Persistent **`notion_manager`** polls page sync and task DBs.
 
 ```mermaid
 flowchart TD
-  TS[task_scanner persistent] -->|30min poll| TB[(task_bindings)]
+  NM[notion_manager] -->|poll| SP[sync_pull]
+  NM -->|poll| TS[task_scanner]
+  SP -->|Notion ahead / merge| MD[(wiki MD)]
+  AG[department agents] -->|write_wiki_page| MD
+  MD --> NS[NotionSync push]
+  NS --> N[(Notion pages)]
+  SP --> N
   TS --> NDB[(Notion task DBs)]
   GT[granola task] -->|create row| SYNC[task_sync]
   LC[linear_completed] -->|status update| SYNC
   SYNC --> NDB
 ```
 
+**Manager:** `notion_manager.py` — persistent; interval from
+`config/operations.yaml` → `notion_platform.poll_interval_minutes`. Dispatches
+`sync_pull` and `task_scanner` each pass.
+
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `task_scanner.py` | Persistent (30 min poll) | Query updated task DB rows; link by Linear ID (read-first) |
+| `sync_pull.py` | Via manager | Pull human Notion edits → MD; merge when compatible; mark `sync_conflict` when not |
+| `task_scanner.py` | Via manager | Query updated task DB rows; link by Linear ID (read-first) |
 | `task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
 | `db.py` | — | Database query/patch helpers (not an agent) |
 
-Config: `config/notion.yaml` → `task_databases` (per-DB `database_id` + column map),
-`task_routing` (department/project → database key). Poll interval:
-`config/operations.yaml` → `notion_platform.poll_interval_minutes`.
+**Push policy:** `NotionSync` is signature-gated — same `agent_signature` as last push
+does not overwrite a diverged Notion page (human wins; MD `human_override_note`). New
+signature reasserts agent factual content.
+
+Config: `config/notion.yaml` → `teamspaces`, `section_teamspace`, `task_databases`,
+`task_routing`. CLI: `company-brain notion manager [--once]`, `notion sync-pull`.
 
 Requires `ntn` CLI authenticated to the workspace. Populate `database_id` after init;
 column names must match your Notion schema (`Name`, `Status`, `Linear ID`, etc.).
 
-Started by **`linear_onboarding`** when at least one task database has a `database_id`.
-Granola **`meeting_action`** tasks fan out to Notion on create; Linear Done updates the row
+Task scanner started by **`linear_onboarding`** when at least one task database has a
+`database_id`. Prefer **`notion manager`** for the unified loop. Granola
+**`meeting_action`** tasks fan out to Notion on create; Linear Done updates the row
 via `linear_completed` → `task_sync`.
+
+Deferred Notion specialists (page_system, conflicts, archive, onboarding): see
+[`docs/plans/notion.md`](../plans/notion.md) and [`docs/tabled.md`](../tabled.md).
 
 ---
 

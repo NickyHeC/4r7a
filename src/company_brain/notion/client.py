@@ -116,6 +116,21 @@ class NotionClient:
             args += ["--notion-version", self._notion_version]
         return self._run(args, parse_json=as_json)
 
+    def get_page_meta(self, page_id: str) -> dict[str, Any]:
+        """Return Notion page object metadata (last_edited_time, properties, …)."""
+        result = self.api(f"v1/pages/{page_id}")
+        if result.json_data and isinstance(result.json_data, dict):
+            return result.json_data
+        return {}
+
+    def get_page_markdown(self, page_id: str) -> tuple[str, str | None]:
+        """Return ``(markdown_body, last_edited_time_iso_or_none)``."""
+        content = self.get_page(page_id)
+        body = (content.stdout or "").strip()
+        meta = self.get_page_meta(page_id)
+        edited = meta.get("last_edited_time")
+        return body, str(edited) if edited else None
+
     def update_page(self, page_id: str, markdown: str) -> NtnResult:
         """Replace a page's content with new markdown."""
         args = ["pages", "update", page_id, "--content", "-"]

@@ -1,1 +1,1 @@
-"""Notion task platform — multi-DB registry, scanner, and propagation."""
+"""Notion platform — page sync, task DB registry, scanner, and propagation."""

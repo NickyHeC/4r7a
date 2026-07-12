@@ -14,7 +14,7 @@ information intake -> raw/entries/*.md -> absorb (LLM writer) -> wiki/**/*.md ->
 
 ## Rules
 
-1. **Write MD first** — every agent that produces a page calls `write_wiki_page(rel_path, title, body, mode=..., ...)` from `company_brain.wiki.publish`, which writes the Markdown page then syncs to Notion. Never write Notion directly (no raw `ntn page update/prepend`).
+1. **Write MD first** — every agent that produces a page calls `write_wiki_page(rel_path, title, body, mode=..., ...)` from `company_brain.wiki.publish`, which writes the Markdown page then syncs to Notion. Never write Notion directly (no raw `ntn page update/prepend`) for agent-authored content. Human Notion edits are pulled via `operations/notion/sync_pull.py`.
 
 ### Update vs append (declare it explicitly)
 
@@ -22,11 +22,12 @@ Each agent must **know distinctively** whether it overwrites or appends, declare
 
 - **`update`** — `body` replaces the whole page (current snapshot). Used by: `open_pr`, `branch_monitor`, `subscription_audit`, `request_manual_accounting`, and `monthly_expense` (each month has its own page, overwritten in place).
 - **`append`** — `body` is a new section prepended under the page heading, so the **newest run appears on top** (running log). Used by: `feature_update`, `product_features`, `quarterly_calculation`, `budget_report`, `asset_compile`. In append mode, pass only the new section (a `## ...` block), not a full `# Title` document.
-2. **Notion binding lives in frontmatter** — `notion_page_id` is written back by `NotionSync` and is the canonical binding; `registry.json` is a derived cache.
-3. **Two intake paths**:
+2. **Bidirectional with MD as durable SoT** — humans may edit Notion; `sync_pull` merges or pulls into MD. Agent re-pushes are **signature-gated** (`agent_signature`): unchanged signature does not clobber a diverged Notion page (human wins locally; MD `human_override_note` only). A later agent run with a **new** factual signature reasserts. Hard conflicts set `sync_conflict` for Conflict Resolutions (later Notion session).
+3. **Notion binding lives in frontmatter** — `notion_page_id` is written back by `NotionSync` and is the canonical binding; `registry.json` is a derived cache.
+4. **Two intake paths**:
    - Knowledge: `ingest` writes `raw/entries/*.md`; `absorb` (LLM writer) synthesizes them into `wiki/**/*.md` articles.
    - Operational: department agents write their pages (e.g. open-pr, expense reports) directly via `write_wiki_page` and skip absorb.
-4. **Reads come from the wiki store** — use `read_wiki_page(rel_path)`; never read raw entries during query/operations.
+5. **Reads come from the wiki store** — use `read_wiki_page(rel_path)`; never read raw entries during query/operations.
 
 ## Absorb writing standards (from the wiki-gen skill)
 

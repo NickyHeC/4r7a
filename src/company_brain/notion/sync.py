@@ -1,11 +1,15 @@
 """NotionSync: mirror the Markdown wiki (source of truth) into Notion.
 
 The wiki MD files are authoritative; Notion is a synced mirror. For each page,
-sync compares the page's current ``content_hash`` against the ``synced_hash``
+sync compares the page's current body hash against the ``synced_hash``
 recorded in frontmatter and skips unchanged pages (cheap gate). New pages are
 discovered-or-created in Notion and the resulting ``notion_page_id`` is written
 back into the frontmatter (the canonical binding), with the registry kept as a
 derived cache.
+
+Signature-gated push: when ``agent_signature`` matches the last pushed
+signature and Notion has diverged (human edit), the push is skipped and MD is
+restored from Notion (human wins locally; MD note only).
 
 Control files (``_index.md``, ``_backlinks.json``, ``_absorb_log.json``) are
 local-only and never mirrored.
@@ -19,9 +23,17 @@ from typing import Any
 
 from company_brain.config import AppConfig, load_config
 from company_brain.notion.client import NotionClient
+from company_brain.notion.sync_policy import (
+    AGENT_SIGNATURE_KEY,
+    PUSHED_AGENT_SIGNATURE_KEY,
+    body_hash,
+    should_skip_push_for_signature,
+    stamp_agent_push,
+    stamp_human_override,
+)
 from company_brain.notion.sync_routing import resolve_sync_parent, should_skip_notion_mirror
 from company_brain.wiki.registry import PageRegistry
-from company_brain.wiki.store import LocalWikiStore, WikiStore
+from company_brain.wiki.store import LocalWikiStore, MarkdownDoc, WikiStore
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +78,7 @@ class NotionSync:
         doc = self.store.read(rel_path)
         fm = dict(doc.frontmatter or {})
         title = fm.get("title") or rel_path.rsplit("/", 1)[-1].removesuffix(".md")
-        current_hash = doc.content_hash
+        current_hash = body_hash(doc.body)
         page_id = fm.get("notion_page_id")
 
         if should_skip_notion_mirror(fm, self.config):
@@ -82,16 +94,45 @@ class NotionSync:
         if not page_id:
             page_id = self._discover(title)
 
+        now = datetime.now(timezone.utc).isoformat()
+
         if page_id:
+            notion_body = self._fetch_notion_body(page_id) if not force else None
+            if not force and should_skip_push_for_signature(
+                agent_signature=fm.get(AGENT_SIGNATURE_KEY),
+                pushed_agent_signature=fm.get(PUSHED_AGENT_SIGNATURE_KEY),
+                md_body=doc.body,
+                notion_body=notion_body,
+            ):
+                logger.info(
+                    "Signature-gated skip push for %s (human Notion edit preserved)",
+                    rel_path,
+                )
+                self._apply_human_notion_body(
+                    rel_path,
+                    doc,
+                    notion_body or "",
+                    when_iso=now,
+                    detail=(
+                        "Human Notion edit preserved over agent re-push with "
+                        f"unchanged signature {fm.get(AGENT_SIGNATURE_KEY)}"
+                    ),
+                )
+                return page_id
             self.client.update_page(page_id, doc.body)
         else:
             page_id = self._create(doc, fm, title, sync_parent or parent_id)
             if not page_id:
                 return None
 
+        fm = stamp_agent_push(
+            fm,
+            signature=fm.get(AGENT_SIGNATURE_KEY),
+            when_iso=now,
+        )
         fm["notion_page_id"] = page_id
-        fm["synced_hash"] = current_hash
-        fm["last_synced"] = datetime.now(timezone.utc).isoformat()
+        fm["synced_hash"] = body_hash(doc.body)
+        fm["last_synced"] = now
         doc.frontmatter = fm
         self.store.write(rel_path, doc)
 
@@ -104,6 +145,31 @@ class NotionSync:
 
         logger.info("Synced %s -> Notion %s", rel_path, page_id)
         return page_id
+
+    def _fetch_notion_body(self, page_id: str) -> str | None:
+        try:
+            body, _edited = self.client.get_page_markdown(page_id)
+            return body
+        except Exception:
+            logger.debug("Could not fetch Notion body for %s", page_id, exc_info=True)
+            return None
+
+    def _apply_human_notion_body(
+        self,
+        rel_path: str,
+        doc: MarkdownDoc,
+        notion_body: str,
+        *,
+        when_iso: str,
+        detail: str,
+    ) -> None:
+        """Write Notion human content into MD; do not push back to Notion."""
+        fm = stamp_human_override(dict(doc.frontmatter or {}), when_iso=when_iso, detail=detail)
+        fm["synced_hash"] = body_hash(notion_body)
+        fm["last_synced"] = when_iso
+        fm["last_updated"] = when_iso
+        updated = MarkdownDoc(frontmatter=fm, body=notion_body)
+        self.store.write(rel_path, updated)
 
     # -- internals ---------------------------------------------------------
 
@@ -123,10 +189,13 @@ class NotionSync:
 
     def _resolve_parent(self, section: str) -> str | None:
         # Route to the section's teamspace parent if configured (member reads are
-        # enforced by Notion's teamspace permissions).
+        # enforced by Notion's teamspace permissions). Optional eng/product/growth
+        # splits fall back to company when unset.
+        from company_brain.notion.sync_routing import resolve_teamspace_parent
+
         ts_key = self.config.notion.teamspace_for_section(section)
         if ts_key and ts_key != "admin_only":
-            ts_parent = self.config.notion.teamspaces.get(ts_key)
+            ts_parent = resolve_teamspace_parent(ts_key, self.config)
             if ts_parent:
                 return ts_parent
         if section:

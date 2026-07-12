@@ -13,21 +13,35 @@ section_page_ids: {}
 # section_teamspace: wiki section (exact or path prefix) -> teamspace key, or
 # "admin_only" to keep that section MD-only (never mirrored to Notion).
 #
+# Default install: two teamspaces — admin + company.
+#   admin   — finance, legal, admin
+#   company — engineering, product, growth (whole-company read)
+# Optional splits: set parent page ids under engineering / product / growth and
+# point section_teamspace (and sync: location:*) at those keys. Empty/missing
+# split keys fall back to company.
+#
 # Employee wiki pages use frontmatter ``sync:`` (not section_teamspace):
 #   private -> member_{key} or members.yaml notion_teamspace
 #   company -> company
 #   admin_only -> admin (admin teamspace mirror)
+#   location:{dept} -> that teamspace if configured, else company for
+#     engineering|product|growth
 #   not_synced -> no Notion mirror
 teamspaces:
   admin: ""
   company: ""
-  engineering: ""
-  product: ""
+  # Optional department splits (leave blank to use company):
+  # engineering: ""
+  # product: ""
+  # growth: ""
 section_teamspace:
   admin: admin
+  finance: admin
+  legal: admin
   crm: company
-  engineering: engineering
-  product: product
+  engineering: company
+  product: company
+  growth: company
 
 # CRM entity + inbound database mirrors (populate database_id after Notion connect).
 crm_databases:

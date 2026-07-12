@@ -194,6 +194,10 @@ class NotionConfig(BaseModel):
     # page id pages sync under; ``section_teamspace`` maps a wiki section (exact or
     # path prefix) -> a teamspace key, or the literal "admin_only" to keep that
     # section MD-only (never mirrored to Notion).
+    #
+    # Default: admin + company. Optional engineering/product/growth keys may be
+    # set to split those sections out; empty/missing split keys fall back to
+    # company via ``resolve_teamspace_parent``.
     teamspaces: dict[str, str] = Field(default_factory=dict)
     section_teamspace: dict[str, str] = Field(default_factory=dict)
     crm_databases: dict[str, CrmDatabaseSpec] = Field(default_factory=dict)

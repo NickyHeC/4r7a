@@ -973,3 +973,30 @@ def hr_offboard(member_key: str, reason: str) -> None:
     config = load_config()
     result = EmployeeOffboardingAgent(config).run(member_key=member_key, reason=reason)
     click.echo(result)
+
+
+@main.group()
+def notion() -> None:
+    """Notion platform — manager, page sync pull, task scanner."""
+
+
+@notion.command("manager")
+@click.option("--once", is_flag=True, help="Run a single manager pass then exit.")
+def notion_manager_cmd(once: bool) -> None:
+    """Run the persistent Notion manager (sync_pull + task_scanner)."""
+    from company_brain.agents.operations.notion_manager import NotionManager
+
+    config = load_config()
+    result = NotionManager(config).execute(once=once)
+    if once:
+        click.echo(result)
+
+
+@notion.command("sync-pull")
+def notion_sync_pull_cmd() -> None:
+    """Run one sync_pull pass (Notion → MD for bound pages)."""
+    from company_brain.agents.operations.notion.sync_pull import SyncPullAgent
+
+    config = load_config()
+    result = SyncPullAgent(config).execute()
+    click.echo(result)
