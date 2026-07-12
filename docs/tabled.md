@@ -24,7 +24,7 @@ Format for new rows:
 | Process artifacts (Architect/Doer) | Cross | Agents living on cloud VMs | Compile reusable Processes (steps, inputs, temporal deps) from observed workflows; second-order automation per Ramp Labs |
 | Self-maintaining monitor-driven ops | Cross / runtime | Agents living on cloud VMs | PR-merge monitor generation, alert → sandbox reproduce → propose fix; includes cloud builder agent maintenance loop |
 | Latent Briefing (KV cache handoff) | LLM / runtime | Self-hosted GLM-5 (`COMPANY_BRAIN_LLM_PROVIDER=glm`) | Ramp Labs multi-agent memory compaction; needs internal KV access — not for hosted API-only |
-| Review queue UX for actionable outputs | operations/notion | Notion platform agents build | Single admin surface for drafts, accounting proposals, CRM promotions awaiting judgment |
+| Review queue UX for actionable outputs | operations/notion | Accounting/CRM promotions follow-on | Stale review shipped (Session 6); drafts/accounting/CRM promotions still deferred |
 | Ingest existing / personal wikis | External wiki + employee wiki | Admin mount flow stable | Use `migrate-names` on import; see external wiki plan |
 | AI pages too long → unread | All writers | Absorb/handbook quality pass | Length targets in absorb prompt + `config/wiki.yaml`; anti-cram split ongoing |
 
@@ -77,8 +77,9 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Product progress page (Notion) | `operations/notion` + `product/` | Notion platform agents build | Mirror `product/catalog.yaml` + roadmap; feeds Discord feature dedup v2; design in Notion platform session |
-| Human-added pages ingest | `operations/notion` | Notion-first teams | Pull → MD path TBD |
+| Product progress page (Notion) | `operations/notion` + `product/` | Product asks | Mirror catalog + roadmap; Discord feature dedup v2 |
+| Review queue UX for actionable outputs | `operations/notion` | Accounting/CRM promotions follow-on | Stale review shipped; drafts/accounting proposals still deferred |
+| Human-added pages ingest | `operations/notion` | Broader ingest polish | Onboarding ingest shipped; live orphan discovery still TBD |
 | Version control | Wiki | Same as cross-cutting versioning | |
 | Sign-in / account management | Product | Multi-member deploy | Admin vs member model exists |
 | Work logs in Notion | `employee_wiki` | Employee wiki Notion pull built | |

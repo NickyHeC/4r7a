@@ -94,6 +94,13 @@ class NotionSync:
         if not page_id:
             page_id = self._discover(title)
 
+        if not page_id and not self.config.notion.is_mirror_enabled():
+            logger.info(
+                "Mirror disabled (notion_onboarding confirm pending) — skip create for %s",
+                rel_path,
+            )
+            return None
+
         now = datetime.now(timezone.utc).isoformat()
 
         if page_id:

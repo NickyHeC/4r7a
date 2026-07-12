@@ -1,7 +1,8 @@
 """Notion Manager — persistent dispatcher for the Notion platform.
 
 Polls on ``notion_platform.poll_interval_minutes``. Each pass runs page sync,
-``@wiki`` directives, conflict resolution/apply, page_system, and task_scanner.
+``@wiki``, conflicts, page_system, archive/stale review, task scanner, CRM
+Notion mirror, and Weave approval poll.
 
 SDK: Neither (orchestration only).
 """
@@ -46,14 +47,20 @@ class NotionManager(BaseAgent):
             await asyncio.sleep(max(interval * 60, 60))
 
     def run_once(self) -> dict[str, Any]:
+        from company_brain.agents.admin.weave_triage import WeaveTriageAgent
         from company_brain.agents.operations.notion.conflict_apply import ConflictApplyAgent
         from company_brain.agents.operations.notion.conflict_resolution import (
             ConflictResolutionAgent,
         )
+        from company_brain.agents.operations.notion.deprecated_collector import (
+            DeprecatedCollectorAgent,
+        )
         from company_brain.agents.operations.notion.page_system import PageSystemAgent
+        from company_brain.agents.operations.notion.stale_review import StaleReviewAgent
         from company_brain.agents.operations.notion.sync_pull import SyncPullAgent
         from company_brain.agents.operations.notion.task_scanner import TaskScannerAgent
         from company_brain.agents.operations.notion.wiki_directive import WikiDirectiveAgent
+        from company_brain.crm.notion_sync import sync_all_crm
         from company_brain.runtime import get_runtime
 
         runtime = get_runtime()
@@ -63,7 +70,17 @@ class NotionManager(BaseAgent):
         results["conflict_resolution"] = self._run_agent(runtime, ConflictResolutionAgent)
         results["conflict_apply"] = self._run_agent(runtime, ConflictApplyAgent)
         results["page_system"] = self._run_agent(runtime, PageSystemAgent)
+        results["stale_review"] = self._run_agent(runtime, StaleReviewAgent)
+        results["deprecated_collector"] = self._run_agent(runtime, DeprecatedCollectorAgent)
         results["task_scanner"] = self._run_agent(runtime, TaskScannerAgent, once=True)
+        results["crm_sync"] = self._run_callable(
+            "crm_sync",
+            lambda: sync_all_crm(config=self.config),
+        )
+        results["weave_approvals"] = self._run_callable(
+            "weave_approvals",
+            lambda: WeaveTriageAgent(self.config).poll_approved_dispatch(),
+        )
         return results
 
     def _run_agent(self, runtime: Any, agent_cls: type, **kwargs: Any) -> Any:
@@ -71,4 +88,11 @@ class NotionManager(BaseAgent):
             return runtime.run(agent_cls, self.config, **kwargs)
         except Exception:
             self.logger.exception("%s dispatch failed", agent_cls.__name__)
+            return None
+
+    def _run_callable(self, label: str, fn: Any) -> Any:
+        try:
+            return fn()
+        except Exception:
+            self.logger.exception("%s dispatch failed", label)
             return None

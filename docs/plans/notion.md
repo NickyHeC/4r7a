@@ -239,20 +239,20 @@ Frontmatter additions (as needed):
 - Misplaced human pages (`page_relocate_to`); stub link + `stub_ttl_days` cleanup.
 - Tests: move + stub expiry.
 
-### Session 6 — Review queue + deprecated collector
+### Session 6 — Review queue + deprecated collector ✅
 
-- Stale → review queue.
+- Stale → review queue (`operations/notion/review.md`).
 - Archive when all four conditions; Archive parent per teamspace.
 - Tests: eligibility matrix (fail if any condition missing).
 
-### Session 7 — `notion_onboarding`
+### Session 7 — `notion_onboarding` ✅
 
 - Empty vs existing; alongside tree; confirm gate (ingest-only without confirm).
 - Handoff: start `notion_manager` via `get_runtime().start()`.
 
-### Session 8 — Manager coherence
+### Session 8 — Manager coherence ✅
 
-- Fold task_scanner, CRM Notion sync triggers, Weave DB mirror into `notion_manager` poll.
+- Fold task_scanner, CRM Notion sync, Weave approval poll into `notion_manager`.
 - Single handbook diagram; one poll config story.
 
 ### Session 9 — Docs ship

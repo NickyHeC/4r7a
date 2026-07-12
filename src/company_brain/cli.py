@@ -1000,3 +1000,35 @@ def notion_sync_pull_cmd() -> None:
     config = load_config()
     result = SyncPullAgent(config).execute()
     click.echo(result)
+
+
+@notion.group("onboarding")
+def notion_onboarding_group() -> None:
+    """Notion platform onboarding — ingest and alongside structure."""
+
+
+@notion_onboarding_group.command("run")
+@click.option(
+    "--confirm-mirror",
+    is_flag=True,
+    help="Build alongside 4r7a Notion tree + enable mirror (required if workspace has pages).",
+)
+@click.option("--no-manager", is_flag=True, help="Skip starting notion_manager.")
+@click.option("--no-ingest", is_flag=True, help="Skip ingesting existing Notion pages into MD.")
+def notion_onboarding_run(confirm_mirror: bool, no_manager: bool, no_ingest: bool) -> None:
+    """Run Notion onboarding (warns before large reorg unless --confirm-mirror)."""
+    from company_brain.agents.operations.notion.notion_onboarding import NotionOnboardingAgent
+
+    if not confirm_mirror:
+        click.secho(
+            "Note: without --confirm-mirror, existing Notion pages are ingested to MD only; "
+            "structured mirror/sync is not established. Re-run with --confirm-mirror after review.",
+            fg="yellow",
+        )
+    config = load_config()
+    result = NotionOnboardingAgent(config).execute(
+        confirm_mirror=confirm_mirror,
+        start_manager=not no_manager,
+        ingest_existing=not no_ingest,
+    )
+    click.echo(result)

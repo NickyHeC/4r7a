@@ -11,6 +11,16 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-12 — Notion platform Sessions 6–8 (archive, onboarding, manager coherence | working tree)
+
+- **Session 6:** `archive_policy`, `stale_review` → `operations/notion/review.md`;
+  `deprecated_collector` (all four eligibility rules; Archive parents).
+- **Session 7:** `notion_onboarding` — ingest-only without `--confirm-mirror`;
+  alongside structure + Archive when empty/confirmed; CLI
+  `notion onboarding run`; `mirror_enabled` gate on NotionSync create.
+- **Session 8:** `notion_manager` also runs CRM `sync_all_crm` + Weave approval poll.
+- **Tests:** `tests/test_notion_sessions_678.py`.
+
 ## 2026-07-12 — Notion platform Sessions 3–5 (@wiki, conflicts, page_system | working tree)
 
 - **Session 3:** `wiki_directive` — plain-text `@wiki` fill/move on current page;

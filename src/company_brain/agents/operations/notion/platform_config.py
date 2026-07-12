@@ -21,3 +21,11 @@ def poll_interval_minutes(*, config_dir: Path | None = None) -> int:
 
 def stub_ttl_days(*, config_dir: Path | None = None) -> int:
     return int(_notion_platform_cfg(config_dir).get("stub_ttl_days") or 7)
+
+
+def archive_idle_days(*, config_dir: Path | None = None) -> int:
+    return int(_notion_platform_cfg(config_dir).get("archive_idle_days") or 30)
+
+
+def stale_idle_days(*, config_dir: Path | None = None) -> int:
+    return int(_notion_platform_cfg(config_dir).get("stale_idle_days") or 90)

@@ -203,10 +203,19 @@ class NotionConfig(BaseModel):
     crm_databases: dict[str, CrmDatabaseSpec] = Field(default_factory=dict)
     change_request_database: dict[str, Any] = Field(default_factory=dict)
     conflict_resolution_database: dict[str, Any] = Field(default_factory=dict)
+    review_database: dict[str, Any] = Field(default_factory=dict)
+    # Archive parent page ids per teamspace (admin / company).
+    archive_parents: dict[str, str] = Field(default_factory=dict)
+    # Set False by notion_onboarding when admin declined structured mirror.
+    # None/True = mirror allowed (default for existing installs).
+    mirror_enabled: bool | None = None
 
     @property
     def is_initialized(self) -> bool:
         return self.root_page_id is not None
+
+    def is_mirror_enabled(self) -> bool:
+        return self.mirror_enabled is not False
 
     def teamspace_for_section(self, section: str) -> str | None:
         """Return the teamspace key (or 'admin_only') for a section, by longest path prefix."""

@@ -632,8 +632,9 @@ Weave app listener; change requests at `admin/change-request/{id}.md`.
 
 Notion is the human visualizer/edit surface for the MD wiki. Default teamspaces:
 **admin** + **company** (engineering/product/growth route to company unless optional
-splits are configured). Persistent **`notion_manager`** polls page sync, `@wiki`
-directives, conflicts, page moves, and task DBs.
+splits are configured). Persistent **`notion_manager`** polls the full Notion surface:
+page sync, `@wiki`, conflicts, page moves, stale/archive, task DBs, CRM mirrors, and
+Weave approval rows.
 
 ```mermaid
 flowchart TD
@@ -642,15 +643,21 @@ flowchart TD
   NM --> CR[conflict_resolution]
   NM --> CA[conflict_apply]
   NM --> PS[page_system]
+  NM --> ST[stale_review]
+  NM --> DC[deprecated_collector]
   NM --> TS[task_scanner]
+  NM --> CRM[crm Notion sync]
+  NM --> WV[weave approval poll]
   SP -->|Notion ahead / merge| MD[(wiki MD)]
   WD -->|fill or move| MD
   CR -->|evidence or escalate| MD
   CA -->|admin choice| MD
   PS -->|relocate / stub TTL| MD
+  ST --> RQ[review.md]
+  DC -->|Archive parent| N[(Notion pages)]
   AG[department agents] -->|write_wiki_page| MD
   MD --> NS[NotionSync push]
-  NS --> N[(Notion pages)]
+  NS --> N
   SP --> N
   TS --> NDB[(Notion task DBs)]
   GT[granola task] -->|create row| SYNC[task_sync]
@@ -659,9 +666,7 @@ flowchart TD
 ```
 
 **Manager:** `notion_manager.py` — persistent; interval from
-`config/operations.yaml` → `notion_platform.poll_interval_minutes`. Dispatches
-`sync_pull`, `wiki_directive`, `conflict_resolution`, `conflict_apply`,
-`page_system`, and `task_scanner` each pass.
+`config/operations.yaml` → `notion_platform.poll_interval_minutes`.
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
@@ -670,31 +675,47 @@ flowchart TD
 | `conflict_resolution.py` | Via manager | Evidence tie-break or escalate to Conflict Resolutions log + Notion DB |
 | `conflict_apply.py` | Via manager | Apply admin `resolved_md` / `resolved_notion` from Notion DB |
 | `page_system.py` | Via manager | Relocate `page_relocate_to` pages; expire move stubs (`stub_ttl_days`) |
+| `stale_review.py` | Via manager | Flag idle active pages → `operations/notion/review.md` (+ optional review DB) |
+| `deprecated_collector.py` | Via manager | Archive Notion page under Archive parent when all four eligibility rules hold |
 | `task_scanner.py` | Via manager | Query updated task DB rows; link by Linear ID (read-first) |
 | `task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
 | `db.py` / `conflict_store.py` | — | Helpers (not agents) |
 
-**Push policy:** `NotionSync` is signature-gated — same `agent_signature` as last push
-does not overwrite a diverged Notion page (human wins; MD `human_override_note`). New
-signature reasserts agent factual content.
+Also each manager pass: **CRM** `sync_all_crm` and **Weave** `poll_approved_dispatch`.
 
-**Conflicts:** `operations/notion/conflict-resolution.md` (append log) + optional
-`conflict_resolution_database` in `config/notion.yaml`.
+**Archive eligibility (all required):** MD idle ≥ `archive_idle_days`, `status: done` / past
+`end_date`, Notion idle ≥ same window, no shared link confirmed (`shared_link: false` or
+`no_shared_link: true`). MD retained.
 
-Config: `config/notion.yaml` → `teamspaces`, `section_teamspace`, `task_databases`,
-`task_routing`, `conflict_resolution_database`. CLI: `company-brain notion manager [--once]`,
-`notion sync-pull`. Stub TTL: `notion_platform.stub_ttl_days` (default 7).
+**Push policy:** signature-gated `NotionSync`. New pages skipped when
+`mirror_enabled: false` (onboarding ingest-only).
 
-Requires `ntn` CLI authenticated to the workspace. Populate `database_id` after init;
-column names must match your Notion schema (`Name`, `Status`, `Linear ID`, etc.).
+**Conflicts / review:** `operations/notion/conflict-resolution.md`,
+`operations/notion/review.md`; optional DBs in `config/notion.yaml`.
 
-Task scanner started by **`linear_onboarding`** when at least one task database has a
-`database_id`. Prefer **`notion manager`** for the unified loop. Granola
-**`meeting_action`** tasks fan out to Notion on create; Linear Done updates the row
-via `linear_completed` → `task_sync`.
+Config: `config/notion.yaml` → teamspaces, archive_parents, conflict/review DBs.
+CLI: `company-brain notion manager [--once]`, `notion sync-pull`,
+`notion onboarding run [--confirm-mirror]`.
 
-Deferred Notion specialists (archive, review queue, onboarding): see
-[`docs/plans/notion.md`](../plans/notion.md) and [`docs/tabled.md`](../tabled.md).
+Requires `ntn` CLI authenticated. Task scanner also started by **`linear_onboarding`**
+when a task `database_id` is set.
+
+### `notion_onboarding.py`
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **Schedule** | Once, early in install (after MD wiki setup) |
+| **Source** | Notion workspace |
+
+1. Scan workspace; ingest existing pages → MD (`sync=False` / no push) when present.
+2. Structured alongside tree + Archive parents only if workspace empty **or**
+   `--confirm-mirror` (large reorg confirm gate).
+3. Without confirm on a non-empty workspace: ingest-only (`mirror_enabled: false`).
+4. Starts **`notion_manager`** via `get_runtime().start()` and exits.
+
+Deferred: product progress page — [`docs/tabled.md`](../tabled.md). Plan:
+[`docs/plans/notion.md`](../plans/notion.md) (Session 9 docs ship remains).
 
 ---
 

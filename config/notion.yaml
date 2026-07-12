@@ -161,3 +161,21 @@ conflict_resolution_database:
     rel_path: Path
     reason: Reason
     winner: Winner
+
+# Conflict-adjacent review queue (stale pages, etc.).
+review_database:
+  database_id: ""
+  columns:
+    title: Title
+    status: Status
+    rel_path: Path
+    kind: Kind
+
+# Archive parent pages per teamspace (populated by notion_onboarding).
+archive_parents:
+  admin: ""
+  company: ""
+
+# False when onboarding ingested existing pages without confirm_mirror.
+# Omit or true = structured mirror allowed.
+mirror_enabled: null
