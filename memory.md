@@ -11,6 +11,14 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-12 — Notion platform Session 9 (docs ship)
+
+- **Docs:** README Notion + MD/Notion flow; `project_install.md` Notion early connect
+  + `notion onboarding` / manager; operations handbook deferred → tabled only;
+  handbook index Operations scope.
+- **Hygiene:** Removed `docs/plans/notion.md`; tabled sync-lag note updated.
+- **Ship checklist:** ruff, pytest, `company-brain doctor code`.
+
 ## 2026-07-12 — Notion platform Sessions 6–8 (archive, onboarding, manager coherence | working tree)
 
 - **Session 6:** `archive_policy`, `stale_review` → `operations/notion/review.md`;

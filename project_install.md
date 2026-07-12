@@ -74,11 +74,24 @@ Re-run it after each step below to confirm progress.
 Do these in any order the user wants; only connect what they use. After each,
 run `company-brain doctor` to confirm.
 
-### Notion (required — the wiki mirror)
+### Notion (required — early; the wiki visualizer)
+
+Default teamspaces: **admin** (finance/legal/admin) and **company** (engineering,
+product, growth). Optional department splits later via `config/notion.yaml`.
+
 1. Install the Notion CLI (`ntn`) and run `ntn login`.
-2. `company-brain init` — discovers existing workspace content and sets up the
-   wiki structure (the user picks a merge strategy).
-- Verify: `doctor` shows "Notion CLI authenticated" and "Wiki initialized".
+2. Set `teamspaces.admin` / `teamspaces.company` parent page IDs in `config/notion.yaml`
+   (or run `company-brain init` for interactive discovery).
+3. `company-brain notion onboarding run` — ingests existing Notion pages into MD.
+   If the workspace already has content, structured mirror is **not** established until
+   you re-run with `--confirm-mirror` (alongside 4r7a tree + Archive parents; old tree
+   left for admin to delete after review).
+4. Start steady-state: `company-brain notion manager` (or rely on onboarding handoff).
+
+CLI: `notion sync-pull`, `notion manager [--once]`, `notion onboarding run [--confirm-mirror]`.
+
+Verify: `doctor` shows Notion CLI authenticated; wiki pages bind via `notion_page_id`.
+Handbook: [docs/agents/operations.md](docs/agents/operations.md) → Notion.
 
 ### GitHub (engineering department) — read-only
 1. Install GitHub CLI (`gh`) and authenticate (`gh auth login`); read-only is enough.

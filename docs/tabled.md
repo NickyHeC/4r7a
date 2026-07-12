@@ -39,7 +39,7 @@ Format for new rows:
 | Bridge token revoke on offboard | operations/slack | Offboard actuation ships | `employee_offboarding` proposal exists; auto-revoke after actuation |
 | Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | Tabled — rsync, re-issue tokens, URL change |
 | Senior `propose_practice_update` via MCP | Engineering / bridge | Read-only bridge stable | Tabled |
-| Human vs agent Notion/MD sync lag | Bridge / Notion | Product decision | Agent reads MD via bridge; humans read Notion — lag TBD |
+| Human vs agent Notion/MD sync lag | Bridge / Notion | Bridge MCP ships | Signature-gated bidirectional sync shipped; bridge citation lag TBD |
 | Platform connection order | Admin / `project_install.md` | Almost all platforms specced | Canonical connect sequence for new installs; ties stacks together last |
 | Process mining from Loom (evolving agents) | Admin onboarding | Last part of 4r7a onboarding | Observe how admin actually works; suggest/write agents that evolve with behavior — needs design time before build |
 | Quarterly doc pass | Admin / docs | First multi-member deploy or major release | Handbooks vs code paths, `migrate-names`, trim stale plans |

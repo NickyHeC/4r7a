@@ -113,9 +113,7 @@ def create_conflict_row(
     cols = columns()
     schema = db.get_database_schema(client, db_id)
     properties: dict[str, Any] = {}
-    properties.update(
-        db.build_property_patch(cols.get("title", "Title"), title, schema=schema)
-    )
+    properties.update(db.build_property_patch(cols.get("title", "Title"), title, schema=schema))
     properties.update(
         db.build_property_patch(cols.get("status", "Status"), STATUS_OPEN, schema=schema)
     )

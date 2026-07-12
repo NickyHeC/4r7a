@@ -218,9 +218,7 @@ class NotionOnboardingAgent(BaseAgent):
                 page_title = ""
                 for prop in props.values():
                     if isinstance(prop, dict) and prop.get("type") == "title":
-                        page_title = "".join(
-                            t.get("plain_text", "") for t in prop.get("title", [])
-                        )
+                        page_title = "".join(t.get("plain_text", "") for t in prop.get("title", []))
                         break
                 if page_title.strip().lower() == title.strip().lower():
                     parent = page.get("parent") or {}

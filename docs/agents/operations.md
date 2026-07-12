@@ -714,8 +714,8 @@ when a task `database_id` is set.
 3. Without confirm on a non-empty workspace: ingest-only (`mirror_enabled: false`).
 4. Starts **`notion_manager`** via `get_runtime().start()` and exits.
 
-Deferred: product progress page — [`docs/tabled.md`](../tabled.md). Plan:
-[`docs/plans/notion.md`](../plans/notion.md) (Session 9 docs ship remains).
+Deferred: product progress page and accounting/CRM review-queue expansions —
+[`docs/tabled.md`](../tabled.md).
 
 ---
 
