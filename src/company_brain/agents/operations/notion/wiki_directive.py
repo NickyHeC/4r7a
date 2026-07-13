@@ -9,13 +9,12 @@ SDK: Neither (WikiStore + Notion sync).
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from pathlib import PurePosixPath
+from datetime import datetime, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.operations.notion import platform_config
 from company_brain.config import AppConfig
+from company_brain.notion.relocate import relocate_page
 from company_brain.notion.scoped_search import (
     build_fill_section,
     prefixes_for_teamspace,
@@ -114,13 +113,16 @@ class WikiDirectiveAgent(BaseAgent):
             body = f"# {title}\n\n{body.lstrip()}"
 
         if relocate_to:
-            self._relocate(
+            relocate_page(
+                store=self._store,
+                config=self.config,
                 from_path=target_path,
                 to_path=relocate_to,
                 fm=fm,
                 body=body,
                 title=title,
                 when=now,
+                sync=self._sync,
             )
             stats["moved"] += 1
             target_path = relocate_to
@@ -159,65 +161,3 @@ class WikiDirectiveAgent(BaseAgent):
             rest = lines[1].lstrip("\n") if len(lines) > 1 else ""
             return f"{lines[0]}\n\n{section}\n{rest}".rstrip() + "\n"
         return f"# {title}\n\n{section}\n{body.lstrip()}".rstrip() + "\n"
-
-    def _relocate(
-        self,
-        *,
-        from_path: str,
-        to_path: str,
-        fm: dict[str, Any],
-        body: str,
-        title: str,
-        when: datetime,
-    ) -> None:
-        """Move page content to ``to_path`` and leave a stub at ``from_path``."""
-        ttl = platform_config.stub_ttl_days()
-        expires = (when + timedelta(days=ttl)).isoformat()
-        new_fm = dict(fm)
-        new_fm["title"] = title
-        new_fm["section"] = str(PurePosixPath(to_path).parent)
-        if new_fm["section"] == ".":
-            new_fm["section"] = ""
-        new_fm["last_updated"] = when.isoformat()
-        new_fm["synced_hash"] = body_hash(body)
-        new_fm.pop("stub", None)
-        new_fm.pop("stub_target", None)
-        new_fm.pop("stub_expires_at", None)
-        # Mark for page_system Notion parent fix if needed
-        new_fm["relocated_from"] = from_path
-
-        self._store.write(to_path, MarkdownDoc(frontmatter=new_fm, body=body))
-
-        stub_title = f"Moved — {title}"
-        stub_body = (
-            f"# {stub_title}\n\n"
-            f"This page moved to [[{to_path.removesuffix('.md')}]].\n\n"
-            f"Stub expires {expires[:10]}.\n"
-        )
-        stub_section = str(PurePosixPath(from_path).parent)
-        stub_fm = {
-            "title": stub_title,
-            "type": "stub",
-            "stub": True,
-            "stub_target": to_path,
-            "stub_expires_at": expires,
-            "section": "" if stub_section == "." else stub_section,
-            "created": when.isoformat(),
-            "last_updated": when.isoformat(),
-        }
-        # Keep old Notion binding on stub briefly so humans still land somewhere;
-        # new page gets a fresh sync discover-or-create.
-        if fm.get("notion_page_id"):
-            # Transfer binding to the new page; stub is MD-only redirect.
-            new_doc = self._store.read(to_path)
-            nfm = dict(new_doc.frontmatter)
-            nfm["notion_page_id"] = fm["notion_page_id"]
-            self._store.write(to_path, MarkdownDoc(frontmatter=nfm, body=new_doc.body))
-
-        self._store.write(from_path, MarkdownDoc(frontmatter=stub_fm, body=stub_body))
-
-        if self._sync:
-            try:
-                NotionSync(store=self._store, config=self.config).sync_doc(to_path, force=True)
-            except Exception:
-                self.logger.exception("Notion sync failed after move to %s", to_path)

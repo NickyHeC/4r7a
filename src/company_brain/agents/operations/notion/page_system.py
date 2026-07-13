@@ -18,6 +18,7 @@ from company_brain.agents.base import BaseAgent
 from company_brain.agents.operations.notion import platform_config
 from company_brain.config import AppConfig
 from company_brain.notion.client import NotionClient
+from company_brain.notion.relocate import relocate_page
 from company_brain.notion.sync import NotionSync
 from company_brain.notion.sync_routing import resolve_teamspace_parent
 from company_brain.wiki.store import CONTROL_FILES, LocalWikiStore, MarkdownDoc, WikiStore
@@ -113,27 +114,18 @@ class PageSystemAgent(BaseAgent):
         *,
         when: datetime,
     ) -> None:
-        from company_brain.agents.operations.notion.wiki_directive import WikiDirectiveAgent
-
-        # Reuse wiki_directive relocate semantics via a one-shot helper path:
-        agent = WikiDirectiveAgent(
-            self.config,
-            store=self._store,
-            sync=self._sync,
-        )
         fm = dict(doc.frontmatter or {})
         title = str(fm.get("title") or PurePosixPath(to_path).stem)
-        body = doc.body
-        fm.pop("page_relocate_to", None)
-        fm.pop("misplaced_to", None)
-        fm.pop("misplaced", None)
-        agent._relocate(
+        relocate_page(
+            store=self._store,
+            config=self.config,
             from_path=from_path,
             to_path=to_path,
             fm=fm,
-            body=body,
+            body=doc.body,
             title=title,
             when=when,
+            sync=self._sync,
         )
         self._ensure_notion_parent(to_path, dict(self._store.read(to_path).frontmatter))
 
