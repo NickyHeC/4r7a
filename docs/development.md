@@ -2,8 +2,10 @@
 
 How to change company-brain safely: lint, test, and the doctor registry.
 
-**Solo maintainer:** deferred features → [`tabled.md`](tabled.md); doc format →
-[`doc-style.md`](doc-style.md); agent governance → [`.cursor/rules/solo-maintainer.mdc`](../.cursor/rules/solo-maintainer.mdc).
+**Solo maintainer:** deferred features → [`tabled.md`](tabled.md); design-before-build
+→ [`design_before_build.md`](design_before_build.md); doc format →
+[`doc-style.md`](doc-style.md); agent governance →
+[`.cursor/rules/solo-maintainer.mdc`](../.cursor/rules/solo-maintainer.mdc).
 
 ## Fix loop
 

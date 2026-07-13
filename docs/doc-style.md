@@ -12,6 +12,7 @@ How human-facing docs in this repo stay consistent. Agents update docs per
 | Handbook index | `docs/agents/README.md` | Navigation | Department table, shared conventions |
 | Install | `project_install.md` | Admin connecting platforms | OAuth, env, onboarding commands |
 | Plans | `docs/plans/*.md` | Design + build session only | **Delete after ship** when handbooks updated |
+| Design process | `docs/design_before_build.md` | Before new features/platforms | Concern debate → temporary plan file → build sessions |
 | Backlog | `docs/tabled.md` | Planning phase | Deferred features; remove row when shipped |
 | Dev loop | `docs/development.md` | Contributors | ruff, pytest, doctor |
 | Memory | `memory.md` | AI + you | Reverse-chronological decision log |
@@ -22,9 +23,10 @@ delete after build completes and outcomes are folded into handbooks.
 
 ## Design sessions
 
-Before building a new feature, the agent lists concerns one-by-one (issues,
-clarifications, questions, improvements). Expect 2–3 rounds until scope is agreed.
-Read `docs/tabled.md` at plan start for the matching department/platform.
+Before building a new feature, follow [`design_before_build.md`](design_before_build.md):
+research, numbered concerns (one-by-one, batch, or all-at-once), 2–3 rounds until scope
+is agreed, then `docs/plans/<topic>.md`. Read `docs/tabled.md` at plan start for the
+matching department/platform.
 
 ## Handbook page template
 

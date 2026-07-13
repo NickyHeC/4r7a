@@ -87,6 +87,8 @@ more persistent **managers** that dispatch specialist agents based on what they 
 This section is a high-level map of the departments and the platforms they cover —
 for the detailed work, scope, sources, and destinations of every agent, see the
 **[Agent Handbook](docs/agents/README.md)** (`docs/agents/` — one file per department).
+**New features/platforms:** spec first via [`docs/design_before_build.md`](docs/design_before_build.md)
+(research → design debate → `docs/plans/<topic>.md` → build sessions).
 
 ### Engineering
 
@@ -268,7 +270,12 @@ company-brain/
       employee_wiki/      # employee_wiki_manager, materializer, import, onboarding
       bridge/             # bridge_manager, materializer, blocker_rollup
     bridge/               # MCP server, auth, read gate, index, tools
-  docs/agents/            # Agent handbook — schedules, diagrams, per-agent detail
+  docs/
+    design_before_build.md  # Design debate before new features/platforms
+    agents/                 # Agent handbook — schedules, diagrams, per-agent detail
+    development.md          # ruff, pytest, doctor
+    doc-style.md            # Handbook and diagram conventions
+    tabled.md               # Deferred feature backlog
   wiki/ · employee_wiki/ · raw/entries/   # Gitignored locally; shared volume in cloud
 ```
 

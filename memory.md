@@ -11,6 +11,13 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-12 — Design-before-build doc (`docs/design_before_build.md`)
+
+- **What:** Canonical planning process for new features/platforms (research → concern
+  debate with one-by-one / batch / all-at-once modes → `docs/plans/<topic>.md` → build).
+- **Docs:** Linked from README, `doc-style.md`, `development.md`, agents handbook index,
+  `solo-maintainer.mdc`.
+
 ## 2026-07-12 — Notion platform Session 9 (docs ship)
 
 - **Docs:** README Notion + MD/Notion flow; `project_install.md` Notion early connect

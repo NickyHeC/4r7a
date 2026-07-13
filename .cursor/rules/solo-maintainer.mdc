@@ -14,6 +14,9 @@ chase features).
 
 When the user starts **designing** a new feature (before implementation):
 
+Follow [`docs/design_before_build.md`](../../docs/design_before_build.md) for the full
+debate process, presentation modes, and plan-file template.
+
 1. Read `docs/tabled.md` for the matching department/platform.
 2. List concerns **one by one** — issues, clarifications, questions, improvements.
    Do this proactively; do not wait to be asked.
