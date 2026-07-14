@@ -7,7 +7,7 @@ name = "company-brain"
 version = "0.1.0"
 description = "The automated platform that covers any information circulation within a company"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.1",

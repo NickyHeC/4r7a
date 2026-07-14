@@ -297,4 +297,4 @@ Agent filenames, schedules, and data flow diagrams live in [`docs/agents/`](docs
 
 ## License
 
-MIT
+Apache License 2.0 — see [LICENSE](LICENSE).
