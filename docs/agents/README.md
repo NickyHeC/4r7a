@@ -54,7 +54,7 @@ agents run to completion when dispatched.
 (high-level map), and [`project_install.md`](../../project_install.md) (connect steps).
 Onboarding agents always appear **last** in their platform section.
 
-**Development loop:** [`docs/development.md`](../development.md) — ruff, pytest,
-`company-brain doctor`. **New features:** [`docs/design_before_build.md`](../design_before_build.md).
-Deferred work: [`docs/tabled.md`](../tabled.md). Doc format:
-[`docs/doc-style.md`](../doc-style.md).
+**Extending the system:** design via [`docs/design_process.md`](../design_process.md),
+then build/test/clean via [`docs/hygiene_checklist.md`](../hygiene_checklist.md) (ruff,
+pytest, `company-brain doctor`). Deferred work: [`docs/tabled.md`](../tabled.md). Doc
+format: [`docs/doc_style.md`](../doc_style.md).

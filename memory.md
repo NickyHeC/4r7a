@@ -11,6 +11,30 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-13 — Doc filename coherence (`doc-style.md` → `doc_style.md`)
+
+- **What:** Renamed the last hyphenated doc so all `docs/*.md` and root meta docs use
+  `_` (matching `design_process`, `hygiene_checklist`, `project_install`, `agent_list`).
+- **Scope (user choice):** docs only. `.cursor/rules/*.mdc` and `.cursor/skills/` dirs
+  stay kebab-case (Cursor convention, referenced in code); wiki content slugs stay `-`
+  per `naming.mdc`.
+- **Refs updated:** README, `CONTRIBUTING.md`, `design_process.md`, `hygiene_checklist.md`,
+  `docs/agents/README.md`, `governance.mdc`. Added a docs-use-`_` note to `naming.mdc`.
+
+## 2026-07-13 — Process docs dedupe + public-repo UX (working tree)
+
+- **What:** Reorganized the design/build/test process docs so each fact lives once and
+  is read on demand. Framed for external contributors extending 4r7a with AI agents.
+- **Renames:** `docs/design_before_build.md` → `docs/design_process.md` (phase 1);
+  `docs/development.md` → `docs/hygiene_checklist.md` (phase 2, single source of all
+  checks); `.cursor/rules/solo-maintainer.mdc` → `.cursor/rules/governance.mdc`
+  (generalized off "Nicky", slimmed to invariants + pointers — no duplicated checklists).
+- **New:** root `CONTRIBUTING.md` — OSS entry point pointing to the two process docs.
+- **Dedupe:** post-feature hygiene checklist and pre-ship gate now live only in
+  `hygiene_checklist.md`; design process only in `design_process.md`; "when to update
+  what" only in `doc-style.md`. Governance rule and docs cross-link instead of restating.
+- **Refs updated:** README (map + project tree), `docs/agents/README.md`, `doc-style.md`.
+
 ## 2026-07-12 — Design-before-build doc (`docs/design_before_build.md`)
 
 - **What:** Canonical planning process for new features/platforms (research → concern

@@ -1,36 +1,35 @@
 ---
-description: Solo-maintainer governance — design scoping, rule compliance, tabled features, docs
+description: Project governance — how contributors (humans and AI agents) extend company-brain: design-before-build, rule compliance, tabled work, doc obligations
 alwaysApply: true
 ---
 
-# Solo Maintainer Governance
+# Governance
 
-Nicky is the sole developer for the foreseeable future. The agent acts as a
-**maintainer partner**: flag drift early, keep docs truthful, and surface deferred
-work during **planning** — not as a nagging layer (see README posture on out-of-scope
-chase features).
+company-brain is a small, docs-first codebase maintained by one or a few people and
+extended largely through AI coding agents. Act as a **maintainer partner**: flag drift
+early, keep docs truthful, prove your claims, and surface deferred work during
+planning — not as a nagging layer (see the README posture on out-of-scope chase
+features).
 
-## 0. Design before build (required)
+This rule is the always-on summary. The full procedures live in two docs; read them
+when the work calls for it (do not duplicate their contents here):
 
-When the user starts **designing** a new feature (before implementation):
+- **Design a feature →** [`docs/design_process.md`](../../docs/design_process.md)
+- **Build / test / clean →** [`docs/hygiene_checklist.md`](../../docs/hygiene_checklist.md)
+- **Doc formatting + when to update what →** [`docs/doc_style.md`](../../docs/doc_style.md)
 
-Follow [`docs/design_before_build.md`](../../docs/design_before_build.md) for the full
-debate process, presentation modes, and plan-file template.
+## 1. Design before build (required)
 
-1. Read `docs/tabled.md` for the matching department/platform.
-2. List concerns **one by one** — issues, clarifications, questions, improvements.
-   Do this proactively; do not wait to be asked.
-3. Expect **2–3 back-and-forth rounds** until scope is agreed; only then write code.
-4. Use `docs/plans/<topic>.md` for the design + build-session instructions.
-5. **After ship:** fold outcomes into handbooks + `memory.md`, update `project_install.md`
-   if needed, remove shipped rows from `docs/tabled.md`, **delete the plan file**.
+When the user starts **designing** a new feature, do not write production code until
+scope is settled and they explicitly start a build. Follow
+[`docs/design_process.md`](../../docs/design_process.md): research first, raise concerns
+(one-by-one / batch / all-at-once per the user's choice), 2–3 rounds, then write a
+temporary `docs/plans/<topic>.md`. Read [`docs/tabled.md`](../../docs/tabled.md) at plan
+start for the matching area. Build **one ship unit per thread**.
 
-**One concern per session** when building: one ship unit (agent slice, platform, or doc pass)
-per thread when possible.
+## 2. Rule compliance (flag, don't silently work around)
 
-## 1. Rule compliance (flag, don't silently fix scope)
-
-Before shipping or when reviewing design, cross-check work against `.cursor/rules/`:
+Cross-check work against `.cursor/rules/`:
 
 | Area | Rule file |
 |------|-----------|
@@ -38,91 +37,45 @@ Before shipping or when reviewing design, cross-check work against `.cursor/rule
 | Wiki / Notion | `wiki-data-flow`, `naming`, `access-control` |
 | Platform scope | `platform-boundary` |
 
-**When a change violates a rule**, say so explicitly:
+When a change violates a rule, say so explicitly and stop — do not quietly pick the
+convenient path:
 
-> **Rule drift:** `<rule>` — `<what violates it>` — suggest fix or ask to update the rule if intentional.
+> **Rule drift:** `<rule>` — `<what violates it>` — suggest a fix, or ask to update the rule if intentional.
 
-Do not expand scope to "fix" unrelated violations unless the user asks.
+Do not expand scope to "fix" unrelated violations unless asked. **One source of truth
+per decision** — never leave the same fact defined in two places.
 
-## 2. Tabled / deferred work
+**Naming / structure:** follow [`naming.mdc`](naming.mdc) and
+[`agent-organization.mdc`](agent-organization.mdc). Flag inconsistencies; run
+`company-brain doctor naming` and `company-brain migrate-names` when bulk-renaming
+legacy wiki trees.
+
+## 3. Tabled / deferred work
 
 Canonical registry: [`docs/tabled.md`](../../docs/tabled.md).
 
-- **During planning / design** — read `docs/tabled.md`; mention relevant rows
-  ("tabled: X — include now or still defer?"). User usually reaches tabled.md before
-  platform visions; remind if they forget at plan start.
+- **During planning** — read it; mention relevant rows ("tabled: X — include now or
+  still defer?"). Users often reach `tabled.md` before the platform vision — remind them
+  at plan start if they forget.
 - **When deferring** — append a row to `docs/tabled.md` (not only `notepad.md`).
-- **When shipping** — remove the row from `docs/tabled.md`.
-- **No nudge otherwise** — do not ping about tabled items outside planning/build context.
-
-## 3. Naming and file structure
-
-Follow [`naming.mdc`](naming.mdc) and [`agent-organization.mdc`](agent-organization.mdc).
-
-Flag inconsistencies; run `company-brain doctor naming` and `company-brain migrate-names`
-when bulk-renaming legacy wiki trees.
+- **When shipping** — remove the row.
+- **Otherwise** — no nudging about tabled items outside a planning/build context.
 
 ## 4. Documentation obligations
 
-After **meaningful** work, update in order:
+After **meaningful** work, keep steady-state docs truthful. Update the applicable
+surfaces — in priority order **`memory.md` (always, dated entry) → department handbook
+→ `README.md` (map only) → `project_install.md` (connect steps) → `docs/tabled.md`**.
+Which change needs which surface is the "When to update what" table in
+[`docs/doc_style.md`](../../docs/doc_style.md) — follow it rather than guessing.
 
-1. **`memory.md`** — prepend dated entry (newest on top)
-2. **Department handbook** — `docs/agents/<dept>.md`
-3. **`README.md`** — high-level map only
-4. **`project_install.md`** — connect/onboard steps when platforms change
-5. **`docs/tabled.md`** — defer or remove shipped backlog rows
+Do **not** create new doc files unless the user asks or a plan needs one. `docs/plans/`
+files are temporary: delete them once the build ships and their outcomes are folded into
+the steady-state docs above.
 
-**Plans:** `docs/plans/` is temporary; delete when build completes and steady-state docs
-are updated. Do not create new doc files unless the user asks or a plan is needed.
+## 5. Prove before shipping
 
-Doc format: [`docs/doc-style.md`](../../docs/doc-style.md).
-
-## 5. Human-readable docs and visuals
-
-- **One mermaid diagram per major steady-state flow** — one summary paragraph under
-  `## {Platform} — how it runs`, then the diagram; no duplicate ascii
-  of the same flow.
-- **Exclude onboarding agents from diagrams** — onboarding is one-time setup; graphs show
-  how the system runs **after** setup (managers, persistent loops, dispatch).
-- **Tables** for agent specs; short prose; link to code/config for detail.
-- Deferred work: link to `docs/tabled.md` — no long "Not yet built" lists in handbooks.
-
-## 6. Pre-ship checklist (always run)
-
-```bash
-ruff check .
-ruff format --check .
-pytest -q
-company-brain doctor code
-```
-
-Doctor runs on every ship — no exceptions. Coherence / excess-file / repo cleaning
-passes are **optional**; ask after large feature sections (see §7).
-
-Use **no-sus-agent-doctor** skill for auth, billing, Gmail actuation, onboarding,
-receipt routing, or security-sensitive changes.
-
-## 7. Post-feature hygiene (ask, don't auto-run)
-
-After a **large feature section** ships, ask the user:
-
-> Would you like a **project coherence check** (doctor + naming + handbook vs code),
-> **excess file scan**, or **repository cleaning** pass?
-
-When they say yes, run the three-pass checklist in
-[`docs/development.md`](../../docs/development.md) → **Post-feature hygiene checklist**:
-
-1. **Cleanliness** — `ruff check .`, `ruff format --check .`, `pytest -q`, `git status --short`; no stray
-   generated files tracked (gitignore local-only state), no leftover `docs/plans/*`.
-2. **Coherence** — `company-brain doctor code` (+ `doctor llm` when keys exist), then
-   docs-vs-code: handbook, README map, `project_install.md`, `config/*.yaml` keys have
-   readers, `memory.md` entry, `docs/tabled.md` rows added/removed.
-3. **Dead code** — `ruff check . --select F` for unused imports; manually grep new
-   public symbols for callers (remove definitions with none), delete zero-logic
-   placeholder modules (keep "concept only" as a `tabled.md` row), and consolidate
-   duplicate helpers / orphaned config keys.
-4. **Safety & deps** — secret scan the staged diff (`detect-secrets` / `gitleaks`;
-   never commit `.env`/tokens), `pip-audit` when deps changed, new egress hosts in the
-   `Smolfile` allow_list. Optional: `mypy`, `pytest --cov`, `codespell`, extended ruff.
-
+Every ship runs the pre-ship gate; large builds run the deeper passes and (for
+security-sensitive changes) the no-sus review. All of these live in
+[`docs/hygiene_checklist.md`](../../docs/hygiene_checklist.md) — run them from there.
 Do not run destructive cleanup without explicit approval.

@@ -1,32 +1,34 @@
 # Documentation Style
 
 How human-facing docs in this repo stay consistent. Agents update docs per
-[`.cursor/rules/solo-maintainer.mdc`](../.cursor/rules/solo-maintainer.mdc).
+[`.cursor/rules/governance.mdc`](../.cursor/rules/governance.mdc).
 
 ## Doc layers
 
 | Layer | Path | Audience | Content |
 |-------|------|----------|---------|
 | Pitch + map | `README.md` | Anyone | Why, data-flow diagram, department one-liners |
+| Contributing | `CONTRIBUTING.md` | New contributors | Entry point → the two process docs below |
+| Design process | `docs/design_process.md` | Extending the system (phase 1) | Concern debate → temporary plan file |
+| Hygiene checklist | `docs/hygiene_checklist.md` | Extending the system (phase 2) | ruff, pytest, doctor, cleanliness, no-sus, CI |
 | Runbooks | `docs/agents/*.md` | You + future hires | Per-agent tables, schedules, wiki paths |
 | Handbook index | `docs/agents/README.md` | Navigation | Department table, shared conventions |
 | Install | `project_install.md` | Admin connecting platforms | OAuth, env, onboarding commands |
 | Plans | `docs/plans/*.md` | Design + build session only | **Delete after ship** when handbooks updated |
-| Design process | `docs/design_before_build.md` | Before new features/platforms | Concern debate → temporary plan file → build sessions |
 | Backlog | `docs/tabled.md` | Planning phase | Deferred features; remove row when shipped |
-| Dev loop | `docs/development.md` | Contributors | ruff, pytest, doctor |
 | Memory | `memory.md` | AI + you | Reverse-chronological decision log |
-| Rules | `.cursor/rules/*.mdc` | AI | Invariants agents must enforce |
+| Rules | `.cursor/rules/*.mdc` | AI | Always-on invariants agents must enforce |
 
 **Rule:** Steady-state truth lives in handbooks + `memory.md`. Plans are **temporary** —
-delete after build completes and outcomes are folded into handbooks.
+delete after build completes and outcomes are folded into handbooks. Each fact lives in
+exactly one layer; other layers link to it rather than restating it.
 
-## Design sessions
+## Design and build process
 
-Before building a new feature, follow [`design_before_build.md`](design_before_build.md):
-research, numbered concerns (one-by-one, batch, or all-at-once), 2–3 rounds until scope
-is agreed, then `docs/plans/<topic>.md`. Read `docs/tabled.md` at plan start for the
-matching department/platform.
+The full extend-the-system loop is two docs: design in
+[`design_process.md`](design_process.md), then build/test/clean in
+[`hygiene_checklist.md`](hygiene_checklist.md). This file only covers how the resulting
+docs are **formatted**.
 
 ## Handbook page template
 
@@ -71,6 +73,12 @@ Each `docs/agents/<department>.md` file:
   persistent loops, dispatch). Onboarding is documented in prose below the diagram.
 - Label edges with dispatch triggers (`08:00`, `on demand`, `via manager`)
 - Use **ascii** only for simple linear pipelines in README if mermaid is overkill
+
+## Prose
+
+- **Tables for agent specs; short prose; link to code/config for detail** rather than
+  restating it. Deferred work links to `docs/tabled.md` — no long "Not yet built" lists
+  in handbooks.
 
 ## `memory.md` entries
 

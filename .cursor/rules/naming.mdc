@@ -17,6 +17,11 @@ Inspired by the nicky-wiki pattern (concise path slug, readable title) with one 
 difference: **agents use `_` for Python imports**; wiki **file** slugs use `-` because
 they are not import paths.
 
+**Repo docs and meta files use `_`** (e.g. `docs/design_process.md`, `docs/doc_style.md`,
+`project_install.md`) — matching the code convention, not the wiki-slug convention. The
+`-` is reserved for wiki **content** slugs (section B) and `.cursor/rules/*.mdc` /
+`.cursor/skills/` directories (kebab-case per the Cursor convention).
+
 ---
 
 ## A. Agents (`src/company_brain/agents/`)
