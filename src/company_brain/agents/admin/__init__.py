@@ -1,1 +1,1 @@
-"""Admin department agents — system change requests (Weave)."""
+"""Admin department agents — Weave + monthly LLM ops maintenance."""

@@ -336,6 +336,17 @@ gcal:
     time: "08:00"
     slack_user: ""
 
+# Admin — monthly LLM ops maintenance (expense report + maintain session request).
+admin:
+  llm_ops:
+    day: 1
+    time: "09:00"
+    drift_ratio: 0.5
+    verify_fail_rate: 0.3
+    min_verify_samples: 5
+    estimated_minutes:
+      linear_stale_audit: 15
+
 # CRM — entity-per-person contacts + typed inbound (see docs/agents/operations.md).
 crm:
   contact_dir: crm/contact

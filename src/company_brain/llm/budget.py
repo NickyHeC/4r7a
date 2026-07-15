@@ -218,11 +218,17 @@ def _token_dims(block: dict[str, Any]) -> dict[str, float]:
 
 
 def current_usage(*, store: StateStore | None = None) -> dict[str, Any]:
+    return usage_for_month(_month_key(), store=store)
+
+
+def usage_for_month(month: str, *, store: StateStore | None = None) -> dict[str, Any]:
+    """Return the usage ledger for ``month`` (``YYYY-MM``)."""
     store = store or StateStore()
-    raw = store.get(_usage_key()) or {}
+    raw = store.get(f"{USAGE_PREFIX}{month}") or {}
     categories = raw.get("categories") or {}
     agents = raw.get("agents") or {}
     return {
+        "month": month,
         **_token_dims(raw),
         "categories": {name: _token_dims(block) for name, block in categories.items()},
         "agents": {
@@ -232,9 +238,45 @@ def current_usage(*, store: StateStore | None = None) -> dict[str, Any]:
                     mgr: _token_dims(mblock)
                     for mgr, mblock in (block.get("managers") or {}).items()
                 },
+                "verify": {
+                    "ok": int((block.get("verify") or {}).get("ok") or 0),
+                    "rework": int((block.get("verify") or {}).get("rework") or 0),
+                    "noise": int((block.get("verify") or {}).get("noise") or 0),
+                },
+                "last_run_id": block.get("last_run_id"),
+                "last_session_id": block.get("last_session_id"),
+                "last_reason": block.get("last_reason"),
             }
             for name, block in agents.items()
         },
+    }
+
+
+def record_verify_verdict(
+    agent: str,
+    status: str,
+    *,
+    store: StateStore | None = None,
+) -> dict[str, int]:
+    """Increment monthly ok/rework/noise counts for ``agent``."""
+    from company_brain.agents.result import STATUS_NOISE, STATUS_OK, STATUS_REWORK
+
+    key_status = status if status in {STATUS_OK, STATUS_REWORK, STATUS_NOISE} else STATUS_OK
+    store = store or StateStore()
+    key = _usage_key()
+    raw = dict(store.get(key) or {})
+    agents = dict(raw.get("agents") or {})
+    agent_block = dict(agents.get(agent) or {})
+    verify = dict(agent_block.get("verify") or {})
+    verify[key_status] = int(verify.get(key_status) or 0) + 1
+    agent_block["verify"] = verify
+    agents[agent] = agent_block
+    raw["agents"] = agents
+    store.set(key, raw)
+    return {
+        "ok": int(verify.get(STATUS_OK) or 0),
+        "rework": int(verify.get(STATUS_REWORK) or 0),
+        "noise": int(verify.get(STATUS_NOISE) or 0),
     }
 
 

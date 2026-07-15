@@ -60,6 +60,10 @@ class StateStore:
             del data[key]
             self._save(data)
 
+    def keys(self, *, prefix: str = "") -> list[str]:
+        """Return stored keys, optionally filtered by prefix."""
+        return [k for k in self._load() if k.startswith(prefix)]
+
 
 def changed_since(
     key: str, signature: Any, *, store: StateStore | None = None, update: bool = True

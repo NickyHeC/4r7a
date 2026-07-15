@@ -816,6 +816,49 @@ def weave() -> None:
     """Weave system-change dispatch."""
 
 
+@main.group()
+def admin() -> None:
+    """Admin department — monthly LLM ops + Weave helpers."""
+
+
+@admin.command("manager")
+@click.option("--loop", is_flag=True, help="Run the persistent monthly loop (daemon).")
+@click.option("--month", default=None, help="Target month YYYY-MM (default: previous).")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync for wiki writes.")
+def admin_manager_cmd(loop: bool, month: str | None, no_sync: bool) -> None:
+    """Run admin_manager (monthly LLM expense + maintain). Default: one pass."""
+    from company_brain.agents.admin.admin_manager import AdminManager
+
+    config = load_config()
+    result = AdminManager(config).execute(once=not loop, month=month, sync=not no_sync)
+    if not loop:
+        click.echo(result)
+
+
+@admin.command("expense-report")
+@click.option("--month", default=None, help="Target month YYYY-MM (default: previous).")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_expense_report_cmd(month: str | None, no_sync: bool) -> None:
+    """Run llm_expense_report for one month."""
+    from company_brain.agents.admin.llm_expense_report import LlmExpenseReportAgent
+
+    config = load_config()
+    result = LlmExpenseReportAgent(config).execute(month=month, sync=not no_sync)
+    click.echo(result)
+
+
+@admin.command("maintain")
+@click.option("--month", default=None, help="Target month YYYY-MM (default: previous).")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_maintain_cmd(month: str | None, no_sync: bool) -> None:
+    """Run admin_maintain for one month."""
+    from company_brain.agents.admin.admin_maintain import AdminMaintainAgent
+
+    config = load_config()
+    result = AdminMaintainAgent(config).execute(month=month, sync=not no_sync)
+    click.echo(result)
+
+
 @weave.command("events")
 @click.option("--http", is_flag=True, help="Use HTTP mode instead of Socket Mode.")
 @click.option("--host", default="0.0.0.0", help="HTTP bind host.")

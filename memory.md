@@ -11,6 +11,15 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-15 — LLM telemetry Sessions 3–4 (working tree)
+
+- **Session 3:** `record_verify_verdict` on execute; `session_id` kwargs nest into
+  ambient context; `usage_for_month` exposes verify + last session; `StateStore.keys`.
+- **Session 4:** `admin_manager` → `llm_expense_report` + `admin_maintain`; wiki pages
+  `admin/llm-expense/{YYYY-MM}.md`, `admin/maintain/{YYYY-MM}.md`, `admin/agent-runtime.md`;
+  CLI `company-brain admin …`; `operations.yaml` `admin.llm_ops`; handbook + README.
+- **Tests:** `tests/test_admin_llm_ops.py` (303 suite green).
+
 ## 2026-07-15 — LLM telemetry Sessions 1–2 (working tree)
 
 - **Session 1:** `llm/run_context.py` ambient tags (`manager` / `run_id` / `session_id`);

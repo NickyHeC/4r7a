@@ -98,3 +98,12 @@ def resolve_estimated_minutes(
         return fallback
     p95_minutes = int(math.ceil(stats["p95_ms"] / 60_000.0))
     return max(p95_minutes, 1)
+
+
+def list_duration_agents(*, store: StateStore | None = None) -> list[str]:
+    """Agent names that have at least one recorded execute duration sample."""
+    store = store or StateStore()
+    agents: list[str] = []
+    for key in store.keys(prefix=DURATION_PREFIX):
+        agents.append(key.removeprefix(DURATION_PREFIX))
+    return sorted(agents)

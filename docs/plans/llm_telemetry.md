@@ -112,9 +112,9 @@ Onboarding agents stay out of the diagram.
    honesty in `record_usage` / tracking hooks; tests.
 2. **Specialist duration** — DONE — time ephemeral `execute()`; StateStore rolling stats;
    `resolve_estimated_minutes`; Linear stale-audit work_ahead consumer; tests.
-3. **Verify rollup + optional session_id** — persist verdict counts; pass session when
+3. **Verify rollup + optional session_id** — DONE — persist verdict counts; pass session when
    callers have one.
-4. **Admin monthly pair** — `admin_manager`, `llm_expense_report`, `admin_maintain`;
+4. **Admin monthly pair** — DONE — `admin_manager`, `llm_expense_report`, `admin_maintain`;
    wiki pages; Notifier gating; handbook + `memory.md`.
 5. **Docs ship** — admin handbook, README map if needed, remove nothing from tabled except
    confirm optimization scout remains; delete this plan.

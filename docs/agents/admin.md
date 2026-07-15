@@ -1,7 +1,40 @@
 # Admin department — agents
 
-System-change intake via **Weave** (`@weave` Slack app). Wiki MD is source of truth;
-Notion change-request database mirrors when configured.
+System-change intake via **Weave** (`@weave` Slack app), plus monthly **LLM ops**
+maintenance (expense report + coding-session request). Wiki MD is source of truth;
+Notion mirrors when configured.
+
+## LLM ops — how it runs
+
+Monthly maintenance period (default 1st at 09:00, `config/operations.yaml` → `admin.llm_ops`).
+Persistent **`admin_manager`** dispatches two specialists in order.
+
+```mermaid
+flowchart TD
+  AM[admin_manager] -->|1 expense| EXP[llm_expense_report]
+  AM -->|2 maintain| MNT[admin_maintain]
+  SPEC[ephemeral specialists] -->|usage + duration + verify| ST[(StateStore)]
+  ST --> EXP
+  ST --> MNT
+  EXP -->|write_wiki_page| W1[admin/llm-expense/YYYY-MM.md]
+  MNT -->|write_wiki_page| W2[admin/maintain/YYYY-MM.md]
+  MNT -->|refresh| W3[admin/agent-runtime.md]
+  MNT -->|actionable if drift| SL[#wiki-admin]
+```
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `admin_manager.py` | Monthly (`admin.llm_ops`) | Dispatch expense then maintain |
+| `llm_expense_report.py` | Via manager | Month spend by agent/category; verify + duration summary |
+| `admin_maintain.py` | Via manager | Drift list + agent-runtime page; request admin coding session |
+
+**CLI:** `company-brain admin manager`, `company-brain admin expense-report`, `company-brain admin maintain`
+
+**Notify:** `#wiki-admin` actionable only on budget pressure, duration drift, or verify fail rates; quiet months stay silent.
+
+**Tabled:** Monthly optimization scout — see `docs/tabled.md`.
+
+---
 
 ## Weave — how it runs
 

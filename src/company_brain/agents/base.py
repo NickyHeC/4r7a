@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from abc import ABC, abstractmethod
+from contextlib import nullcontext
 from typing import Any
 
 from company_brain.agents.result import AgentResult
@@ -76,27 +77,43 @@ class BaseAgent(ABC):
         if not self.should_run(**kwargs):
             self.logger.info("Agent '%s' skipped by cost gate (no change)", self.name)
             return SKIPPED
+
+        session_id = kwargs.get("session_id")
+        if session_id:
+            from company_brain.llm.run_context import ambient_scope
+
+            scope = ambient_scope(session_id=str(session_id))
+        else:
+            scope = nullcontext()
+
         started = time.monotonic() if self.track_duration else None
+        final_status: str | None = None
         try:
-            with run_budget_scope(self.name) as run_budget:
-                self.setup()
-                result: AgentResult | None = None
-                for attempt in range(1, self.max_iterations + 1):
-                    run_budget.begin_execute_step()
-                    output = self.run(**kwargs)
-                    result = self.verify(output, **kwargs)
-                    if result.passed:
-                        break
+            with scope:
+                with run_budget_scope(self.name) as run_budget:
+                    self.setup()
+                    result: AgentResult | None = None
+                    for attempt in range(1, self.max_iterations + 1):
+                        run_budget.begin_execute_step()
+                        output = self.run(**kwargs)
+                        result = self.verify(output, **kwargs)
+                        if result.passed:
+                            break
+                        self.logger.info(
+                            "Agent '%s' attempt %d/%d: status=%s gaps=%s",
+                            self.name,
+                            attempt,
+                            self.max_iterations,
+                            result.status,
+                            result.gaps,
+                        )
+                    final_status = result.status if result is not None else None
                     self.logger.info(
-                        "Agent '%s' attempt %d/%d: status=%s gaps=%s",
+                        "Agent '%s' completed (status=%s)",
                         self.name,
-                        attempt,
-                        self.max_iterations,
-                        result.status,
-                        result.gaps,
+                        final_status,
                     )
-                self.logger.info("Agent '%s' completed (status=%s)", self.name, result.status)
-                return result.output
+                    return result.output if result is not None else None
         except RunLimitExceededError:
             self.logger.error("Agent '%s' stopped by per-run budget cap", self.name)
             raise
@@ -104,6 +121,17 @@ class BaseAgent(ABC):
             self.logger.exception("Agent '%s' failed", self.name)
             raise
         finally:
+            if final_status is not None:
+                try:
+                    from company_brain.llm.budget import record_verify_verdict
+
+                    record_verify_verdict(self.name, final_status)
+                except Exception:
+                    self.logger.debug(
+                        "Failed to record verify verdict for '%s'",
+                        self.name,
+                        exc_info=True,
+                    )
             if started is not None:
                 try:
                     from company_brain.llm.duration import record_execute_duration

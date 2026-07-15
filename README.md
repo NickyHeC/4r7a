@@ -137,6 +137,9 @@ Open-source **developer community** platforms. v1 ships **Discord** only.
 
 ### Admin
 
+- **LLM ops** — monthly `admin_manager` runs expense report + maintain (coding-session
+  request) from measured usage/duration/verify; wiki under `admin/llm-expense/` and
+  `admin/maintain/`. CLI: `company-brain admin manager`.
 - **Weave** — separate Slack app for system-change requests (`@weave`). Triage writes
   `admin/change-request/{id}.md`, mirrors to a Notion change-request DB when configured,
   and dispatches draft PRs for approved `config_only` changes (W2 `members.yaml` only;
