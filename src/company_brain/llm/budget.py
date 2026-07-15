@@ -367,11 +367,7 @@ def record_usage(
     Returns the delta recorded for this call (tokens + usd / unknown flag).
     """
     dims_sum = (
-        input_tokens
-        + output_tokens
-        + cache_read_tokens
-        + cache_write_tokens
-        + reasoning_tokens
+        input_tokens + output_tokens + cache_read_tokens + cache_write_tokens + reasoning_tokens
     )
     if dims_sum <= 0 and (usd is None or usd <= 0):
         return {

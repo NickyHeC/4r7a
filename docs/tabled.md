@@ -3,7 +3,7 @@
 Canonical backlog of **deferred** work — features specced or discussed but not built.
 The agent reads this file when starting work in a matching department/platform.
 
-**Not here:** intentional out-of-scope items in README (nudge/chase agents).  
+**Not here:** intentional out-of-scope items in README (nudge/chase agents).
 **Scratch pad:** `notepad.md` (migrate rows here when a deferral is real).
 
 Format for new rows:
@@ -34,7 +34,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Monthly optimization scout | `admin/` | After monthly LLM expense + admin maintain agents ship | Walks system + human behavior signals; proposes workflow optimizations for the admin coding session. Expense report + maintain/session-request agents are **in** the telemetry plan (same monthly period, two agents) — this scout stays deferred |
+| Monthly optimization scout | `admin/` | Explicit product ask after admin coding sessions are in use | Walks system + human behavior; proposes deeper workflow optimizations. **Shipped:** `admin_manager` + `llm_expense_report` + `admin_maintain` (monthly expense + thin maintain/session request). This scout stays deferred |
 
 ---
 

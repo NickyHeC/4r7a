@@ -296,7 +296,13 @@ limits outside the model.
 company-brain models budget              # status + per-agent run caps
 company-brain models budget --reconcile  # compare tracked usage vs Mercury vendor bills
 company-brain models spot-check          # vibe eval samples → #wiki
+company-brain admin manager              # monthly LLM expense + maintain (one pass)
 ```
+
+**Monthly LLM ops:** `admin_manager` writes `admin/llm-expense/{YYYY-MM}.md` and
+`admin/maintain/{YYYY-MM}.md`, refreshes `admin/agent-runtime.md`, and requests an
+admin coding session on `#wiki-admin` when budget/duration/verify drift. Schedule in
+`config/operations.yaml` → `admin.llm_ops`. Handbook: `docs/agents/admin.md`.
 
 **Model health:** `company-brain doctor llm` pings configured models, auto-falls
 back within `fallback_chains`, persists overrides in `models.yaml`, alerts

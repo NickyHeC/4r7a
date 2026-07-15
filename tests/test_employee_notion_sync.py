@@ -128,7 +128,6 @@ def test_write_employee_wiki_page_mirrors_when_enabled(notion_config, tmp_path, 
 
 
 def test_onboarding_agent_bootstrap(tmp_path, monkeypatch):
-
     from company_brain.agents.employee_wiki.employee_wiki_onboarding import (
         EmployeeWikiOnboardingAgent,
     )

@@ -34,7 +34,6 @@ def _cfg() -> AppConfig:
     return AppConfig(wiki=WikiConfig(), notion=NotionConfig())
 
 
-
 def test_ambient_scope_sets_context():
     assert get_run_context() is None
     with ambient_scope(manager="linear_manager", run_id="abc123", reason="stale_audit"):

@@ -11,6 +11,28 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-15 — Post-feature hygiene (LLM telemetry | working tree)
+
+- Full `docs/hygiene_checklist.md` passes: cleanliness, coherence, dead code, safety.
+- **Dead code:** `ruff --select F` clean; vulture (`llm/` + `admin/`, conf≥80) empty;
+  telemetry/admin public symbols all have callers (self-only helpers intentional).
+- **Pre-commit:** bumped `ruff-pre-commit` `v0.4.4` → `v0.15.21` (`ruff` → `ruff-check`)
+  so hooks match project ruff 0.15.x / CI (old pin flipped I001 blank lines).
+- **Safety:** `pip-audit` clean; `detect-secrets` 3 keyword hits are false positives
+  (`cols.status`, HTTP 401 fixture, `"status"` binding). No pyproject dep change.
+- Accepted debt: `doctor naming` discord_gateway warn; `doctor llm/connect` missing
+  local API keys; optional UP017 (`datetime.UTC`) not applied.
+
+## 2026-07-15 — LLM telemetry Session 5 (docs ship | working tree)
+
+- **Docs:** admin handbook already had LLM ops; README map + `docs/agents/README`
+  Admin scope; `project_install.md` admin manager CLI; tabled optimization scout
+  trigger updated (expense/maintain shipped).
+- **Retired:** `docs/plans/llm_telemetry.md`.
+- **Hygiene:** `ruff format` on `llm_expense_report` / `budget` / `test_llm_telemetry`;
+  303 pytest green; `doctor code --min-score 85` pass (naming 99: known
+  `discord_gateway` warn).
+
 ## 2026-07-15 — LLM telemetry Sessions 3–4 (working tree)
 
 - **Session 3:** `record_verify_verdict` on execute; `session_id` kwargs nest into

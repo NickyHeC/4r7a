@@ -99,9 +99,13 @@ class LlmExpenseReportAgent(BaseAgent):
             block = agents[name]
             verify = block.get("verify") or {}
             mgrs = block.get("managers") or {}
-            mgr_bits = ", ".join(
-                f"`{m}` ${float(b.get('estimated_usd') or 0):.2f}" for m, b in sorted(mgrs.items())
-            ) or "—"
+            mgr_bits = (
+                ", ".join(
+                    f"`{m}` ${float(b.get('estimated_usd') or 0):.2f}"
+                    for m, b in sorted(mgrs.items())
+                )
+                or "—"
+            )
             lines.append(
                 f"| `{name}` | ${float(block.get('estimated_usd') or 0):.2f} | "
                 f"{int(verify.get('ok') or 0)}/"
