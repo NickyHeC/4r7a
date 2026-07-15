@@ -10,6 +10,60 @@ from company_brain.llm.run_budget import get_run_budget
 from company_brain.llm.tiers import resolve_agent_model
 
 
+def _int_attr(obj: Any, *names: str) -> int:
+    for name in names:
+        if isinstance(obj, dict):
+            val = obj.get(name)
+        else:
+            val = getattr(obj, name, None)
+        if val is not None:
+            return int(val or 0)
+    return 0
+
+
+def _dims_from_usage(usage: Any) -> dict[str, int]:
+    """Extract token dimensions from OpenAI- or Claude-shaped usage objects."""
+    if usage is None:
+        return {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "reasoning_tokens": 0,
+        }
+    inp = _int_attr(usage, "input_tokens", "prompt_tokens")
+    out = _int_attr(usage, "output_tokens", "completion_tokens")
+    cache_read = _int_attr(
+        usage,
+        "cache_read_input_tokens",
+        "cache_read_tokens",
+        "cached_tokens",
+    )
+    cache_write = _int_attr(
+        usage,
+        "cache_creation_input_tokens",
+        "cache_write_tokens",
+        "cache_creation_tokens",
+    )
+    reasoning = _int_attr(usage, "reasoning_tokens", "output_reasoning_tokens")
+    details = None
+    if isinstance(usage, dict):
+        details = usage.get("output_tokens_details") or usage.get("completion_tokens_details")
+    else:
+        details = getattr(usage, "output_tokens_details", None) or getattr(
+            usage, "completion_tokens_details", None
+        )
+    if details is not None and reasoning == 0:
+        reasoning = _int_attr(details, "reasoning_tokens")
+    return {
+        "input_tokens": inp,
+        "output_tokens": out,
+        "cache_read_tokens": cache_read,
+        "cache_write_tokens": cache_write,
+        "reasoning_tokens": reasoning,
+    }
+
+
 def record_from_openai_result(
     agent_name: str,
     result: Any,
@@ -25,24 +79,12 @@ def record_from_openai_result(
     if usage is None:
         return
     model_id = model or resolve_agent_model(agent_name).model_id
-    record_usage(
-        agent=agent_name,
-        model=model_id,
-        input_tokens=int(getattr(usage, "input_tokens", 0) or 0),
-        output_tokens=int(getattr(usage, "output_tokens", 0) or 0),
-    )
+    dims = _dims_from_usage(usage)
+    record_usage(agent=agent_name, model=model_id, **dims)
     if ctx is not None:
         requests = int(getattr(usage, "requests", 0) or 0)
         if requests:
             ctx.set_tool_calls(requests)
-
-
-def _tokens_from_claude_usage(usage: dict[str, Any] | None) -> tuple[int, int]:
-    if not usage:
-        return 0, 0
-    inp = usage.get("input_tokens") or usage.get("prompt_tokens") or 0
-    out = usage.get("output_tokens") or usage.get("completion_tokens") or 0
-    return int(inp or 0), int(out or 0)
 
 
 def record_from_claude_result(
@@ -60,16 +102,10 @@ def record_from_claude_result(
     if ctx is not None:
         ctx.begin_llm_step()
     model_id = model or resolve_agent_model(agent_name).model_id
-    inp, out = _tokens_from_claude_usage(message.usage)
+    dims = _dims_from_usage(message.usage)
     usd_val = message.total_cost_usd
     usd = float(usd_val) if usd_val is not None and float(usd_val) > 0 else None
-    record_usage(
-        agent=agent_name,
-        model=model_id,
-        input_tokens=inp,
-        output_tokens=out,
-        usd=usd,
-    )
+    record_usage(agent=agent_name, model=model_id, usd=usd, **dims)
     if ctx is not None and message.num_turns:
         ctx.set_tool_calls(max(ctx.tool_calls, int(message.num_turns)))
 

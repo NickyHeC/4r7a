@@ -29,6 +29,7 @@ class LinearManagerAgent(BaseAgent):
     """Poll Linear for recently updated terminal issues and dispatch completion handlers."""
 
     name = "linear_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -85,12 +86,18 @@ class LinearManagerAgent(BaseAgent):
 
     def _maybe_run_stale_audit(self, now: datetime) -> dict[str, Any] | None:
         from company_brain.agents.scheduling.work_ahead import should_run_work_ahead
+        from company_brain.llm.duration import resolve_estimated_minutes
+        from company_brain.llm.run_context import ambient_scope, new_run_id
 
         cfg = stale_audit_cfg()
         ready = cfg.get("ready_for") or {}
         ready_day = str(ready.get("day") or cfg.get("day") or "monday")
         ready_time = str(ready.get("time") or cfg.get("time") or "09:00")
-        estimated = int(cfg.get("estimated_minutes") or 15)
+        estimated = resolve_estimated_minutes(
+            "linear_stale_audit",
+            int(cfg.get("estimated_minutes") or 15),
+            store=self._state,
+        )
         buffer = int(cfg.get("buffer_minutes") or 45)
 
         if not should_run_work_ahead(
@@ -109,12 +116,17 @@ class LinearManagerAgent(BaseAgent):
         from company_brain.runtime import get_runtime
 
         mark_handled("linear_stale_audit", week_key, store=self._state)
-        return get_runtime().run(
-            StaleAuditAgent,
-            self.config,
-            dispatch_manual=True,
-            wait_for_completion=False,
-        )
+        with ambient_scope(
+            manager=self.name,
+            run_id=new_run_id(),
+            reason="stale_audit",
+        ):
+            return get_runtime().run(
+                StaleAuditAgent,
+                self.config,
+                dispatch_manual=True,
+                wait_for_completion=False,
+            )
 
     def _since_timestamp(self, now: datetime) -> datetime:
         raw = self._state.get(POLL_STATE_KEY)

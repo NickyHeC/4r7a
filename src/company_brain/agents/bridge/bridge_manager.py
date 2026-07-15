@@ -28,6 +28,7 @@ def _parse_rollup_time(raw: str) -> time:
 
 class BridgeManagerAgent(BaseAgent):
     name = "bridge_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

@@ -29,6 +29,7 @@ class EmployeeWikiManagerAgent(BaseAgent):
     """Dispatch materializers for unprocessed work events."""
 
     name = "employee_wiki_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

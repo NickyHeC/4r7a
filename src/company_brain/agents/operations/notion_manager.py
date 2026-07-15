@@ -23,6 +23,7 @@ class NotionManager(BaseAgent):
     """Persistent manager for the Notion platform within operations."""
 
     name = "notion_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

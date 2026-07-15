@@ -45,6 +45,7 @@ class QuarterlyCalculationManager(BaseAgent):
     """
 
     name = "finance_quarterly_calculation"
+    track_duration = False
     WRITE_MODE = "append"
 
     def __init__(self, config: AppConfig, **kwargs: Any):

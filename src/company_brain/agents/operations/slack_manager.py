@@ -26,6 +26,7 @@ class SlackManager(BaseAgent):
     """Persistent manager for the Slack platform within operations."""
 
     name = "slack_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

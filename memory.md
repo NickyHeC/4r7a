@@ -11,6 +11,17 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-15 — LLM telemetry Sessions 1–2 (working tree)
+
+- **Session 1:** `llm/run_context.py` ambient tags (`manager` / `run_id` / `session_id`);
+  `record_usage` token dimensions (cache read/write, reasoning), per-agent + manager
+  attribution, unknown-model honesty (`estimated_usd` unset, never silent default rate);
+  tracking hooks extract dims from Claude/OpenAI usage shapes.
+- **Session 2:** `llm/duration.py` rolling specialist execute times +
+  `resolve_estimated_minutes` (p95 when N≥5); `BaseAgent.track_duration` (managers False);
+  Linear stale-audit work_ahead uses measured estimate + ambient_scope on dispatch.
+- **Tests:** `tests/test_llm_telemetry.py`.
+
 ## 2026-07-13 — Doc filename coherence (`doc-style.md` → `doc_style.md`)
 
 - **What:** Renamed the last hyphenated doc so all `docs/*.md` and root meta docs use

@@ -27,6 +27,7 @@ class DiscordManager(BaseAgent):
     """Persistent manager for the Discord platform within growth."""
 
     name = "discord_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

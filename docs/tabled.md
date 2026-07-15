@@ -30,6 +30,14 @@ Format for new rows:
 
 ---
 
+## Admin / LLM ops
+
+| Item | Department / platform | Trigger to build | Notes |
+|------|----------------------|------------------|-------|
+| Monthly optimization scout | `admin/` | After monthly LLM expense + admin maintain agents ship | Walks system + human behavior signals; proposes workflow optimizations for the admin coding session. Expense report + maintain/session-request agents are **in** the telemetry plan (same monthly period, two agents) — this scout stays deferred |
+
+---
+
 ## 4r7a onboarding (new admin / member deploy)
 
 | Item | Department / platform | Trigger to build | Notes |

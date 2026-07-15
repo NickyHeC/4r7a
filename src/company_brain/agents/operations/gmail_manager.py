@@ -39,6 +39,7 @@ class GmailManager(BaseAgent):
     """Persistent manager for the Gmail platform within operations."""
 
     name = "gmail_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

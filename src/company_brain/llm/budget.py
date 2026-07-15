@@ -149,8 +149,16 @@ def resolve_run_limits(agent: str, cfg: ModelsConfig | None = None) -> RunLimitV
     return _merge_limit_values(rl.defaults, tier_limits, agent_limits, builder_layer)
 
 
-def _rate_for_model(model: str, cfg: ModelsConfig) -> tuple[float, float]:
+def _rate_for_model(model: str, cfg: ModelsConfig) -> tuple[float, float] | None:
+    """Return (input, output) per-million rates, or None when the model is unknown.
+
+    Unknown models must not fall through to a silent default price (misleading $0
+    or a generic rate). Self-hosted entries like ``glm-5`` with explicit $0 rates
+    still resolve as known.
+    """
     key = (model or "").strip().lower()
+    if not key:
+        return None
     rates = cfg.model_rates or {}
     if key in rates:
         spec = rates[key]
@@ -158,11 +166,15 @@ def _rate_for_model(model: str, cfg: ModelsConfig) -> tuple[float, float]:
     for name, spec in rates.items():
         if name != "default" and key.startswith(name.lower()):
             return float(spec.input_per_million), float(spec.output_per_million)
-    if "default" in rates:
-        spec = rates["default"]
-        return float(spec.input_per_million), float(spec.output_per_million)
-    fallback = DEFAULT_MODEL_RATES.get(key) or DEFAULT_MODEL_RATES["default"]
-    return float(fallback["input_per_million"]), float(fallback["output_per_million"])
+    if key in DEFAULT_MODEL_RATES:
+        fallback = DEFAULT_MODEL_RATES[key]
+        return float(fallback["input_per_million"]), float(fallback["output_per_million"])
+    return None
+
+
+def model_rate_known(model: str, *, cfg: ModelsConfig | None = None) -> bool:
+    cfg = cfg or load_models_config()
+    return _rate_for_model(model, cfg) is not None
 
 
 def estimate_usd(
@@ -171,32 +183,57 @@ def estimate_usd(
     output_tokens: int,
     *,
     cfg: ModelsConfig | None = None,
-) -> float:
-    """Estimate USD from token counts using ``model_rates`` (or built-in defaults)."""
+    cache_read_tokens: int = 0,
+    reasoning_tokens: int = 0,
+) -> float | None:
+    """Estimate USD from token counts, or ``None`` when the model rate is unknown.
+
+    Cache-read tokens are priced at the input rate when present. Reasoning tokens
+    use the output rate (provider bills them as completion-class).
+    """
     cfg = cfg or load_models_config()
-    inp_rate, out_rate = _rate_for_model(model, cfg)
-    return (input_tokens / 1_000_000) * inp_rate + (output_tokens / 1_000_000) * out_rate
+    rates = _rate_for_model(model, cfg)
+    if rates is None:
+        return None
+    inp_rate, out_rate = rates
+    billable_in = input_tokens + max(cache_read_tokens, 0)
+    billable_out = output_tokens + max(reasoning_tokens, 0)
+    return (billable_in / 1_000_000) * inp_rate + (billable_out / 1_000_000) * out_rate
 
 
 def _usage_key(when: datetime | None = None) -> str:
     return f"{USAGE_PREFIX}{_month_key(when)}"
 
 
+def _token_dims(block: dict[str, Any]) -> dict[str, float]:
+    return {
+        "input_tokens": float(block.get("input_tokens") or 0),
+        "output_tokens": float(block.get("output_tokens") or 0),
+        "cache_read_tokens": float(block.get("cache_read_tokens") or 0),
+        "cache_write_tokens": float(block.get("cache_write_tokens") or 0),
+        "reasoning_tokens": float(block.get("reasoning_tokens") or 0),
+        "estimated_usd": float(block.get("estimated_usd") or 0),
+        "unknown_model_calls": float(block.get("unknown_model_calls") or 0),
+    }
+
+
 def current_usage(*, store: StateStore | None = None) -> dict[str, Any]:
     store = store or StateStore()
     raw = store.get(_usage_key()) or {}
     categories = raw.get("categories") or {}
+    agents = raw.get("agents") or {}
     return {
-        "input_tokens": float(raw.get("input_tokens") or 0),
-        "output_tokens": float(raw.get("output_tokens") or 0),
-        "estimated_usd": float(raw.get("estimated_usd") or 0),
-        "categories": {
+        **_token_dims(raw),
+        "categories": {name: _token_dims(block) for name, block in categories.items()},
+        "agents": {
             name: {
-                "input_tokens": float(block.get("input_tokens") or 0),
-                "output_tokens": float(block.get("output_tokens") or 0),
-                "estimated_usd": float(block.get("estimated_usd") or 0),
+                **_token_dims(block),
+                "managers": {
+                    mgr: _token_dims(mblock)
+                    for mgr, mblock in (block.get("managers") or {}).items()
+                },
             }
-            for name, block in categories.items()
+            for name, block in agents.items()
         },
     }
 
@@ -244,50 +281,172 @@ def check_budget(*, agent: str = "", store: StateStore | None = None) -> None:
         )
 
 
+def _add_dims(
+    block: dict[str, Any],
+    *,
+    input_tokens: int,
+    output_tokens: int,
+    cache_read_tokens: int,
+    cache_write_tokens: int,
+    reasoning_tokens: int,
+    cost: float | None,
+    unknown: bool,
+) -> None:
+    block["input_tokens"] = float(block.get("input_tokens") or 0) + input_tokens
+    block["output_tokens"] = float(block.get("output_tokens") or 0) + output_tokens
+    block["cache_read_tokens"] = float(block.get("cache_read_tokens") or 0) + cache_read_tokens
+    block["cache_write_tokens"] = float(block.get("cache_write_tokens") or 0) + cache_write_tokens
+    block["reasoning_tokens"] = float(block.get("reasoning_tokens") or 0) + reasoning_tokens
+    if cost is not None:
+        block["estimated_usd"] = float(block.get("estimated_usd") or 0) + cost
+    if unknown:
+        block["unknown_model_calls"] = float(block.get("unknown_model_calls") or 0) + 1
+
+
 def record_usage(
     *,
     agent: str,
     model: str,
     input_tokens: int = 0,
     output_tokens: int = 0,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
+    reasoning_tokens: int = 0,
     usd: float | None = None,
     spend_category: str | None = None,
     store: StateStore | None = None,
-) -> dict[str, float]:
+) -> dict[str, Any]:
     """Accumulate one LLM call into the monthly usage ledger.
 
-    Returns the delta recorded for this call (tokens + usd).
+    Inherits ambient ``run_id`` / ``manager`` / ``session_id`` from
+    :mod:`company_brain.llm.run_context` when set. Unknown models leave
+    ``estimated_usd`` unset for that call (tokens still accumulate).
+
+    Returns the delta recorded for this call (tokens + usd / unknown flag).
     """
-    if input_tokens <= 0 and output_tokens <= 0 and (usd is None or usd <= 0):
-        return {"input_tokens": 0.0, "output_tokens": 0.0, "estimated_usd": 0.0}
+    dims_sum = (
+        input_tokens
+        + output_tokens
+        + cache_read_tokens
+        + cache_write_tokens
+        + reasoning_tokens
+    )
+    if dims_sum <= 0 and (usd is None or usd <= 0):
+        return {
+            "input_tokens": 0.0,
+            "output_tokens": 0.0,
+            "cache_read_tokens": 0.0,
+            "cache_write_tokens": 0.0,
+            "reasoning_tokens": 0.0,
+            "estimated_usd": None,
+            "unknown_model": False,
+        }
 
     store = store or StateStore()
     category = spend_category or resolve_spend_category(agent)
     if category not in VALID_SPEND_CATEGORIES:
         category = SPEND_RUNTIME
 
-    cost = usd if usd is not None else estimate_usd(model, input_tokens, output_tokens)
+    if usd is not None:
+        cost: float | None = float(usd)
+        unknown = False
+    else:
+        cost = estimate_usd(
+            model,
+            input_tokens,
+            output_tokens,
+            cache_read_tokens=cache_read_tokens,
+            reasoning_tokens=reasoning_tokens,
+        )
+        unknown = cost is None
+        if unknown:
+            logger.warning(
+                "LLM usage for unknown model %r (agent=%s) — tokens recorded, "
+                "estimated_usd left unset",
+                model,
+                agent,
+            )
+
+    from company_brain.llm.run_context import get_run_context
+
+    ambient = get_run_context()
+    manager = ambient.manager if ambient else None
+
     key = _usage_key()
     raw = dict(store.get(key) or {})
-    raw["input_tokens"] = float(raw.get("input_tokens") or 0) + input_tokens
-    raw["output_tokens"] = float(raw.get("output_tokens") or 0) + output_tokens
-    raw["estimated_usd"] = float(raw.get("estimated_usd") or 0) + cost
+    _add_dims(
+        raw,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_read_tokens=cache_read_tokens,
+        cache_write_tokens=cache_write_tokens,
+        reasoning_tokens=reasoning_tokens,
+        cost=cost,
+        unknown=unknown,
+    )
 
     categories = dict(raw.get("categories") or {})
-    block = dict(categories.get(category) or {})
-    block["input_tokens"] = float(block.get("input_tokens") or 0) + input_tokens
-    block["output_tokens"] = float(block.get("output_tokens") or 0) + output_tokens
-    block["estimated_usd"] = float(block.get("estimated_usd") or 0) + cost
-    categories[category] = block
+    cat_block = dict(categories.get(category) or {})
+    _add_dims(
+        cat_block,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_read_tokens=cache_read_tokens,
+        cache_write_tokens=cache_write_tokens,
+        reasoning_tokens=reasoning_tokens,
+        cost=cost,
+        unknown=unknown,
+    )
+    categories[category] = cat_block
     raw["categories"] = categories
+
+    agents = dict(raw.get("agents") or {})
+    agent_block = dict(agents.get(agent) or {})
+    _add_dims(
+        agent_block,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_read_tokens=cache_read_tokens,
+        cache_write_tokens=cache_write_tokens,
+        reasoning_tokens=reasoning_tokens,
+        cost=cost,
+        unknown=unknown,
+    )
+    if manager:
+        managers = dict(agent_block.get("managers") or {})
+        mgr_block = dict(managers.get(manager) or {})
+        _add_dims(
+            mgr_block,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cache_read_tokens=cache_read_tokens,
+            cache_write_tokens=cache_write_tokens,
+            reasoning_tokens=reasoning_tokens,
+            cost=cost,
+            unknown=unknown,
+        )
+        managers[manager] = mgr_block
+        agent_block["managers"] = managers
+    if ambient:
+        agent_block["last_run_id"] = ambient.run_id
+        if ambient.session_id:
+            agent_block["last_session_id"] = ambient.session_id
+        if ambient.reason:
+            agent_block["last_reason"] = ambient.reason
+    agents[agent] = agent_block
+    raw["agents"] = agents
     store.set(key, raw)
 
     logger.debug(
-        "LLM usage +%d in / +%d out ($%.4f) agent=%s category=%s model=%s",
+        "LLM usage +%d in / +%d out / +%d cache_r / +%d reason "
+        "($%s) agent=%s manager=%s category=%s model=%s",
         input_tokens,
         output_tokens,
-        cost,
+        cache_read_tokens,
+        reasoning_tokens,
+        f"{cost:.4f}" if cost is not None else "—",
         agent,
+        manager,
         category,
         model,
     )
@@ -295,14 +454,21 @@ def record_usage(
 
     from company_brain.llm.run_budget import agent_matches_run, get_run_budget
 
-    ctx = get_run_budget()
-    if ctx is not None and agent_matches_run(ctx, agent):
-        ctx.add_cost(float(cost))
+    run_budget = get_run_budget()
+    if run_budget is not None and agent_matches_run(run_budget, agent) and cost is not None:
+        run_budget.add_cost(float(cost))
 
     return {
         "input_tokens": float(input_tokens),
         "output_tokens": float(output_tokens),
-        "estimated_usd": float(cost),
+        "cache_read_tokens": float(cache_read_tokens),
+        "cache_write_tokens": float(cache_write_tokens),
+        "reasoning_tokens": float(reasoning_tokens),
+        "estimated_usd": float(cost) if cost is not None else None,
+        "unknown_model": unknown,
+        "manager": manager,
+        "run_id": ambient.run_id if ambient else None,
+        "session_id": ambient.session_id if ambient else None,
     }
 
 

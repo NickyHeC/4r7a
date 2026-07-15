@@ -33,6 +33,7 @@ class GitHubManager(BaseAgent):
     """Persistent manager that schedules and dispatches GitHub specialist agents."""
 
     name = "github_manager"
+    track_duration = False
 
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)

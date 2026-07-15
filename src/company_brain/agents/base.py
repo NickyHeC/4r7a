@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -31,6 +32,10 @@ class BaseAgent(ABC):
 
     #: Raise in a subclass to opt into the rework loop (run -> verify -> retry).
     max_iterations: int = 1
+
+    #: Wall-clock duration for ephemeral specialists (feeds work-ahead). Persistent
+    #: managers set this False — they dispatch specialists; they are not timed.
+    track_duration: bool = True
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         self.config = config
@@ -71,6 +76,7 @@ class BaseAgent(ABC):
         if not self.should_run(**kwargs):
             self.logger.info("Agent '%s' skipped by cost gate (no change)", self.name)
             return SKIPPED
+        started = time.monotonic() if self.track_duration else None
         try:
             with run_budget_scope(self.name) as run_budget:
                 self.setup()
@@ -98,4 +104,18 @@ class BaseAgent(ABC):
             self.logger.exception("Agent '%s' failed", self.name)
             raise
         finally:
+            if started is not None:
+                try:
+                    from company_brain.llm.duration import record_execute_duration
+
+                    record_execute_duration(
+                        self.name,
+                        (time.monotonic() - started) * 1000.0,
+                    )
+                except Exception:
+                    self.logger.debug(
+                        "Failed to record execute duration for '%s'",
+                        self.name,
+                        exc_info=True,
+                    )
             self.teardown()

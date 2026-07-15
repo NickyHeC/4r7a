@@ -43,6 +43,7 @@ class MonthlyExpenseManager(BaseAgent):
     """
 
     name = "finance_monthly_expense"
+    track_duration = False
     WRITE_MODE = "update"
 
     def __init__(self, config: AppConfig, **kwargs: Any):
