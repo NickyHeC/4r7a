@@ -139,7 +139,15 @@ tokens → `company-brain weave events`. Populate `config/notion.yaml`
 `change_request_database` after Notion connect. W2 members in `members.yaml` only;
 roster (`config/roster.yaml`) cannot invoke Weave.
 
-**Admin CLI:** `slack channel list|tag|enable-connect`, `weave poll-approvals`,
+**Weave builder (implement+prove):** default backend is Codex on the [smol registry](https://smolmachines.com/registry)
+image (`slack_platform.weave.builder: codex`). Set `COMPANY_BRAIN_SANDBOX=smolvm`,
+install `smolvm`, and provide `OPENAI_API_KEY` (or `WEAVE_OPENAI_API_KEY`) for guest
+runs. Opt into the in-house builder with `WEAVE_BUILDER=in_house` or
+`company-brain weave poll-approvals --builder in_house`. Disable with `builder: off`
+(proposal markdown PR only). Builder egress is GitHub + model host only — never bank
+or Slack tokens in the VM.
+
+**Admin CLI:** `slack channel list|tag|enable-connect`, `weave poll-approvals [--builder …]`,
 `hr promote {roster_key}`, `hr offboard {member_key}`.
 
 Verify with `doctor` (Slack wiki / Weave lines). Handbook:

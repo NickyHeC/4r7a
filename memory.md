@@ -11,6 +11,24 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-15 — Weave implement+prove (Inspect-shaped | working tree)
+
+- **Dispatcher:** `weave.py` for `config_only` runs guest implement+prove; other
+  classes stay proposal PR / approval path.
+- **Default A:** smol registry Codex image via `runtime/builder_session.py`; inject
+  `OPENAI_API_KEY`; fail closed if smolvm sandbox unavailable.
+- **Opt-in B:** `WEAVE_BUILDER=in_house` / `weave.builder: in_house` ephemeral
+  worktree runner (`weave_in_house.py`).
+- **Policy:** allow-list `config/**/*.{yaml,yml,json}`; escalate to
+  `admin/weave-queue.md` (surfaced by `admin_maintain`); prove = ruff + pytest +
+  doctor code ≥85.
+- **Config:** `operations.yaml` `slack_platform.weave` builder block; CLI
+  `weave poll-approvals --builder`.
+- **Tests:** `tests/test_weave_builder.py`. Plan `docs/plans/weave_builder.md` retired.
+- **Hygiene:** 314 pytest green; doctor code pass (naming 99 pre-existing); removed
+  unused `implement_with_codex_dry_run`.
+
+
 ## 2026-07-15 — Post-feature hygiene (LLM telemetry | working tree)
 
 - Full `docs/hygiene_checklist.md` passes: cleanliness, coherence, dead code, safety.

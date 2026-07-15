@@ -208,6 +208,7 @@ class AdminMaintainAgent(BaseAgent):
                 "",
                 "- [ ] Review `admin/llm-expense/" + month + ".md`",
                 "- [ ] Review [[admin/agent-runtime]] duration vs schedule buffers",
+                "- [ ] Review [[admin/weave-queue]] (escalated Weave / out-of-allow-list work)",
                 "- [ ] Adjust `estimated_minutes` / work-ahead buffers where drift is real",
                 "- [ ] Investigate verify rework/noise streaks",
                 "",

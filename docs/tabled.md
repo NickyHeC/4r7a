@@ -19,7 +19,8 @@ Format for new rows:
 |------|----------------------|------------------|-------|
 | Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
 | Batch absorb by urgency | operations/slack + notion | Optional `--absorb` on Slack onboarding | Three-tier lanes shipped; encyclopedia absorb opt-in at backfill |
-| Weave hot-reload / agent pause-resume | admin/weave | Weave PR-only v1 stable | Option B from Slack design — pause persistent agents, edit, resume; after structure ships |
+| Weave hot-reload / agent pause-resume | admin/weave | Implement+prove v1 stable + product ask | Option B from Slack design — pause persistent agents, edit, resume. **Shipped:** config_only implement+prove (Codex default / in_house opt-in), allow-list, fail-closed prove, `admin/weave-queue.md` |
+
 | Ramp LLM vendor reconcile | Finance / LLM | Ramp MCP stable in reconcile path | Mercury card vendor bills wired; add Ramp card txns to `llm/reconcile.py` |
 | Process artifacts (Architect/Doer) | Cross | Agents living on cloud VMs | Compile reusable Processes (steps, inputs, temporal deps) from observed workflows; second-order automation per Ramp Labs |
 | Self-maintaining monitor-driven ops | Cross / runtime | Agents living on cloud VMs | PR-merge monitor generation, alert → sandbox reproduce → propose fix; includes cloud builder agent maintenance loop |

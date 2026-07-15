@@ -871,10 +871,20 @@ def weave_events(http: bool, host: str, port: int) -> None:
 
 
 @weave.command("poll-approvals")
-def weave_poll_approvals() -> None:
+@click.option(
+    "--builder",
+    type=click.Choice(["codex", "in_house", "off"]),
+    default=None,
+    help="Override weave.builder for dispatched implement+prove runs.",
+)
+def weave_poll_approvals(builder: str | None) -> None:
     """Dispatch weave for Notion-approved change requests."""
+    import os
+
     from company_brain.agents.admin.weave_triage import WeaveTriageAgent
 
+    if builder:
+        os.environ["WEAVE_BUILDER"] = builder
     config = load_config()
     result = WeaveTriageAgent(config).run(poll_approvals=True)
     click.echo(result)

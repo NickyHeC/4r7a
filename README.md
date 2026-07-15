@@ -142,8 +142,10 @@ Open-source **developer community** platforms. v1 ships **Discord** only.
   `admin/maintain/`. CLI: `company-brain admin manager`.
 - **Weave** — separate Slack app for system-change requests (`@weave`). Triage writes
   `admin/change-request/{id}.md`, mirrors to a Notion change-request DB when configured,
-  and dispatches draft PRs for approved `config_only` changes (W2 `members.yaml` only;
-  `config/roster.yaml` cannot invoke). See [admin handbook](docs/agents/admin.md).
+  and for `config_only` runs **implement+prove** in a smol VM (default: smol registry
+  Codex; opt-in `in_house`) then opens a draft PR. Allow-list is `config/` YAML/JSON;
+  overflows go to `admin/weave-queue.md` for the monthly admin session. W2
+  `members.yaml` only; roster cannot invoke. See [admin handbook](docs/agents/admin.md).
 
 ### HR
 

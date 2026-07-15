@@ -44,16 +44,27 @@ class SmolSandbox:
         mount: Path,
         allow_hosts: list[str] | None = None,
         timeout: int = 600,
+        env: dict[str, str] | None = None,
+        workdir: str | None = None,
+        image: str | None = None,
+        net: bool = True,
     ) -> tuple[int, str]:
         """Run ``command`` in an ephemeral VM with ``mount`` at /workspace.
 
         Returns (exit_code, combined_output). The VM is cleaned up on exit.
         """
-        args = [SMOLVM_BINARY, "machine", "run", "--net"]
+        img = image or self.image
+        args = [SMOLVM_BINARY, "machine", "run"]
+        if net or allow_hosts:
+            args.append("--net")
         for host in allow_hosts or []:
             args += ["--allow-host", host]
-        args += ["--image", self.image, "-v", f"{mount}:{GUEST_MOUNT}", "--", *command]
-        logger.debug("smolvm sandbox: %s", " ".join(args))
+        for key, value in (env or {}).items():
+            args += ["-e", f"{key}={value}"]
+        if workdir:
+            args += ["-w", workdir]
+        args += ["--image", img, "-v", f"{mount}:{GUEST_MOUNT}", "--", *command]
+        logger.debug("smolvm sandbox: %s", " ".join(args[:12]) + " …")
         try:
             proc = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
         except (FileNotFoundError, subprocess.TimeoutExpired) as e:

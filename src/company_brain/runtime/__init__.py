@@ -1,5 +1,10 @@
 """Agent runtime: run agents in-process today, on cloud VMs tomorrow."""
 
+from company_brain.runtime.builder_session import (
+    builder_env_for_backend,
+    builder_runtime_available,
+    run_in_builder_vm,
+)
 from company_brain.runtime.runtime import (
     AgentDeployer,
     AgentRuntime,
@@ -24,4 +29,7 @@ __all__ = [
     "SmolSandbox",
     "VMSandbox",
     "verify_in_sandbox",
+    "builder_runtime_available",
+    "builder_env_for_backend",
+    "run_in_builder_vm",
 ]

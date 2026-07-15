@@ -248,6 +248,23 @@ slack_platform:
       - white_check_mark
   weave:
     admin_channel: "#admin"
+    # Implement+prove backend: codex (default, smol registry) | in_house | off
+    builder: codex
+    codex_image: registry.smolmachines.com/library/codex:latest
+    allow_prefixes:
+      - config/
+    allow_suffixes:
+      - .yaml
+      - .yml
+      - .json
+    extra_allow_prefixes:
+      - docs/weave-requests/
+    prove_fail_closed: true
+    builder_allow_hosts:
+      - api.github.com
+      - github.com
+      - api.openai.com
+    queue_path: admin/weave-queue.md
     events:
       mode: socket
       http_path: /slack/events/weave

@@ -46,21 +46,44 @@ flowchart LR
   WT -->|config_only + W2 member| WV[weave]
   WT -->|agent_behavior / security_ingest| WAIT[await admin approve in Notion]
   WAIT -->|poll-approvals| WV
-  WV --> PR[draft GitHub PR]
+  WV -->|config_only builder| VM["smol VM implement+prove"]
+  WV -->|out of allow-list| Q[admin/weave-queue.md]
+  VM -->|pass| PR[draft GitHub PR]
+  Q --> ADMIN[monthly admin coding session]
 ```
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
 | `weave_triage.py` | `@weave` mention (Weave Events) | Classify change class; write change-request MD + Notion row |
-| `weave.py` | On approval / auto `config_only` | Draft PR + optional VM sandbox verify |
+| `weave.py` | On approval / auto `config_only` | Dispatcher: implement+prove (default Codex) or proposal PR |
 
-**CLI:** `company-brain weave events`, `company-brain weave poll-approvals`
+**Helpers (not agents):** `weave_allowlist`, `weave_prove`, `weave_escalate`, `weave_codex`,
+`weave_in_house`, `weave_worktree`, `weave_builder_config`; runtime
+`builder_session`.
+
+**CLI:** `company-brain weave events`, `company-brain weave poll-approvals [--builder codex|in_house|off]`
 
 **Auth:** Active `members.yaml` W2 only — `config/roster.yaml` cannot invoke Weave.
 
-**Change classes:** `config_only` (auto PR for W2), `agent_behavior`, `security_ingest`
-(admin Notion approval via `weave poll-approvals`).
+**Change classes:** `config_only` (auto implement+prove for W2), `agent_behavior`,
+`security_ingest` (admin Notion approval via `weave poll-approvals` — proposal PR in v1,
+no auto coding).
 
-Config: `config/notion.yaml` → `change_request_database`; `config/operations.yaml` → `slack_platform.weave`.
+**Builder backends** (`config/operations.yaml` → `slack_platform.weave.builder`, env
+`WEAVE_BUILDER`):
+- **`codex` (default)** — guest VM from smol registry Codex image; Weave injects
+  `OPENAI_API_KEY` / `WEAVE_OPENAI_API_KEY`. Fail closed if smolvm sandbox unavailable.
+- **`in_house`** — company-brain guest runner on an ephemeral worktree (opt-in).
+- **`off`** — markdown proposal PR only (legacy).
+
+**Allow-list:** `config/**/*.{yaml,yml,json}` (+ `docs/weave-requests/`). Violations and
+oversized work escalate to `admin/weave-queue.md` for the monthly admin session
+(`admin_maintain` checklist).
+
+**Prove (fail closed):** `ruff check`, `pytest`, `company-brain doctor code --min-score 85`
+on the ephemeral worktree before opening a draft PR. No merge automation.
+
+Config: `config/notion.yaml` → `change_request_database`; `config/operations.yaml` →
+`slack_platform.weave` (builder, allow-list, `builder_allow_hosts`, `queue_path`).
 
 **Tabled:** Weave hot-reload / agent pause-resume (option B) — see `docs/tabled.md`.
