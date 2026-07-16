@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from company_brain.agents.operations.slack import channels_config
 from company_brain.config import resolve_wiki_dir
-from company_brain.wiki.store import CONTROL_FILES, LocalWikiStore, MarkdownDoc
+from company_brain.wiki.retrieve import retrieve
+from company_brain.wiki.store import LocalWikiStore, MarkdownDoc
 
 DENIED_SYNC = frozenset({"admin_only", "not_synced"})
 DENIED_PREFIXES = ("admin/", "employee_wiki/")
@@ -34,14 +34,12 @@ def wiki_prefixes(channel_id: str) -> list[str]:
 
 
 def path_allowed(rel_path: str, prefixes: list[str]) -> bool:
+    from company_brain.wiki.retrieve import path_in_prefixes
+
     rel = rel_path.strip().strip("/")
     if not rel or any(rel.startswith(pfx) for pfx in DENIED_PREFIXES):
         return False
-    for pfx in prefixes:
-        base = pfx.rstrip("/")
-        if rel == base or rel.startswith(base + "/"):
-            return True
-    return False
+    return path_in_prefixes(rel, prefixes)
 
 
 def _sync_allowed(doc: MarkdownDoc) -> bool:
@@ -64,49 +62,32 @@ def search_wiki_snippets(
     """Return allowed wiki snippets with Notion citation metadata."""
     prefixes = wiki_prefixes(channel_id)
     store = LocalWikiStore(root=resolve_wiki_dir())
-    terms = [t for t in re.split(r"\W+", (query or "").lower()) if len(t) >= 3]
-    hits: list[tuple[int, dict[str, Any]]] = []
 
-    for rel in store.list():
-        name = rel.rsplit("/", 1)[-1]
-        if name in CONTROL_FILES or not rel.endswith(".md"):
-            continue
-        if not path_allowed(rel, prefixes):
-            continue
-        try:
-            doc = store.read(rel)
-        except FileNotFoundError:
-            continue
-        if not _sync_allowed(doc):
-            continue
-        body = doc.body
-        title = str(doc.frontmatter.get("title") or name)
-        score = _score(terms, f"{title}\n{body}")
-        if score <= 0 and terms:
-            continue
-        if not terms:
-            score = 1
-        notion_id = str(doc.frontmatter.get("notion_page_id") or "")
-        hits.append(
-            (
-                score,
-                {
-                    "rel_path": rel,
-                    "title": title,
-                    "snippet": body[:1200],
-                    "notion_page_id": notion_id,
-                    "notion_url": _notion_url(notion_id),
-                },
-            )
+    def allow(rel: str, doc: MarkdownDoc) -> bool:
+        return path_allowed(rel, prefixes) and _sync_allowed(doc)
+
+    hits = retrieve(
+        query,
+        store=store,
+        allow=allow,
+        deny_prefixes=DENIED_PREFIXES,
+        limit=limit,
+        snippet_chars=1200,
+    )
+    out: list[dict[str, Any]] = []
+    for hit in hits:
+        notion_id = str(hit.get("notion_page_id") or "")
+        out.append(
+            {
+                "rel_path": hit["rel_path"],
+                "title": hit["title"],
+                "snippet": hit["snippet"],
+                "score": hit.get("score"),
+                "notion_page_id": notion_id,
+                "notion_url": _notion_url(notion_id),
+            }
         )
-
-    hits.sort(key=lambda row: row[0], reverse=True)
-    return [row[1] for row in hits[:limit]]
-
-
-def _score(terms: list[str], text: str) -> int:
-    lower = text.lower()
-    return sum(lower.count(term) for term in terms)
+    return out
 
 
 def _notion_url(page_id: str) -> str:

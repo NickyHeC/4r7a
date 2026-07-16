@@ -133,6 +133,8 @@ Legacy `SLACK_BOT_TOKEN` is accepted as a fallback for the wiki bot only.
    (default 30-day backfill; optional `--absorb`).
 5. Start hot lane: `company-brain slack events` (persistent listener).
 6. Start steady-state manager: `slack_manager` (or rely on onboarding handoff).
+   Daily `thread_absorb` enqueues internal threads into `raw/entries` (manual:
+   `company-brain slack thread-absorb [--force]`).
 
 **Weave (optional):** second Slack app with `app_mention` only → set `SLACK_WEAVE_*`
 tokens → `company-brain weave events`. Populate `config/notion.yaml`

@@ -234,6 +234,9 @@ slack_platform:
     - will do
     - assigned to
   debounce_minutes: 3
+  # Daily Slack→raw/entries distill (thread_absorb); absorb LLM runs separately.
+  thread_absorb_batch_hour_utc: 6
+  thread_absorb_min_age_hours: 12
   rate_limits:
     wiki_queries_per_user_hour: 30
     weave_submissions_per_user_day: 5

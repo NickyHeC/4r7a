@@ -133,6 +133,24 @@ def onboarding_absorb_default() -> bool:
     return bool(onboarding_cfg().get("absorb_on_backfill", False))
 
 
+def thread_absorb_batch_hour_utc() -> int:
+    """UTC hour after which the daily Slack→raw distill pass may run."""
+    raw = slack_platform_cfg().get("thread_absorb_batch_hour_utc", 6)
+    try:
+        return min(23, max(0, int(raw)))
+    except (TypeError, ValueError):
+        return 6
+
+
+def thread_absorb_min_age_hours() -> int:
+    """Minimum age (hours) for open threads before distill (closed threads skip this)."""
+    raw = slack_platform_cfg().get("thread_absorb_min_age_hours", 12)
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return 12
+
+
 def slack_is_configured() -> bool:
     from company_brain.agents.operations.slack import slack_client
 

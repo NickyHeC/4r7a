@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from company_brain.config import AppConfig
 from company_brain.notion.sync_policy import COMPANY_FALLBACK_LOCATIONS
-from company_brain.wiki.store import CONTROL_FILES, WikiStore
+from company_brain.wiki.retrieve import path_in_prefixes, retrieve
+from company_brain.wiki.store import MarkdownDoc, WikiStore
 
 DENIED_PREFIXES = ("employee_wiki/",)
 ADMIN_PREFIXES = ("admin/", "finance/", "legal/")
@@ -60,11 +60,7 @@ def path_allowed(rel_path: str, prefixes: list[str]) -> bool:
     rel = rel_path.strip().strip("/")
     if not rel or any(rel.startswith(pfx) for pfx in DENIED_PREFIXES):
         return False
-    for pfx in prefixes:
-        base = pfx.rstrip("/")
-        if rel == base or rel.startswith(base + "/"):
-            return True
-    return False
+    return path_in_prefixes(rel, prefixes)
 
 
 def search_scoped_snippets(
@@ -75,36 +71,27 @@ def search_scoped_snippets(
     limit: int = 5,
     exclude: str | None = None,
 ) -> list[dict[str, Any]]:
-    terms = [t for t in re.split(r"\W+", (query or "").lower()) if len(t) >= 3]
-    hits: list[tuple[int, dict[str, Any]]] = []
-    for rel in store.list():
-        name = rel.rsplit("/", 1)[-1]
-        if name in CONTROL_FILES or not rel.endswith(".md"):
-            continue
-        if exclude and rel == exclude:
-            continue
-        if not path_allowed(rel, prefixes):
-            continue
-        try:
-            doc = store.read(rel)
-        except FileNotFoundError:
-            continue
-        title = str(doc.frontmatter.get("title") or name)
-        score = _score(terms, f"{title}\n{doc.body}")
-        if score <= 0 and terms:
-            continue
-        hits.append(
-            (
-                score or 1,
-                {
-                    "rel_path": rel,
-                    "title": title,
-                    "snippet": doc.body[:800],
-                },
-            )
-        )
-    hits.sort(key=lambda x: (-x[0], x[1]["rel_path"]))
-    return [h for _, h in hits[:limit]]
+    def allow(rel: str, doc: MarkdownDoc) -> bool:
+        return path_allowed(rel, prefixes)
+
+    hits = retrieve(
+        query,
+        store=store,
+        allow=allow,
+        deny_prefixes=DENIED_PREFIXES,
+        limit=limit,
+        snippet_chars=800,
+        exclude=exclude,
+    )
+    return [
+        {
+            "rel_path": h["rel_path"],
+            "title": h["title"],
+            "snippet": h["snippet"],
+            "score": h.get("score"),
+        }
+        for h in hits
+    ]
 
 
 def build_fill_section(instruction: str, snippets: list[dict[str, Any]]) -> str:
@@ -130,8 +117,3 @@ def build_fill_section(instruction: str, snippets: list[dict[str, Any]]) -> str:
         lines.append(f"**{snip['title']}:** {excerpt}")
         lines.append("")
     return "\n".join(lines)
-
-
-def _score(terms: list[str], text: str) -> int:
-    low = text.lower()
-    return sum(low.count(t) for t in terms)

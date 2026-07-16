@@ -568,25 +568,30 @@ flowchart TD
   SM -->|each pass| OTM[open_thread_monitor]
   SM -->|each pass| CI[customer_intake]
   SM -->|daily| CR[channel_registry]
+  SM -->|daily| TA[thread_absorb]
   TW --> TRI
   TW --> AI[action_items]
   TRI --> CS[customer_support orchestrator]
   CI --> CS
   TRI --> RR[(slack routing records)]
+  TA --> RAW[raw/entries]
+  RAW --> ABS[absorb]
   OTM --> EW[employee_wiki open-thread.md]
   AI --> TB[(task_bindings + Linear)]
   LM[linear_manager] -->|Done| LC[linear_completed]
   LC --> STR[slack_thread_respond]
   STR --> TB
+  AW --> RET[wiki/retrieve hybrid lexical]
 ```
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches `thread_watcher`, `open_thread_monitor`, `customer_intake`; `channel_registry` daily |
+| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches watcher/monitor/intake; daily `channel_registry` + `thread_absorb` |
 | `customer_support.py` | Via intake specialists | Classify customer mail/Slack → wiki + Linear + `#customer-support` |
 | `customer_intake.py` | Events hot lane + manager | Slack Connect / customer channels → orchestrator |
 | `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; dispatches `action_items` / `customer_intake` |
-| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL wiki Q&A with Notion citations |
+| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL wiki Q&A via hybrid lexical retrieve + Notion citations |
+| `thread_absorb.py` | Daily via manager / CLI | Distill closed/aged internal threads → `raw/entries` (no LLM); skips Connect/customer |
 | `wiki_commands.py` | `@wiki` mention | `threads`, `help`; blocked in Connect channels |
 | `internal_meeting_scheduler.py` | `@wiki` meeting keywords | Propose/book slots on primary calendar |
 | `thread_watcher.py` | Via manager | Poll backup; runs triage on each message |
@@ -599,8 +604,13 @@ flowchart TD
 | `offboard_signal.py` | `user_change` Events + CLI | Slack deactivation → HR offboard proposal |
 | `slack_client.py` | — | Slack Web API (wiki bot; not an agent) |
 
-**CLI:** `company-brain slack events`, `slack sync-channels`, `slack channel list|tag|enable-connect`,
-`slack onboarding estimate|run`, `weave events`, `weave poll-approvals`, `hr promote|offboard`
+**Retrieval:** shared [`wiki/retrieve.py`](../../src/company_brain/wiki/retrieve.py) — title boost +
+term frequency + simple IDF + age decay (no embeddings). Scope for humans =
+channel `wiki_prefixes` (default project scope); agents use `bridge.departments`.
+
+**CLI:** `company-brain slack events`, `slack sync-channels`, `slack thread-absorb [--force]`,
+`slack channel list|tag|enable-connect`, `slack onboarding estimate|run`, `weave events`,
+`weave poll-approvals`, `hr promote|offboard`
 
 Config: `config/operations.yaml` → `slack_platform`; `config/slack_channels.json`
 for per-channel ingest scope. Env: `SLACK_WIKI_BOT_TOKEN`, `SLACK_WIKI_APP_TOKEN`

@@ -766,6 +766,17 @@ def slack_sync_channels() -> None:
     click.echo(result)
 
 
+@slack.command("thread-absorb")
+@click.option("--force", is_flag=True, help="Ignore UTC batch-hour gate.")
+def slack_thread_absorb(force: bool) -> None:
+    """Distill eligible Slack threads into ``raw/entries`` for absorb (no LLM)."""
+    from company_brain.agents.operations.slack.thread_absorb import ThreadAbsorbAgent
+
+    config = load_config()
+    result = ThreadAbsorbAgent(config).execute(force=force)
+    click.echo(result)
+
+
 @slack.group("onboarding")
 def slack_onboarding_group() -> None:
     """Slack platform onboarding — estimate and backfill."""

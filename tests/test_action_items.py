@@ -203,6 +203,7 @@ def test_slack_manager_dispatches_thread_watcher(monkeypatch):
     with (
         patch("company_brain.runtime.get_runtime", return_value=mock_runtime),
         patch.object(manager, "_should_run_channel_registry", return_value=False),
+        patch.object(manager, "_should_run_thread_absorb", return_value=False),
     ):
         import asyncio
 

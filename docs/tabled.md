@@ -18,7 +18,7 @@ Format for new rows:
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
 | Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
-| Batch absorb by urgency | operations/slack + notion | Optional `--absorb` on Slack onboarding | Three-tier lanes shipped; encyclopedia absorb opt-in at backfill |
+| Batch absorb by urgency | operations/slack + notion | Optional `--absorb` on Slack onboarding | Three-tier lanes shipped; **`thread_absorb` → raw/entries** daily; encyclopedia absorb still opt-in / separate LLM pass |
 | Weave hot-reload / agent pause-resume | admin/weave | Implement+prove v1 stable + product ask | Option B from Slack design — pause persistent agents, edit, resume. **Shipped:** config_only implement+prove (Codex default / in_house opt-in), allow-list, fail-closed prove, `admin/weave-queue.md` |
 
 | Ramp LLM vendor reconcile | Finance / LLM | Ramp MCP stable in reconcile path | Mercury card vendor bills wired; add Ramp card txns to `llm/reconcile.py` |
@@ -78,10 +78,17 @@ Format for new rows:
 
 ---
 
-## Operations — Slack
+## Operations — Slack / wiki search
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
+| Semantic / embedding hybrid search | wiki + `@wiki` + bridge | Lexical retrieve inadequate in practice | **Shipped v1:** TF+IDF+title+age in `wiki/retrieve.py`. Defer vector/RRF |
+| `@wiki` planner tool fan-out | operations/slack | Multi-source answers needed | Parallel wiki + routing + code tools; Cerebras-style planner |
+| who_knows expertise graph | operations + people/ | People pages + thread authors stable | Cite experts from participation, not static roster |
+| Slack burst-level distill | operations/slack | Long threads lose answers in summaries | Cerebras bursting; LLM normalize of threads also deferred |
+| First-class project registry | wiki Q&A scopes | Multi-team search noise | v1 uses channel `wiki_prefixes` + `bridge.departments` as scope |
+| Custom source connectors (PR plugins) | ingest | Team-owned DBs need same query surface | Shared row contract; not a new SoT |
+
 ## Operations — Notion
 
 | Item | Department / platform | Trigger to build | Notes |

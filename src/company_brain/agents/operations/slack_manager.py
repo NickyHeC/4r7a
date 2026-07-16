@@ -20,6 +20,7 @@ from company_brain.agents.operations.slack import slack_config as cfg
 from company_brain.config import AppConfig
 
 CHANNEL_REGISTRY_DAILY_KEY = "slack_manager:channel_registry_date"
+THREAD_ABSORB_DAILY_KEY = "slack_manager:thread_absorb_date"
 
 
 class SlackManager(BaseAgent):
@@ -55,6 +56,7 @@ class SlackManager(BaseAgent):
         from company_brain.agents.operations.slack.channel_registry import ChannelRegistryAgent
         from company_brain.agents.operations.slack.customer_intake import CustomerIntakeAgent
         from company_brain.agents.operations.slack.open_thread_monitor import OpenThreadMonitorAgent
+        from company_brain.agents.operations.slack.thread_absorb import ThreadAbsorbAgent
         from company_brain.agents.operations.slack.thread_watcher import ThreadWatcherAgent
         from company_brain.runtime import get_runtime
 
@@ -65,10 +67,17 @@ class SlackManager(BaseAgent):
         if self._should_run_channel_registry():
             self._run_agent(runtime, ChannelRegistryAgent)
             self._state.set(CHANNEL_REGISTRY_DAILY_KEY, datetime.now().date().isoformat())
+        if self._should_run_thread_absorb():
+            self._run_agent(runtime, ThreadAbsorbAgent)
+            self._state.set(THREAD_ABSORB_DAILY_KEY, datetime.now().date().isoformat())
 
     def _should_run_channel_registry(self) -> bool:
         today = datetime.now().date().isoformat()
         return self._state.get(CHANNEL_REGISTRY_DAILY_KEY) != today
+
+    def _should_run_thread_absorb(self) -> bool:
+        today = datetime.now().date().isoformat()
+        return self._state.get(THREAD_ABSORB_DAILY_KEY) != today
 
     def _run_agent(self, runtime: Any, agent_cls: type, **kwargs: Any) -> None:
         try:

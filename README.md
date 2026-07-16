@@ -114,7 +114,8 @@ department (Gmail, Slack ops, Notion ops, ...).
 - **Google Calendar** — availability lookup, meeting booking (with Meet links), optional morning Slack agenda DM (off by default).
 - **Granola** — meeting notes ingested after each meeting ends (calendar-driven), with a weekly miss check as backstop (business: per-member API keys; enterprise: single company-wide key); meeting action items become Linear tasks. Read-only at the source.
 - **Slack** — full operations platform: Events API ingest (tier 0/1 triage), open threads,
-  `@wiki` Q&A (channel ACL + Notion citations), customer support orchestrator (Gmail +
+  `@wiki` Q&A (hybrid lexical retrieve + channel ACL + Notion citations), daily
+  `thread_absorb` into `raw/entries` for encyclopedia absorb, customer support (Gmail +
   Connect fan-in), onboarding backfill, and HR offboard signals. Action-item threads
   still bind to Linear via `action_items.py`. See [operations handbook](docs/agents/operations.md)
   Slack section; Weave (`@weave` system changes) lives under **Admin**.

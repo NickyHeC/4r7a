@@ -76,10 +76,11 @@ class SlackRoutingStore:
         except (OSError, json.JSONDecodeError, KeyError):
             return None
 
-    def write(self, record: SlackRoutingRecord) -> None:
-        record.updated_at = _utc_now()
+    def write(self, record: SlackRoutingRecord, *, touch_updated: bool = True) -> None:
+        if touch_updated:
+            record.updated_at = _utc_now()
         if not record.created_at:
-            record.created_at = record.updated_at
+            record.created_at = record.updated_at or _utc_now()
         path = self._path(record.channel, record.thread_ts)
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".json.tmp")
@@ -136,3 +137,13 @@ class SlackRoutingStore:
             if record.handled.get("closed"):
                 continue
             yield record
+
+    def iter_all(self) -> Iterable[SlackRoutingRecord]:
+        """Yield every routing record under the store root."""
+        if not self._root.is_dir():
+            return
+        for path in sorted(self._root.rglob("*.json")):
+            try:
+                yield SlackRoutingRecord.from_dict(json.loads(path.read_text()))
+            except (OSError, json.JSONDecodeError, KeyError):
+                continue

@@ -11,6 +11,16 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-16 — Hybrid lexical retrieve + Slack thread distill
+
+- **`wiki/retrieve.py`:** title boost + TF + simple IDF + age decay; wired into
+  `@wiki` (`wiki_acl`), Notion `scoped_search`, bridge `search_practices` (body snippets).
+- **`thread_absorb`:** daily via `slack_manager` / `slack thread-absorb`; closed or
+  aged internal threads → `raw/entries` (skips Connect/customer); no absorb LLM.
+- **Scope:** channel `wiki_prefixes` (humans) + `bridge.departments` (agents).
+- **Tabled:** embeddings/RRF, who_knows, planner fan-out, bursting, project registry.
+- **Tests:** `tests/test_wiki_retrieve.py`, `tests/test_slack_thread_absorb.py`.
+
 ## 2026-07-16 — Design process: grill-me inspirations
 
 - **`docs/design_process.md`:** dependency-ordered concerns (`Depends on`); react-to-

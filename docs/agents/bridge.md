@@ -47,6 +47,11 @@ departments, and other members' private pages.
 `get_skill`. Blockers are a summary compilation layer — Linear issue tracking stays
 in each coding agent's own Linear integration.
 
+**`search_practices`:** hybrid lexical search over practices pages (title + body)
+via shared `wiki/retrieve.py` (TF + IDF + title boost + age decay), still gated by
+`ReadGate` / `bridge.departments`. Default “project scope” for agents =
+department allow-list prefixes — not a separate project registry.
+
 ---
 
 ## Managers

@@ -10,7 +10,7 @@ from typing import Any
 
 from company_brain.bridge.config import BridgeConfig, load_bridge_config
 from company_brain.bridge.events import BridgeEvent, BridgeEventStore
-from company_brain.bridge.index import load_index, rebuild_index, search_entries
+from company_brain.bridge.index import load_index, rebuild_index
 from company_brain.bridge.rate_limit import RateLimiter
 from company_brain.bridge.read_gate import ReadGate
 from company_brain.config import CONFIG_DIR, resolve_wiki_dir
@@ -117,18 +117,33 @@ def get_priority(ctx: ToolContext, _arguments: dict[str, Any]) -> dict[str, Any]
 
 
 def search_practices(ctx: ToolContext, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Hybrid lexical search over practices pages (title + body), ReadGate-scoped."""
+    from company_brain.wiki.retrieve import retrieve
+    from company_brain.wiki.store import MarkdownDoc
+
     query = str(arguments.get("query") or "")
     limit = min(int(arguments.get("limit") or 20), 50)
-    index = load_index(ctx.bridge_cfg, ctx.config_dir)
-    if not index.entries:
-        index = rebuild_index(bridge_cfg=ctx.bridge_cfg, config_dir=ctx.config_dir)
-    hits = search_entries(index, ctx.gate, query, limit=limit)
-    practice_hits = [h for h in hits if "practices" in h.rel_path]
+    store = LocalWikiStore(root=resolve_wiki_dir())
+
+    def allow(rel: str, doc: MarkdownDoc) -> bool:
+        if "practices" not in rel:
+            return False
+        sync = str((doc.frontmatter or {}).get("sync") or "")
+        return ctx.gate.can_read(rel, sync, volume="company")
+
+    hits = retrieve(query, store=store, allow=allow, limit=limit, snippet_chars=600)
     _audit(ctx, "search_practices", query[:80])
     return {
         "results": [
-            {"path": h.rel_path, "title": h.title, "sync": h.sync, "volume": h.volume}
-            for h in practice_hits
+            {
+                "path": h["rel_path"],
+                "title": h["title"],
+                "sync": "",
+                "volume": "company",
+                "snippet": h.get("snippet") or "",
+                "score": h.get("score"),
+            }
+            for h in hits
         ]
     }
 
