@@ -22,10 +22,11 @@ when the work calls for it (do not duplicate their contents here):
 
 When the user starts **designing** a new feature, do not write production code until
 scope is settled and they explicitly start a build. Follow
-[`docs/design_process.md`](../../docs/design_process.md): research first, raise concerns
-(one-by-one / batch / all-at-once per the user's choice), 2–3 rounds, then write a
-temporary `docs/plans/<topic>.md`. Read [`docs/tabled.md`](../../docs/tabled.md) at plan
-start for the matching area. Build **one ship unit per thread**.
+[`docs/design_process.md`](../../docs/design_process.md): research first; raise concerns
+in dependency order (one-by-one / batch / all-at-once / grill); run a closing branch
+audit and get an explicit **shared understanding** yes before writing
+`docs/plans/<topic>.md`. Read [`docs/tabled.md`](../../docs/tabled.md) at plan start for
+the matching area. Build **one ship unit per thread**.
 
 ## 2. Rule compliance (flag, don't silently work around)
 

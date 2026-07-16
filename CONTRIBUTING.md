@@ -10,9 +10,10 @@ below and it knows how to run the whole design → build → test loop with you.
 Extending the system is two phases, one doc each:
 
 1. **Design — [`docs/design_process.md`](docs/design_process.md)**
-   Iron out scope *before* any code: your agent researches the repo, raises concerns
-   (one at a time, in batches, or all at once — your choice), and records decisions into
-   a temporary plan file. Nothing is built until scope is settled.
+   Iron out scope *before* any code: your agent researches the repo, raises concerns in
+   dependency order (batch, one-by-one, all-at-once, or **grill**), runs a closing branch
+   audit, confirms shared understanding, then writes a temporary plan file. Nothing is
+   built until you lock scope.
 
 2. **Build, test, clean — [`docs/hygiene_checklist.md`](docs/hygiene_checklist.md)**
    Implement in small slices and prove each one: lint, tests, the `company-brain doctor`
@@ -26,6 +27,9 @@ agent:
 
 Design a new feature for 4r7a. Follow docs/design_process.md. Presentation mode: batch.
 ```
+
+For a pressure-test interview with no plan file until you say lock, use
+`Presentation mode: grill`.
 
 ## For AI coding agents
 

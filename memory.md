@@ -11,6 +11,15 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-16 — Design process: grill-me inspirations
+
+- **`docs/design_process.md`:** dependency-ordered concerns (`Depends on`); react-to-
+  Proposal; **grill** mode (stateless interview, no plan until lock); closing **branch
+  audit**; explicit **Shared understanding?** gate before `docs/plans/`; checklist adds
+  failure UX / authorship / rollback.
+- **Pointers:** `governance.mdc`, `CONTRIBUTING.md` (grill kickoff).
+- Inspired by Matt Pocock grill-me/grilling; paper trail stays 4r7a plans + handbooks.
+
 ## 2026-07-15 — Weave implement+prove (Inspect-shaped | working tree)
 
 - **Dispatcher:** `weave.py` for `config_only` runs guest implement+prove; other

@@ -13,6 +13,12 @@ knows how to run the whole design debate for you.
 start a build. The agent's job here is to *disagree well* — surface concerns, propose
 defaults, and record decisions — not to start typing.
 
+Inspiration for the debate technique (dependency-ordered questions, recommended answers,
+codebase-first, shared-understanding gate): Matt Pocock’s
+[grill-me](https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me) /
+grilling primitive — adapted here so 4r7a invariants, `tabled.md`, and temporary plans
+stay the paper trail.
+
 ---
 
 ## How to start (copy-paste)
@@ -24,7 +30,7 @@ GitHub issue, or just the chat). Then tell the agent:
 [link or paste your vision]
 
 Design a new [feature / platform] for 4r7a. Follow docs/design_process.md.
-Presentation mode: batch.   # or: one-by-one / all-at-once
+Presentation mode: batch.   # or: one-by-one / all-at-once / grill
 ```
 
 ### Choose how concerns are presented
@@ -37,9 +43,17 @@ open question up front. Pick the mode that fits you (default: **batch**).
 | **one-by-one** | Exactly **one** concern per message; waits for you | Answer each before the next |
 | **batch** *(default)* | Up to **3** numbered concerns per round | Answer in batches; skip the obvious ones |
 | **all-at-once** | **Every** concern it can find in the first message | Answer in any order, across one or more replies |
+| **grill** | Strict one-by-one, dependency-ordered; **no** `docs/plans/` until you say lock | Same as one-by-one; pressure-test only |
+
+**Grill mode** is the pure interview pass: sharpen shared understanding in the
+conversation without opening a plan file. When you say **lock** (or “write the plan”),
+the agent runs the branch audit + shared-understanding gate, then Phase 3.
 
 **Interaction style:** plain text back-and-forth. Ask the agent not to use IDE
 multiple-choice popups unless you want them.
+
+**Your job each turn:** accept, override, or defer the **Proposal** — you are reacting
+to a recommended default, not inventing from a blank prompt.
 
 ---
 
@@ -55,11 +69,16 @@ The agent reads and briefly summarizes:
 6. **Invariants** — the relevant [`.cursor/rules/`](../.cursor/rules) (agent-organization, agent-construction, wiki-data-flow, access-control, platform-boundary, naming)
 
 It opens with a short framing paragraph: why this matters, what shifts, and which
-tabled items to decide now.
+tabled items to decide now. If helpful, it sketches a **decision tree** (parent
+blockers → leaf choices) so later rounds stay dependency-ordered.
 
 ---
 
 ## Phase 2 — Design debate (2–3 rounds is typical)
+
+Treat the design as a **decision tree**. Settle **parent / blocker** decisions before
+the choices that hang off them (e.g. ship unit and isolation before CLI flags and image
+tags). Early answers may reshape or drop later concerns — that is expected.
 
 Each concern uses this shape:
 
@@ -68,16 +87,21 @@ Each concern uses this shape:
 
 - **Context:** what exists / what you asked for
 - **Tension:** the decision or risk
+- **Depends on:** prior settled concerns (if any), or `—`
 - **Proposal:** the agent's recommended default (1–2 alternatives only if the fork is real)
 ```
+
+You reply by accepting or overriding the Proposal (or deferring to `tabled.md`). Do not
+leave the agent waiting on an open-ended “what do you think?” with no default.
 
 **What the agent should do:**
 
 - **Be proactive** — raise issues, clarifications, and improvements without being asked
 - **Be concrete** — cite files, agents, config keys, and invariants
+- **Order by dependency** — blockers and blast-radius first; leaf UX/config last
 - **Respect platform boundaries** — if a connected platform already owns a behavior, integrate or note the gap; do not reimplement it without your explicit OK ([`platform-boundary.mdc`](../.cursor/rules/platform-boundary.mdc))
 - **Decide tabled items** — for each relevant row: *include in v1 or still defer?*
-- **Answer what the code already answers** — if the repo settles a concern, say so and move on; do not invent work
+- **Answer what the code already answers** — if the repo settles a concern, explore the codebase and say so; do not ask the user to restate it
 - **Flag rule drift** — if your request conflicts with an invariant:
 
   > **Rule drift:** `<rule>` — `<what violates it>` — suggest a fix, or ask to change the rule if the conflict is intentional
@@ -85,7 +109,7 @@ Each concern uses this shape:
 **After each of your replies**, the agent:
 
 1. Records decisions under a **Settled this round** list
-2. Carries unsettled concerns into the next round
+2. Carries unsettled concerns into the next round (still dependency-ordered)
 3. Does not re-open settled items unless you do
 
 ### Concern checklist (agent's scan list — adapt per feature)
@@ -100,16 +124,42 @@ Not every item applies; used to make sure nothing obvious is missed:
 - [ ] Cost gates / when a run should skip itself
 - [ ] Conflict or review queues vs auto-resolve
 - [ ] Config surface (`config/*.yaml`, env vars, `Smolfile` allow_hosts)
+- [ ] Failure UX / escalate vs abort / who is notified
+- [ ] Authorship / identity for side effects (PRs, commits, external writes)
+- [ ] Rollback or undo story (even if “human reverts the PR”)
 - [ ] v1 ship order and explicit out-of-scope
 - [ ] Extend an existing agent vs add a new file
 - [ ] Wiki path, article title, agent filename ([`naming.mdc`](../.cursor/rules/naming.mdc))
 
+### Closing branch audit (before Phase 3)
+
+When open concerns are resolved (or only minor defaults remain), the agent runs a
+**branch audit** — not another full round, a short pass:
+
+1. List decisions that were **assumed without a Concern** (silent defaults).
+2. List checklist items that never came up and still matter for this vision.
+3. For each: propose a default, or mark deferred (`tabled.md`), or open one last Concern.
+
+Do not write the plan file until this audit has been shown (or you waive it with
+“skip audit / lock”).
+
 ---
 
-## Phase 3 — Lock scope → write the plan file
+## Phase 3 — Shared understanding → plan file
 
-When concerns are resolved (or only minor defaults remain), the agent writes
-**`docs/plans/<topic>.md`** — a temporary build script containing:
+### Shared-understanding gate
+
+Before writing `docs/plans/<topic>.md`, the agent asks explicitly:
+
+> **Shared understanding?** Reply **yes** (write the plan) / **reopen N** (concern title or number) / **grill** (more one-by-one).
+
+Only on **yes** (or an unambiguous “lock” / “write the plan”) does the agent create the
+plan file. Until then: no production code, and in grill mode still no plan file.
+
+### Plan contents
+
+When the gate passes, the agent writes **`docs/plans/<topic>.md`** — a temporary build
+script containing:
 
 1. **Weight** — why this build matters
 2. **Settled decisions** — grouped by theme (data contract, UX, access, scheduling, …)
@@ -118,9 +168,10 @@ When concerns are resolved (or only minor defaults remain), the agent writes
 5. **Ship order** — numbered **build sessions**, each a small reviewable slice
 6. **Per session** — files to touch, tests, doc updates
 7. **Deferred** — what stays in [`docs/tabled.md`](tabled.md) and why
+8. **Branch audit residue** — any silent defaults accepted at the gate (one short list)
 
 The agent may bake in minor implementation defaults that follow directly from settled
-decisions, without re-asking.
+decisions, without re-asking — synthesise the plan from the debate; do not re-interview.
 
 Planning ends with:
 
@@ -146,11 +197,17 @@ per the "when to update what" table in [`doc_style.md`](doc_style.md).
 
 ## Example kickoffs
 
-**Batch (how the Notion platform was designed):**
+**Batch (default — how Notion / Weave were designed):**
 
 ```text
 [vision] — a build as important as our Slack integration.
 Design it per docs/design_process.md. Batch mode, plain text.
+```
+
+**Grill (pressure-test only, no plan until lock):**
+
+```text
+Same vision. Grill mode — one concern at a time, dependency order, no plan file until I say lock.
 ```
 
 **One-by-one:**
@@ -177,5 +234,6 @@ live in the handbooks and `memory.md`):
 | Notion | MD source-of-truth + bidirectional sync; 9 build sessions; batch-of-3 rounds |
 | Discord | New `growth/` department; Gateway ingest; multi-round design |
 | Slack | Manager + specialists; ingest tiers; `@wiki` |
+| Weave implement+prove | Batch debate; Codex vs in-house; allow-list + admin queue |
 
 When in doubt, read `memory.md` for how a similar platform was shipped.
