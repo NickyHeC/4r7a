@@ -29,6 +29,9 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.4",
 ]
+google-ads = [
+    "google-ads>=28.0",
+]
 
 [project.scripts]
 company-brain = "company_brain.cli:main"

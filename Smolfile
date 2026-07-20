@@ -43,6 +43,11 @@ allow_hosts = [
   # Discord (growth) — community Gateway + REST
   "discord.com",
   "gateway.discord.gg",
+  # Google Ads (growth) — Ads API + OAuth
+  "googleads.googleapis.com",
+  "oauth2.googleapis.com",
+  "accounts.google.com",
+  "www.googleapis.com",
   # Google Calendar (operations) — REST + official MCP
   "calendarmcp.googleapis.com",
   "calendar.googleapis.com",

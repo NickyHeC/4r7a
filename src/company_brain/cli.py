@@ -1016,6 +1016,44 @@ def discord_onboarding_run(
     click.echo(result)
 
 
+@main.group("google-ads")
+def google_ads() -> None:
+    """Google Ads — read-only weekly campaign / pacing / CPA snapshots."""
+
+
+@google_ads.command("manager")
+@click.option("--once", is_flag=True, help="Run one snapshot pass and exit.")
+@click.option("--force", is_flag=True, help="Ignore the weekly cost gate (with --once).")
+def google_ads_manager_cmd(once: bool, force: bool) -> None:
+    """Run the persistent Google Ads manager loop (or one pass with --once)."""
+    from company_brain.agents.growth.google_ads_manager import GoogleAdsManager
+
+    config = load_config()
+    manager = GoogleAdsManager(config)
+    if once:
+        click.echo(manager.run(once=True, force=force))
+        return
+    manager.run()
+
+
+@google_ads.group("onboarding")
+def google_ads_onboarding_group() -> None:
+    """Google Ads platform onboarding — snapshot and start manager."""
+
+
+@google_ads_onboarding_group.command("run")
+@click.option("--no-manager", is_flag=True, help="Skip starting google_ads_manager.")
+def google_ads_onboarding_run(no_manager: bool) -> None:
+    """Run Google Ads snapshot specialists and start the weekly manager."""
+    from company_brain.agents.growth.google_ads.google_ads_onboarding import (
+        GoogleAdsOnboardingAgent,
+    )
+
+    config = load_config()
+    result = GoogleAdsOnboardingAgent(config).run(start_manager=not no_manager)
+    click.echo(result)
+
+
 @main.group()
 def hr() -> None:
     """HR roster and offboarding helpers."""

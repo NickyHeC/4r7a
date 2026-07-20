@@ -19,7 +19,7 @@ flowchart LR
 |------------|-------|----------|
 | **Engineering** | GitHub — PRs, branches, feature updates | [engineering.md](engineering.md) |
 | **Finance** | Mercury + Ramp — expenses, quarterly metrics, subscriptions | [finance.md](finance.md) |
-| **Growth** | Discord — open-source community ingest | [growth.md](growth.md) |
+| **Growth** | Discord community ingest + Google Ads read-only snapshots | [growth.md](growth.md) |
 | **Operations** | Gmail, Slack, Granola, Notion (wiki mirror + task/CRM/Weave) | [operations.md](operations.md) |
 | **Admin** | Weave implement+prove (`@weave`), monthly LLM ops, daily `wiki_commit` backup | [admin.md](admin.md) |
 | **HR** | Roster promotion, offboarding proposals | [hr.md](hr.md) |

@@ -1,16 +1,18 @@
 # Growth — Agent Handbook
 
-Open-source **developer community** platforms under
-`src/company_brain/agents/growth/`. v1 ships **Discord** only; future platforms
-(Google Ads, X, …) get their own managers or fold into a parent `growth_manager`.
+Growth platforms under `src/company_brain/agents/growth/`. **Discord** (developer
+community) and **Google Ads** (paid acquisition snapshots) each have their own
+manager; future platforms (X, …) may get managers or fold into a parent
+`growth_manager`.
 
-**Posture:** read-only at the source — the Discord bot **never posts** to Discord.
-Humans draft replies in Slack `#discord` when duplicate/in-progress features need a
-community response. Community members are **not** CRM customers (no contact matching).
+**Posture:** read-only at connected sources — the Discord bot **never posts** to
+Discord; Google Ads agents **never mutate** campaigns, budgets, or bids. Humans
+draft Discord replies in Slack `#discord` when needed. Community members are
+**not** CRM customers (no contact matching).
 
-**Config:** [`config/growth.yaml`](../../config/growth.yaml) — guild, poll interval,
-exclude channels, member-scoring thresholds, absorb batch hour.
-**Env:** `DISCORD_BOT_TOKEN`
+**Config:** [`config/growth.yaml`](../../config/growth.yaml) — Discord guild/poll
+settings; `google_ads` schedule and pacing threshold.
+**Env:** `DISCORD_BOT_TOKEN`; `GOOGLE_ADS_*` (see Google Ads section).
 **Members:** per-member `bindings.discord_id` (+ optional `discord_handle`) in
 [`config/members.yaml`](../../config/members.yaml) for team-member thread suppression.
 
@@ -159,11 +161,83 @@ Helpers: `growth/shared/growth_slack.py` → `growth_notifier()`, `discord_revie
 | `growth/discord/open-conversation.md` | Open Conversations | update | `open_conversation` |
 | `growth/discord/activity.md` | Discord Activity | update | `activity_snapshot` |
 | `growth/discord/member/{handle}.md` | `{Handle}` | update | `member_scoring` |
+| `growth/google-ads/campaign-status.md` | Campaign Status | update | `campaign_status` |
+| `growth/google-ads/budget-pacing.md` | Budget Pacing | update | `budget_pacing` |
+| `growth/google-ads/acquisition-cost.md` | Acquisition Cost | update | `acquisition_cost` |
 | `product/feature-request-log.md` | Feature Request Log | append | `customer_support` (community) |
 | `product/feature-request.md` | Feature Requests | update | `customer_support` (ranked rebuild) |
 | `engineering/issue/{slug}.md` | (per issue) | update | `customer_support` (community bugs) |
 
 Member pages carry frontmatter: `interesting_score` (1–5), `discord_id`, `last_scored_at`.
+
+---
+
+## Google Ads — how it runs
+
+Read-only weekly snapshots. Search and Performance Max share the same agents
+(campaign type is a column). No historical backfill — onboarding captures the
+current snapshot only.
+
+```mermaid
+flowchart TD
+  Mgr[google_ads_manager] -->|Monday 08:00| Gate{week already done?}
+  Gate -->|yes| Idle[idle]
+  Gate -->|no| Run[dispatch three specialists]
+  Run --> Client[google_ads_client GAQL]
+  Client --> W1[campaign-status.md]
+  Client --> W2[budget-pacing.md]
+  Client --> W3[acquisition-cost.md]
+  Run --> Alert{pacing ge 90 percent?}
+  Alert -->|yes| Slack[growth_notifier ACTIONABLE]
+  Alert -->|no| Quiet[suppress]
+```
+
+### Manager
+
+**`google_ads_manager.py`** — Persistent manager scoped to Google Ads (checks Ads
+according to its specified action schedule, idles otherwise).
+
+- Weekly (default **Monday 08:00** in `google_ads.timezone`) dispatches the
+  specialists below; skips if the ISO week already succeeded.
+- `#growth` actionable when MTD spend ≥ `pacing_alert_threshold` (default 0.9)
+  with days left in the month — not for same-day front-loading alone.
+- Repeated auth/API failures (≥2) also alert `#growth`.
+
+### Specialists — Google Ads (`growth/google_ads/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `campaign_status.py` | Weekly via manager | Non-removed campaigns: type, status, dates, budget |
+| `budget_pacing.py` | Weekly via manager | MTD spend vs period budget (% used / remaining) |
+| `acquisition_cost.py` | Weekly via manager | Ads-reported CPA (MTD + last 30 days) |
+| `google_ads_client.py` | — | GAQL helpers (not an agent); read-only |
+| `google_ads_onboarding.py` | Once (`google-ads onboarding run`) | Snapshot once; starts `google_ads_manager` |
+
+**Onboarding** (`google_ads_onboarding.py`) — always last in this table:
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **Schedule** | Once, when Ads credentials are connected |
+| **CLI** | `company-brain google-ads onboarding run [--no-manager]` |
+| **Backfill** | None (snapshot only) |
+| **Handoff** | `get_runtime().start(google_ads_manager)` when `start_manager=True` |
+
+**CLI:** `company-brain google-ads manager [--once] [--force]`,
+`google-ads onboarding run`
+
+**Env:** `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`,
+`GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_CUSTOMER_ID`,
+optional `GOOGLE_ADS_LOGIN_CUSTOMER_ID`. Package: `pip install 'company-brain[google-ads]'`.
+
+Connect steps: [`project_install.md`](../../project_install.md) → Google Ads section.
+
+**Budget / CPA notes**
+
+- Period budget: daily budgets are scaled by days-in-month for the monthly cycle;
+  Ads may front-load within the period without exceeding the period cap.
+- CPA is **Ads-reported** (`cost / conversions`). Product-true conversion CPA is
+  deferred until engineering + Ads conversion actions are configured.
 
 ---
 
@@ -175,5 +249,11 @@ Member pages carry frontmatter: `interesting_score` (1–5), `discord_id`, `last
 | Feature-request log + dedup against product catalog | Community CRM / contact promotion |
 | Technical discussion → absorb queue | Thread lifecycle in the server |
 
-Deferred: Notion product-progress page, fine-grained Notion teamspace ACL for
-growth/product/engineering — see [`docs/tabled.md`](../tabled.md).
+| company-brain owns | Google Ads owns |
+|--------------------|-----------------|
+| Wiki snapshots, weekly pacing alert | Budgets, bids, conversion setup, serving |
+| Ads-reported CPA display | Optimization / Smart Bidding / keyword tooling |
+
+Deferred: Ads mutates, product-true CPA, keyword research, daily pacing, Notion
+product-progress page, fine-grained Notion teamspace ACL — see
+[`docs/tabled.md`](../tabled.md).

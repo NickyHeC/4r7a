@@ -211,6 +211,34 @@ Add per-member `bindings.discord_id` (and optional `discord_handle`) in
 
 Handbook: [`docs/agents/growth.md`](docs/agents/growth.md).
 
+### Google Ads (growth department) — read-only snapshots
+
+Weekly wiki snapshots (campaign status, budget pacing, Ads-reported CPA). The
+client **reads only** — no campaign, budget, bid, or recommendation mutates.
+
+1. Create a Google Cloud OAuth client (Desktop or Web) and complete the Ads API
+   OAuth consent flow for a user with **read** access to the Ads account
+   (prefer a read-only Google Ads user role).
+2. Apply for a Google Ads **developer token** and note the Ads **customer ID**
+   (and MCC login customer ID if the account sits under a manager).
+3. Install the client library: `pip install 'company-brain[google-ads]'` (or
+   `pip install google-ads`).
+4. Set in `.env`:
+   - `GOOGLE_ADS_DEVELOPER_TOKEN`
+   - `GOOGLE_ADS_CLIENT_ID`
+   - `GOOGLE_ADS_CLIENT_SECRET`
+   - `GOOGLE_ADS_REFRESH_TOKEN`
+   - `GOOGLE_ADS_CUSTOMER_ID`
+   - `GOOGLE_ADS_LOGIN_CUSTOMER_ID` (optional, MCC)
+5. Adjust `google_ads:` in `config/growth.yaml` (timezone, Monday 08:00 run,
+   pacing alert threshold default `0.9`).
+6. Snapshot + start manager: `company-brain google-ads onboarding run`
+7. Or run the persistent loop alone: `company-brain google-ads manager`
+
+**CLI:** `google-ads manager`, `google-ads onboarding run` (`--no-manager`).
+
+Handbook: [`docs/agents/growth.md`](docs/agents/growth.md).
+
 ### Gmail (operations department) — read + labels + DRAFT only, never send
 Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `official`):
 

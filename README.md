@@ -51,7 +51,7 @@ flowchart TD
     ENG[Engineering\nGitHub · Linear]
     FIN[Finance\nMercury · Ramp]
     OPS[Operations\nGmail · GCal · Granola]
-    GRO[Growth\nDiscord]
+    GRO[Growth\nDiscord + Google Ads]
     EW[Employee Wiki\nper-member work logs]
   end
 
@@ -127,13 +127,15 @@ department (Gmail, Slack ops, Notion ops, ...).
 
 ### Growth
 
-Open-source **developer community** platforms. v1 ships **Discord** only.
+Developer community + paid acquisition snapshots.
 
 - **Discord** — read-only community bot: Gateway ingest + poll backup, triage routing records,
   community intake (bugs → wiki + Linear, features → shared product log with catalog dedup),
   open-conversation tracker, daily activity snapshot, monthly member scoring, and daily
   technical-absorb batch. Draft replies for duplicate/in-progress features go to Slack `#discord`;
   valid features and interesting members notify `#growth`. Dispatched by `discord_manager.py`.
+- **Google Ads** — read-only weekly snapshots (campaign status, budget pacing, Ads-reported
+  CPA); `#growth` only on high period spend. Dispatched by `google_ads_manager.py`.
   See [growth handbook](docs/agents/growth.md).
 
 ### Admin

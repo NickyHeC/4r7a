@@ -11,6 +11,18 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-20 — Google Ads growth platform (read-only snapshots)
+
+- **Platform:** `growth/google_ads/` + `google_ads_manager.py` — weekly Monday 08:00
+  snapshots; no Ads mutates; no historical backfill.
+- **Specialists:** `campaign_status`, `budget_pacing` (MTD vs period budget; front-load
+  note), `acquisition_cost` (Ads-reported CPA MTD + L30D).
+- **Wiki:** `growth/google-ads/{campaign-status,budget-pacing,acquisition-cost}.md`.
+- **Notify:** `#growth` when spend ≥ 90% period budget with days left; repeated API fail.
+- **Config/CLI:** `config/growth.yaml` `google_ads:`; `company-brain google-ads manager|onboarding`;
+  optional extra `pip install 'company-brain[google-ads]'`; Smolfile Ads hosts.
+- **Tabled:** mutates, product-true CPA, keyword/Smart Bidding tools.
+
 ## 2026-07-19 — Two-repo deploy + daily wiki_commit
 
 - **Topology:** private company 4r7a (Weave PRs) + admin-only `{org}/company-wiki`

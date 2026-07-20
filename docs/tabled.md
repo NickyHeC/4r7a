@@ -121,7 +121,9 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Google Ads agent | `growth/google_ads` | Ads account connected | |
+| Google Ads mutates / recommendation apply | `growth/google_ads` | Explicit write approval | v1 is read-only snapshots |
+| Google Ads product-true CPA | `growth/google_ads` | Eng + Ads conversion setup | v1 uses Ads-reported CPA only |
+| Google Ads keyword / Smart Bidding tools | `growth/google_ads` | Ads config session | |
 | Company activity agent | Growth | Event sources defined | |
 | X / Twitter | Growth | API access | |
 

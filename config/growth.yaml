@@ -1,5 +1,5 @@
 # Growth department platform settings (non-secret).
-# Secrets: DISCORD_BOT_TOKEN in the environment only.
+# Secrets: DISCORD_BOT_TOKEN, GOOGLE_ADS_* in the environment only.
 
 discord:
   guild_id: ""
@@ -11,6 +11,15 @@ discord:
   member_scoring_min_messages: 3
   interesting_score_threshold: 4
   absorb_batch_hour_utc: 6
+
+google_ads:
+  enabled: true
+  timezone: America/Los_Angeles
+  run_weekday: 0          # 0=Monday
+  run_hour: 8
+  run_minute: 0
+  pacing_alert_threshold: 0.9
+  cpa_lookback_days: 30
 
 slack:
   discord_channel: "#discord"

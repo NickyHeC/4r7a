@@ -20,6 +20,7 @@ If yes: integrate, configure, or surface a gap in the wiki — **do not reimplem
 | **Google Calendar** | Propose slots, book events when confirmed | Calendar sync, attendee delivery |
 | **Granola** | Daily ingest of meeting notes | Note access scopes, summaries, transcripts |
 | **Notion** | Mirror from wiki MD | Read ACL via teamspaces |
+| **Google Ads** | Wiki snapshots (campaigns, pacing, Ads CPA); selective pacing alert | Budgets, bids, conversion setup, serving, optimization |
 
 ## Rules
 
