@@ -11,6 +11,17 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-19 — Two-repo deploy + daily wiki_commit
+
+- **Topology:** private company 4r7a (Weave PRs) + admin-only `{org}/company-wiki`
+  (MD backup). SoT = host MD volume; GitHub wiki repo is one-way daily export only.
+- **`wiki_commit`:** persistent `admin/wiki_commit.py`; mirrors wiki + employee_wiki
+  + raw → `.wiki_git` clone; push `main`; never force-push; failure → `#wiki-admin`.
+- **Bots:** `COMPANY_BRAIN_WIKI_GIT_TOKEN` (wiki repo only) vs Weave/`gh` (agent repo).
+- **Docs:** `project_install.md` Step 0 + admin handbook; tabled bootstrap/rollback/
+  upstream sync / bidirectional / Weave allow-list expand.
+- **Tests:** `tests/test_wiki_commit.py`.
+
 ## 2026-07-16 — Hybrid lexical retrieve + Slack thread distill
 
 - **`wiki/retrieve.py`:** title boost + TF + simple IDF + age decay; wired into

@@ -138,14 +138,19 @@ Open-source **developer community** platforms. v1 ships **Discord** only.
 
 ### Admin
 
+- **Two-repo deploy** — private company **4r7a / company-brain** (agents; Weave draft
+  PRs) and admin-only **company-wiki** (MD backup). Live SoT is the host MD volume;
+  daily `wiki_commit` pushes volume → wiki repo (`main` only). Separate bots: wiki git
+  token vs Weave/`gh`. See [admin handbook](docs/agents/admin.md) and
+  `project_install.md`.
 - **LLM ops** — monthly `admin_manager` runs expense report + maintain (coding-session
   request) from measured usage/duration/verify; wiki under `admin/llm-expense/` and
   `admin/maintain/`. CLI: `company-brain admin manager`.
 - **Weave** — separate Slack app for system-change requests (`@weave`). Triage writes
   `admin/change-request/{id}.md`, mirrors to a Notion change-request DB when configured,
   and for `config_only` runs **implement+prove** in a smol VM (default: smol registry
-  Codex; opt-in `in_house`) then opens a draft PR. Allow-list is `config/` YAML/JSON;
-  overflows go to `admin/weave-queue.md` for the monthly admin session. W2
+  Codex; opt-in `in_house`) then opens a draft PR on the **private agent repo**.
+  Allow-list is `config/` YAML/JSON; overflows go to `admin/weave-queue.md`. W2
   `members.yaml` only; roster cannot invoke. See [admin handbook](docs/agents/admin.md).
 
 ### HR

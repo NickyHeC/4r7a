@@ -366,6 +366,15 @@ admin:
     min_verify_samples: 5
     estimated_minutes:
       linear_stale_audit: 15
+  # Daily MD volume → admin-only company-wiki GitHub backup (SoT stays on the host).
+  # Requires: clone of {org}/company-wiki at work_dir + COMPANY_BRAIN_WIKI_GIT_TOKEN.
+  wiki_commit:
+    enabled: false
+    hour_utc: 6
+    remote_url: ""
+    work_dir: ""
+    branch: main
+    poll_interval_minutes: 60
 
 # CRM — entity-per-person contacts + typed inbound (see docs/agents/operations.md).
 crm:

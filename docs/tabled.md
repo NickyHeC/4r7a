@@ -17,7 +17,11 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending |
+| Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending. **Partial:** daily `wiki_commit` → admin-only GitHub backup shipped. Full in-wiki versioning / rollback agents still pending |
+| Wiki volume rollback admin agents | `admin/` | After `wiki_commit` backup is in production | Restore volume from a GitHub commit; stop writers → rsync/clone → rebuild indexes. Not auto-clobber |
+| Automated upstream sync into private 4r7a | Admin / deploy | Company asks for dependabot-style upstream PRs | v1: admin-driven `fetch upstream` only; Weave never targets public 4r7a |
+| Weave coding beyond allow-list / auto-merge | admin/weave | Explicit product ask | Draft PR + no auto-merge stays; expanding `.py` edit scope is a separate ship |
+| Bidirectional GitHub ↔ wiki volume | Wiki git | Never without conflict design | v1 one-way volume → GitHub; GitHub is backup only |
 | Batch absorb by urgency | operations/slack + notion | Optional `--absorb` on Slack onboarding | Three-tier lanes shipped; **`thread_absorb` → raw/entries** daily; encyclopedia absorb still opt-in / separate LLM pass |
 | Weave hot-reload / agent pause-resume | admin/weave | Implement+prove v1 stable + product ask | Option B from Slack design — pause persistent agents, edit, resume. **Shipped:** config_only implement+prove (Codex default / in_house opt-in), allow-list, fail-closed prove, `admin/weave-queue.md` |
 
@@ -43,6 +47,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
+| Wiki git bootstrap (empty repo first push) | Admin onboarding | First company enabling `wiki_commit` without a pre-cloned repo | Admin pre-creates private `{org}/company-wiki`; first-run init+push UX belongs in onboarding, not steady-state agent. Manual clone documented in `project_install.md` |
 | Member bridge MCP | Cross / `bridge/` | First multi-member deploy using coding agents | Co-located with wiki; private mesh; token hashes; ledger → `bridge_manager` → materializer → rollup 08:00; **no Linear**; per-dept bridge index; skills `_index.yaml` per dept; rate limits 60 reads/min + 20 report/day; **read: dept-scoped** — `bridge.departments` required; engineering uses `sync: location:engineering`; `sync: company` only for cross-dept pages (master table); own employee tree; `bridge_readiness` doctor |
 | Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP implementation lands | After employee wiki onboarding; Tailscale; `company-brain bridge issue-token`; env-var token in Cursor |
 | Bridge token revoke on offboard | operations/slack | Offboard actuation ships | `employee_offboarding` proposal exists; auto-revoke after actuation |

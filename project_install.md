@@ -24,8 +24,18 @@ of specialist agents across their platforms. Follow this runbook step by step.
   what token/scope it needs; wait for their go-ahead.
 - **Finance is read-only.** Mercury and Ramp use read-only tokens. Never set up
   or attempt money movement, payments, card issuance, or limit changes.
-- **Markdown first.** The wiki Markdown files are the source of truth; Notion is a
-  mirror. Agents write Markdown via `write_wiki_page`, then sync.
+- **Markdown first.** The wiki Markdown **volume on the wiki host** is the source of
+  truth; Notion is a mirror. Agents write Markdown via `write_wiki_page`, then sync.
+  An admin-only GitHub **company-wiki** repo is a daily backup / version history —
+  not a live read or write plane.
+- **Two GitHub repos (company org).** (1) Private **company-brain / 4r7a** — agent
+  code; Weave opens draft PRs here; admin merges when free. (2) Private **admin-only
+  company-wiki** — MD backup from `wiki_commit`. Employees do not get GitHub access
+  to the wiki repo. Upstream public 4r7a sync into the private fork is admin-driven
+  (not Weave-auto).
+- **Two bots, least privilege.** Wiki git bot (`COMPANY_BRAIN_WIKI_GIT_TOKEN`) —
+  push to company-wiki only. Weave / `gh` bot — branches/PRs on the agent repo only;
+  no merge; no wiki-repo write. Never one god-token for both.
 - **Write only to the system of record.** Agents write to the wiki/Notion or a
   ledger doc as proposals a human reviews — never to a bank/card platform.
 - **Never commit secrets.** Tokens go in `.env` (gitignored). Never print full
@@ -44,7 +54,29 @@ Ask the user: local or cloud?
   **smol cloud** (Smol Machines); install the smolvm CLI and configure smol
   cloud credentials when using the default fleet.
 
+Runtime is co-located: one host runs the **private agent checkout** and mounts the
+**MD volume** (`COMPANY_BRAIN_WIKI_DIR`, employee wiki, `raw/`). GitHub separation
+does not require two machines.
+
 Copy `.env.example` to `.env` and fill values as you go.
+
+### Wiki GitHub backup (`wiki_commit`) — optional but recommended
+
+1. Admin creates a **private** `{org}/company-wiki` repo (admin-only GitHub ACL).
+2. Clone it on the wiki host to `./.wiki_git` (or `COMPANY_BRAIN_WIKI_GIT_DIR`).
+   First-push / empty-repo bootstrap UX is still tabled — pre-create and clone manually.
+3. Set `COMPANY_BRAIN_WIKI_GIT_TOKEN` (contents:write on company-wiki only).
+4. In `config/operations.yaml` → `admin.wiki_commit`: set `enabled: true`,
+   `remote_url` to the HTTPS clone URL, optional `hour_utc` (default 6).
+5. Start: `company-brain admin wiki-commit --loop` (or `--force` for a one-shot test).
+
+Daily job mirrors `wiki/`, `employee_wiki/`, and `raw/` into the clone and pushes
+one commit to `main` when dirty (never force-push). Failures notify `#wiki-admin`.
+
+**Recovery (manual):** stop writers → restore volume trees from a company-wiki
+commit into the configured wiki dirs → rebuild indexes (`company-brain` index /
+absorb control rebuild as needed) → resume agents. Do **not** auto-overwrite a
+healthy volume from GitHub. Automated rollback agents are tabled.
 
 ## Step 1 — Install and check
 
@@ -307,12 +339,16 @@ company-brain models budget              # status + per-agent run caps
 company-brain models budget --reconcile  # compare tracked usage vs Mercury vendor bills
 company-brain models spot-check          # vibe eval samples → #wiki
 company-brain admin manager              # monthly LLM expense + maintain (one pass)
+company-brain admin wiki-commit --loop   # daily MD volume → company-wiki backup
 ```
 
 **Monthly LLM ops:** `admin_manager` writes `admin/llm-expense/{YYYY-MM}.md` and
 `admin/maintain/{YYYY-MM}.md`, refreshes `admin/agent-runtime.md`, and requests an
 admin coding session on `#wiki-admin` when budget/duration/verify drift. Schedule in
 `config/operations.yaml` → `admin.llm_ops`. Handbook: `docs/agents/admin.md`.
+
+**Wiki commit:** persistent `wiki_commit` (independent of `admin_manager`). Config
+`admin.wiki_commit`; token `COMPANY_BRAIN_WIKI_GIT_TOKEN`. See Step 0 above.
 
 **Model health:** `company-brain doctor llm` pings configured models, auto-falls
 back within `fallback_chains`, persists overrides in `models.yaml`, alerts

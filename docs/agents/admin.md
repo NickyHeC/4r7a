@@ -1,8 +1,38 @@
 # Admin department — agents
 
-System-change intake via **Weave** (`@weave` Slack app), plus monthly **LLM ops**
-maintenance (expense report + coding-session request). Wiki MD is source of truth;
-Notion mirrors when configured.
+System-change intake via **Weave** (`@weave` Slack app), monthly **LLM ops**
+maintenance (expense report + coding-session request), and daily **wiki commit**
+(MD volume → admin-only company-wiki GitHub backup). Wiki MD volume is source of
+truth; Notion mirrors when configured; GitHub wiki repo is backup only.
+
+## Wiki commit — how it runs
+
+Persistent **`wiki_commit`** (independent of other agents). After `hour_utc`, if
+the volume changed since the last successful push, mirrors `wiki/`,
+`employee_wiki/`, and `raw/` into a local clone and pushes one commit to `main`.
+Never force-pushes. Failures notify `#wiki-admin` (one retry); success is silent.
+
+```mermaid
+flowchart LR
+  VOL[MD volume SoT] --> WC[wiki_commit persistent]
+  WC -->|daily push main| GH[(admin-only company-wiki)]
+  WC -->|on failure| SL[#wiki-admin]
+```
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `wiki_commit.py` | Persistent (`admin.wiki_commit`) | Daily export of MD volume → GitHub backup |
+
+**CLI:** `company-brain admin wiki-commit [--force] [--loop]`
+
+**Config:** `config/operations.yaml` → `admin.wiki_commit` (`enabled`, `hour_utc`,
+`remote_url`, `work_dir`, `branch`). Env: `COMPANY_BRAIN_WIKI_GIT_TOKEN`,
+optional `COMPANY_BRAIN_WIKI_GIT_DIR`. Wiki bot must not access the private 4r7a repo.
+
+**Tabled:** empty-repo bootstrap (admin onboarding), volume rollback agents — see
+`docs/tabled.md`.
+
+---
 
 ## LLM ops — how it runs
 

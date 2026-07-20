@@ -225,6 +225,8 @@ notepad.md
 /employee_wiki/
 /raw/
 /data/
+# Local clone of admin-only company-wiki (daily wiki_commit push target)
+/.wiki_git/
 # Local wiki manifests (derived/local-only)
 /wiki_index.json
 /registry.json

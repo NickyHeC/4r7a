@@ -829,7 +829,7 @@ def weave() -> None:
 
 @main.group()
 def admin() -> None:
-    """Admin department — monthly LLM ops + Weave helpers."""
+    """Admin department — LLM ops, wiki-commit backup, Weave helpers."""
 
 
 @admin.command("manager")
@@ -868,6 +868,19 @@ def admin_maintain_cmd(month: str | None, no_sync: bool) -> None:
     config = load_config()
     result = AdminMaintainAgent(config).execute(month=month, sync=not no_sync)
     click.echo(result)
+
+
+@admin.command("wiki-commit")
+@click.option("--loop", is_flag=True, help="Run the persistent daily backup loop.")
+@click.option("--force", is_flag=True, help="Bypass hour/once-per-day gates.")
+def admin_wiki_commit_cmd(loop: bool, force: bool) -> None:
+    """Export MD volume to the admin-only company-wiki git repo."""
+    from company_brain.agents.admin.wiki_commit import WikiCommitAgent
+
+    config = load_config()
+    result = WikiCommitAgent(config).execute(once=not loop, force=force)
+    if not loop:
+        click.echo(result)
 
 
 @weave.command("events")
