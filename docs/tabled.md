@@ -102,7 +102,10 @@ Format for new rows:
 | Review queue UX for actionable outputs | `operations/notion` | Accounting/CRM promotions follow-on | Stale review shipped; drafts/accounting proposals still deferred |
 | Human-added pages ingest | `operations/notion` | Broader ingest polish | Onboarding ingest shipped; live orphan discovery still TBD |
 | Version control | Wiki | Same as cross-cutting versioning | |
-| Sign-in / account management | Product | Multi-member deploy | Admin vs member model exists |
+| Sign-in / account management | Product | Multi-member deploy | Admin console v1 uses password session; SSO / multi-admin product still deferred |
+| Admin console SPA / public expose | `admin_console` | Product ask | v1 is HTMX on private mesh (`127.0.0.1:8780`) |
+| Admin console pause/resume managers | `admin_console` | Weave pause-resume | Status heartbeats only in v1 |
+| Admin console non-LLM cost (host/Ads) | `admin_console` | Finance/growth ask | v1 Costs = LLM budget only |
 | Work logs in Notion | `employee_wiki` | Employee wiki Notion pull built | |
 | Investor newsletter drafting | Growth / Gmail | Content pipeline exists | |
 

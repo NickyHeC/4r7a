@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Assist{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Assist</h1>
+  <p class="muted">LLM helper with wiki/status/budget tools. Wiki edits and dispatches are proposals — confirm below before applying.</p>
+  <form method="post" action="/assist">
+    <label for="message">Message</label>
+    <textarea id="message" name="message" style="min-height:100px" required>{{ message }}</textarea>
+    <p style="margin-top:0.75rem"><button type="submit">Ask</button></p>
+  </form>
+</div>
+{% if reply %}
+<div class="card">
+  <h2>Reply</h2>
+  <pre class="assist">{{ reply }}</pre>
+</div>
+{% endif %}
+{% for p in proposals %}
+<div class="card">
+  <h2>Proposal · {{ p.type }}</h2>
+  {% if p.type == 'wiki_edit' %}
+  <p class="muted">{{ p.rationale }}</p>
+  <form method="post" action="/wiki/save">
+    <input type="hidden" name="rel_path" value="{{ p.rel_path }}" />
+    <label>Title</label>
+    <input name="title" type="text" value="{{ p.title }}" />
+    <label>Body</label>
+    <textarea name="body">{{ p.body }}</textarea>
+    <p style="margin-top:0.75rem"><button type="submit">Confirm wiki save</button></p>
+  </form>
+  {% elif p.type == 'dispatch' %}
+  <p class="muted">{{ p.rationale }} · job={{ p.job_id }} · force={{ p.force }}</p>
+  <form method="post" action="/dispatch/run">
+    <input type="hidden" name="job_id" value="{{ p.job_id }}" />
+    {% if p.force %}<input type="hidden" name="force" value="1" />{% endif %}
+    <button type="submit">Confirm dispatch</button>
+  </form>
+  {% else %}
+  <pre class="assist">{{ p | tojson(indent=2) }}</pre>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

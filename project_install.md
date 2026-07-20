@@ -78,6 +78,24 @@ commit into the configured wiki dirs → rebuild indexes (`company-brain` index 
 absorb control rebuild as needed) → resume agents. Do **not** auto-overwrite a
 healthy volume from GitHub. Automated rollback agents are tabled.
 
+### Admin console — logged-in ops cockpit (wiki host)
+
+Private-mesh web UI for agent status, LLM costs, wiki search/edit, allow-listed
+dispatch, and Assist. **Not** the member bridge; do not share console credentials
+with member coding agents.
+
+1. `pip install 'company-brain[admin-console]'`
+2. Set in `.env`:
+   - `ADMIN_CONSOLE_PASSWORD` (required)
+   - `ADMIN_CONSOLE_SESSION_SECRET` (recommended; otherwise derived from password)
+3. Adjust `config/admin_console.yaml` (bind host/port, manager catalog, dispatch allow-list)
+4. Start: `company-brain admin console` (default `127.0.0.1:8780`)
+5. Reach via Tailscale/SSH tunnel — do not bind publicly without a reverse proxy + TLS
+
+**CLI:** `admin console [--host] [--port]`
+
+Handbook: [`docs/agents/admin.md`](docs/agents/admin.md) → Admin console.
+
 ## Step 1 — Install and check
 
 ```bash

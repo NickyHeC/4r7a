@@ -243,3 +243,5 @@ notepad.md
 /config/bridge_events.jsonl
 /config/bridge_index.json
 /config/bridge-audit.jsonl
+# Admin console audit ledger (local runtime)
+/config/admin_console_events.jsonl

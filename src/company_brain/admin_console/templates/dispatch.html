@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Dispatch{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Manual dispatch</h1>
+  <p class="muted">Allow-listed one-shot jobs only. Does not start persistent manager loops. Force bypasses should_run and is audited.</p>
+  <table>
+    <thead><tr><th>Job</th><th>Agent</th><th></th></tr></thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td>{{ job.label }} <span class="muted">({{ job.id }})</span></td>
+        <td class="muted">{{ job.agent }}</td>
+        <td>
+          <form method="post" action="/dispatch/run" style="display:inline">
+            <input type="hidden" name="job_id" value="{{ job.id }}" />
+            <button type="submit">Run</button>
+            <button type="submit" name="force" value="1" class="secondary">Force</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if result %}
+<div class="card">
+  <h2>Last result</h2>
+  <pre class="assist">{{ result | tojson(indent=2) }}</pre>
+</div>
+{% endif %}
+{% endblock %}

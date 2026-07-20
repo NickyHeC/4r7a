@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Admin Console{% endblock %} · company-brain</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3d9cf0;
+      --ok: #3ecf8e;
+      --warn: #e6b84d;
+      --bad: #e85d5d;
+      --border: #2a3548;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    header .brand { font-weight: 650; letter-spacing: 0.02em; }
+    nav a {
+      margin-left: 1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    nav a.active { color: var(--text); }
+    main { padding: 1.25rem; max-width: 1100px; margin: 0 auto; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      margin-bottom: 1rem;
+    }
+    h1 { font-size: 1.35rem; margin: 0 0 0.75rem; }
+    h2 { font-size: 1.05rem; margin: 0 0 0.5rem; color: var(--muted); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 550; }
+    .pill {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .pill.ok { background: rgba(62,207,142,0.15); color: var(--ok); }
+    .pill.stale { background: rgba(230,184,77,0.15); color: var(--warn); }
+    .pill.no_heartbeat { background: rgba(232,93,93,0.12); color: var(--bad); }
+    label { display: block; margin: 0.5rem 0 0.25rem; color: var(--muted); font-size: 0.85rem; }
+    input[type=text], input[type=password], textarea, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0.5rem 0.65rem;
+      font: inherit;
+    }
+    textarea { min-height: 280px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+    button, .btn {
+      background: var(--accent);
+      color: #041018;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      font: inherit;
+    }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .flash { padding: 0.6rem 0.8rem; border-radius: 6px; margin-bottom: 0.75rem; }
+    .flash.ok { background: rgba(62,207,142,0.12); color: var(--ok); }
+    .flash.err { background: rgba(232,93,93,0.12); color: var(--bad); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .login-wrap { max-width: 380px; margin: 4rem auto; }
+    pre.assist {
+      white-space: pre-wrap;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  {% if show_nav %}
+  <header>
+    <div class="brand">company-brain · admin</div>
+    <nav>
+      <a href="/status" class="{% if nav == 'status' %}active{% endif %}">Status</a>
+      <a href="/costs" class="{% if nav == 'costs' %}active{% endif %}">Costs</a>
+      <a href="/wiki" class="{% if nav == 'wiki' %}active{% endif %}">Wiki</a>
+      <a href="/dispatch" class="{% if nav == 'dispatch' %}active{% endif %}">Dispatch</a>
+      <a href="/assist" class="{% if nav == 'assist' %}active{% endif %}">Assist</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+  {% endif %}
+  <main>
+    {% if flash %}
+      <div class="flash {{ flash.kind }}">{{ flash.text }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

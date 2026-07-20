@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Status{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Agent status</h1>
+  <p class="muted">Heartbeats from persistent managers. Stale if older than {{ stale_minutes }} minutes. “No heartbeat” means the manager has not reported yet (may still be running via CLI).</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Manager</th>
+        <th>State</th>
+        <th>Last heartbeat</th>
+        <th>Age</th>
+        <th>Last dispatch</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.label }} <span class="muted">({{ row.name }})</span></td>
+        <td><span class="pill {{ row.state }}">{{ row.state }}</span></td>
+        <td>{{ row.heartbeat_at or "—" }}</td>
+        <td>{% if row.age_seconds is not none %}{{ row.age_seconds }}s{% else %}—{% endif %}</td>
+        <td>{{ row.last_dispatch_at or "—" }} {% if row.last_dispatch_status %}<span class="muted">({{ row.last_dispatch_status }})</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

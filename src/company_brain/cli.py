@@ -883,6 +883,16 @@ def admin_wiki_commit_cmd(loop: bool, force: bool) -> None:
         click.echo(result)
 
 
+@admin.command("console")
+@click.option("--host", default=None, help="Bind host (default from admin_console.yaml).")
+@click.option("--port", type=int, default=None, help="Bind port (default 8780).")
+def admin_console_cmd(host: str | None, port: int | None) -> None:
+    """Run the admin web console (login required; private mesh)."""
+    from company_brain.admin_console.server import serve
+
+    serve(host=host, port=port)
+
+
 @weave.command("events")
 @click.option("--http", is_flag=True, help="Use HTTP mode instead of Socket Mode.")
 @click.option("--host", default="0.0.0.0", help="HTTP bind host.")

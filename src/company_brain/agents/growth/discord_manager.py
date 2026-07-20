@@ -40,9 +40,12 @@ class DiscordManager(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
+        from company_brain.admin_console.heartbeats import record_heartbeat
+
         interval = cfg.poll_interval_minutes()
         self.logger.info("Discord manager starting (every %d min)", interval)
         while True:
+            record_heartbeat(self.name, detail="idle")
             try:
                 await self._run_pass()
             except Exception:
@@ -50,6 +53,7 @@ class DiscordManager(BaseAgent):
             await asyncio.sleep(max(interval * 60, 60))
 
     async def _run_pass(self) -> None:
+        from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
         from company_brain.agents.growth.discord.activity_snapshot import ActivitySnapshotAgent
         from company_brain.agents.growth.discord.community_intake import CommunityIntakeAgent
         from company_brain.agents.growth.discord.member_scoring import MemberScoringAgent
@@ -58,6 +62,7 @@ class DiscordManager(BaseAgent):
         from company_brain.agents.growth.discord.technical_absorb import TechnicalAbsorbAgent
         from company_brain.runtime import get_runtime
 
+        record_heartbeat(self.name, detail="pass")
         runtime = get_runtime()
         self._run_agent(runtime, PollWatcherAgent)
         self._run_agent(runtime, CommunityIntakeAgent)
@@ -71,6 +76,7 @@ class DiscordManager(BaseAgent):
         if self._should_run_member_scoring():
             self._run_agent(runtime, MemberScoringAgent)
             self._state.set(MEMBER_SCORING_MONTH_KEY, datetime.now(timezone.utc).strftime("%Y-%m"))
+        record_dispatch(self.name, result_status="ok")
 
     def _should_run_activity_snapshot(self) -> bool:
         today = datetime.now(timezone.utc).date().isoformat()

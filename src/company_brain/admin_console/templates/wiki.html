@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Wiki{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Wiki</h1>
+  <form method="get" action="/wiki">
+    <label for="q">Search</label>
+    <input id="q" name="q" type="text" value="{{ q }}" placeholder="search terms…" />
+    <p style="margin-top:0.75rem"><button type="submit">Search</button></p>
+  </form>
+</div>
+{% if hits %}
+<div class="card">
+  <h2>Results</h2>
+  <table>
+    <thead><tr><th>Title</th><th>Path</th><th>Score</th></tr></thead>
+    <tbody>
+      {% for h in hits %}
+      <tr>
+        <td><a href="/wiki/edit?path={{ h.rel_path | urlencode }}">{{ h.title }}</a></td>
+        <td class="muted">{{ h.rel_path }}</td>
+        <td>{{ "%.2f"|format(h.score or 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+<div class="card">
+  <h2>Open by path</h2>
+  <form method="get" action="/wiki/edit">
+    <label for="path">Relative path</label>
+    <input id="path" name="path" type="text" placeholder="admin/agent-runtime.md" />
+    <p style="margin-top:0.75rem"><button type="submit">Open</button></p>
+  </form>
+</div>
+{% endblock %}

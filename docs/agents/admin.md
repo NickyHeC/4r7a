@@ -1,9 +1,55 @@
 # Admin department — agents
 
 System-change intake via **Weave** (`@weave` Slack app), monthly **LLM ops**
-maintenance (expense report + coding-session request), and daily **wiki commit**
-(MD volume → admin-only company-wiki GitHub backup). Wiki MD volume is source of
+maintenance (expense report + coding-session request), daily **wiki commit**
+(MD volume → admin-only company-wiki GitHub backup), and the **admin console**
+(logged-in web ops cockpit on the wiki host). Wiki MD volume is source of
 truth; Notion mirrors when configured; GitHub wiki repo is backup only.
+
+---
+
+## Admin console — how it runs
+
+Logged-in HTMX UI + FastAPI on the wiki host (not the member bridge). Panes:
+Status, Costs, Wiki, Dispatch, Assist.
+
+```mermaid
+flowchart TD
+  CLI[company-brain admin console] --> Srv[FastAPI :8780]
+  Srv --> Login[password session]
+  Login --> Panes[Status Costs Wiki Dispatch Assist]
+  Managers[Persistent managers] -->|record_heartbeat| HB[state.json]
+  Panes --> HB
+  Panes --> Wiki[write_wiki_page / retrieve]
+  Panes --> Run[allow-listed get_runtime.run]
+  Assist[Assist LLM] -->|propose only| Confirm[UI confirm]
+  Confirm --> Wiki
+  Confirm --> Run
+```
+
+| Surface | Description |
+|---------|-------------|
+| Status | Manager catalog + heartbeats (stale after `stale_minutes`) |
+| Costs | LLM `budget_status` + optional Mercury reconcile + expense wiki page |
+| Wiki | Full-tree search (`retrieve`) / read / edit via `write_wiki_page` |
+| Dispatch | Allow-list in `config/admin_console.yaml`; Force bypasses `should_run` (audited) |
+| Assist | LLM tools; wiki edits + dispatches require UI confirm |
+
+**Package:** `src/company_brain/admin_console/` (not an agent).
+**CLI:** `company-brain admin console [--host] [--port]`
+**Config:** `config/admin_console.yaml`
+**Env:** `ADMIN_CONSOLE_PASSWORD`, optional `ADMIN_CONSOLE_SESSION_SECRET`
+**Extra:** `pip install 'company-brain[admin-console]'`
+**Audit:** `config/admin_console_events.jsonl` (gitignored)
+**Bind:** default `127.0.0.1:8780` — expose via Tailscale/mesh only.
+
+Heartbeats are written by wired managers (`admin_manager`, `google_ads_manager`,
+`discord_manager`); others show `no_heartbeat` until instrumented.
+
+**Does not:** replace Weave implement+prove, start persistent manager loops, or
+expose member/bridge access.
+
+Connect steps: [`project_install.md`](../../project_install.md) → Admin console.
 
 ## Wiki commit — how it runs
 

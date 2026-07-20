@@ -36,7 +36,9 @@ company-brain doctor connect
 
 ## Pre-ship gate (never skip)
 
-The minimum bar to ship **any** change:
+The minimum bar to ship **any** change. AI coding agents run this **automatically**
+when a feature build finishes (all plan sessions / todos done) — do not wait for the
+user to request hygiene. See `.cursor/rules/governance.mdc` §5.
 
 ```bash
 ruff check .

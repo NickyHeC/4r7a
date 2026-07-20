@@ -74,9 +74,21 @@ Do **not** create new doc files unless the user asks or a plan needs one. `docs/
 files are temporary: delete them once the build ships and their outcomes are folded into
 the steady-state docs above.
 
-## 5. Prove before shipping
+## 5. Prove before shipping (automatic after feature builds)
 
-Every ship runs the pre-ship gate; large builds run the deeper passes and (for
-security-sensitive changes) the no-sus review. All of these live in
-[`docs/hygiene_checklist.md`](../../docs/hygiene_checklist.md) — run them from there.
-Do not run destructive cleanup without explicit approval.
+**Do not wait for the user to ask.** When a feature build finishes — plan sessions
+complete, all related todos done, or you are about to report “shipped” / “done” —
+run the **pre-ship gate** from [`docs/hygiene_checklist.md`](../../docs/hygiene_checklist.md)
+in the same turn before the final summary:
+
+```bash
+ruff check .
+ruff format --check .
+pytest -q
+company-brain doctor code
+```
+
+Fix failures before declaring the build complete. For large / multi-session platform
+builds, also run the post-feature hygiene passes in that checklist (and no-sus when
+the change is security-sensitive). Do not run destructive cleanup without explicit
+approval.

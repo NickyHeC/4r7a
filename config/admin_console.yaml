@@ -1,0 +1,38 @@
+# Admin console (non-secret). Secrets: ADMIN_CONSOLE_PASSWORD, ADMIN_CONSOLE_SESSION_SECRET.
+
+bind_host: "127.0.0.1"
+bind_port: 8780
+stale_minutes: 10
+
+# Persistent managers shown on the Status pane (heartbeats written to state.json).
+managers:
+  - name: admin_manager
+    label: Admin manager (LLM ops)
+  - name: google_ads_manager
+    label: Google Ads manager
+  - name: discord_manager
+    label: Discord manager
+  - name: slack_manager
+    label: Slack manager
+  - name: notion_manager
+    label: Notion manager
+  - name: wiki_commit
+    label: Wiki commit backup
+
+# Allow-listed one-shot dispatches (get_runtime().run / Force → .run).
+dispatch:
+  - id: admin_maintain
+    label: Admin maintain (once)
+    agent: company_brain.agents.admin.admin_maintain.AdminMaintainAgent
+  - id: llm_expense_report
+    label: LLM expense report (once)
+    agent: company_brain.agents.admin.llm_expense_report.LlmExpenseReportAgent
+  - id: google_ads_snapshots
+    label: Google Ads snapshots (force week)
+    agent: company_brain.agents.growth.google_ads_manager.GoogleAdsManager
+    kwargs:
+      once: true
+      force: true
+  - id: content_catalog
+    label: Rebuild content catalog
+    agent: company_brain.agents.external_wiki.content_catalog.ContentCatalogAgent

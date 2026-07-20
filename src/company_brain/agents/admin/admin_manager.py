@@ -37,20 +37,30 @@ class AdminManager(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
+        from company_brain.admin_console.heartbeats import record_heartbeat
+
         self.logger.info("Admin manager starting persistent monthly loop")
         while True:
+            record_heartbeat(self.name, detail="idle")
             now = datetime.now()
             nxt = self._next_run_time(now)
             wait = max((nxt - now).total_seconds(), 30)
+            # Wake periodically so heartbeats stay fresh while waiting for monthly run.
+            chunk = min(wait, 300)
             self.logger.info("Next admin LLM-ops run at %s (sleep %.0fs)", nxt.isoformat(), wait)
-            await asyncio.sleep(wait)
+            await asyncio.sleep(chunk)
+            if datetime.now() < nxt:
+                continue
             try:
                 self.run_once(month=previous_month(), sync=True)
             except Exception:
                 self.logger.exception("Admin monthly LLM-ops run failed")
 
     def run_once(self, *, month: str | None = None, sync: bool = True) -> dict[str, Any]:
+        from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
+
         month = month or previous_month()
+        record_heartbeat(self.name, detail=f"run_once:{month}")
         runtime = get_runtime()
         with ambient_scope(
             manager=self.name,
@@ -69,6 +79,7 @@ class AdminManager(BaseAgent):
                 month=month,
                 sync=sync,
             )
+        record_dispatch(self.name, result_status="ok")
         return {"month": month, "expense": expense, "maintain": maintain}
 
     def _next_run_time(self, now: datetime) -> datetime:

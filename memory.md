@@ -11,6 +11,23 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-20 — Auto hygiene after feature builds
+
+- **`governance.mdc` §5:** agents must run the pre-ship gate (`ruff` / `pytest` /
+  `doctor code`) automatically when a feature build finishes — do not wait for the
+  user to ask. Mirrored in `docs/hygiene_checklist.md`.
+
+## 2026-07-20 — Admin console v1 (ops cockpit)
+
+- **Package:** `src/company_brain/admin_console/` — FastAPI + HTMX; optional
+  `[admin-console]` extra; CLI `company-brain admin console` (`127.0.0.1:8780`).
+- **Auth:** password session (`ADMIN_CONSOLE_PASSWORD`); not bridge tokens.
+- **Panes:** Status (heartbeats), Costs (LLM budget), Wiki (retrieve + write_wiki_page),
+  Dispatch (yaml allow-list; Force audited), Assist (propose → UI confirm).
+- **Heartbeats:** wired into `admin_manager`, `google_ads_manager`, `discord_manager`.
+- **Audit:** `config/admin_console_events.jsonl` (gitignored).
+- **Tabled:** SSO/multi-admin, SPA/public expose, pause/resume, non-LLM costs.
+
 ## 2026-07-20 — Google Ads growth platform (read-only snapshots)
 
 - **Platform:** `growth/google_ads/` + `google_ads_manager.py` — weekly Monday 08:00

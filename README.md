@@ -140,6 +140,9 @@ Developer community + paid acquisition snapshots.
 
 ### Admin
 
+- **Admin console** — logged-in FastAPI/HTMX cockpit on the wiki host (status
+  heartbeats, LLM costs, wiki edit, allow-listed dispatch, Assist). Private mesh only;
+  separate from member bridge. See [admin handbook](docs/agents/admin.md).
 - **Two-repo deploy** — private company **4r7a / company-brain** (agents; Weave draft
   PRs) and admin-only **company-wiki** (MD backup). Live SoT is the host MD volume;
   daily `wiki_commit` pushes volume → wiki repo (`main` only). Separate bots: wiki git

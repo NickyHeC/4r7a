@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ page.title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Edit · {{ page.rel_path }}</h1>
+  {% if page.sync_conflict %}
+  <div class="flash err">sync_conflict flag set on this page — resolve carefully.</div>
+  {% endif %}
+  {% if page.human_override_note %}
+  <p class="muted">human_override_note: {{ page.human_override_note }}</p>
+  {% endif %}
+  <form method="post" action="/wiki/save">
+    <input type="hidden" name="rel_path" value="{{ page.rel_path }}" />
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" value="{{ page.title }}" required />
+    <label for="body">Body</label>
+    <textarea id="body" name="body" required>{{ page.body }}</textarea>
+    <p style="margin-top:0.75rem">
+      <button type="submit">Save via write_wiki_page</button>
+      <a class="btn secondary" href="/wiki">Cancel</a>
+    </p>
+  </form>
+</div>
+{% endblock %}

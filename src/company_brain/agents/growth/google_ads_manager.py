@@ -44,6 +44,8 @@ class GoogleAdsManager(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
+        from company_brain.admin_console.heartbeats import record_heartbeat
+
         self.logger.info(
             "Google Ads manager starting (weekday=%s hour=%02d:%02d tz=%s)",
             cfg.run_weekday(),
@@ -52,11 +54,15 @@ class GoogleAdsManager(BaseAgent):
             cfg.timezone_name(),
         )
         while True:
+            record_heartbeat(self.name, detail="idle")
             now = datetime.now(cfg.tz())
             nxt = next_run_at(now)
             wait = max(1.0, (nxt - now).total_seconds())
+            chunk = min(wait, 300.0)
             self.logger.info("Next Google Ads snapshot at %s (sleep %.0fs)", nxt.isoformat(), wait)
-            await asyncio.sleep(wait)
+            await asyncio.sleep(chunk)
+            if datetime.now(cfg.tz()) < nxt:
+                continue
             try:
                 self.run_once()
             except Exception:
@@ -65,8 +71,11 @@ class GoogleAdsManager(BaseAgent):
 
     def run_once(self, *, force: bool = False) -> dict[str, Any]:
         """Dispatch the three snapshot specialists for the current week."""
+        from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
+
         now = datetime.now(cfg.tz())
         week = iso_week_key(now)
+        record_heartbeat(self.name, detail=f"run_once:{week}")
         if not force and self._state.get(WEEK_KEY) == week:
             self.logger.info("Google Ads snapshots already done for %s — skip", week)
             return {"status": "skipped", "week": week}
@@ -90,6 +99,7 @@ class GoogleAdsManager(BaseAgent):
         self._state.set(WEEK_KEY, week)
         self._state.set(FAIL_KEY, 0)
         self._maybe_notify_pacing(pacing if isinstance(pacing, dict) else {})
+        record_dispatch(self.name, result_status="ok")
         return {"status": "ok", **results}
 
     def _maybe_notify_pacing(self, pacing: dict[str, Any]) -> None:
