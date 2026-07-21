@@ -1,20 +1,103 @@
 # Growth — Agent Handbook
 
-Growth platforms under `src/company_brain/agents/growth/`. **Discord** (developer
-community) and **Google Ads** (paid acquisition snapshots) each have their own
-manager; future platforms (X, …) may get managers or fold into a parent
-`growth_manager`.
+Growth under `src/company_brain/agents/growth/`. Finance-like shape: **platform
+managers** (Discord, Google Ads) plus **workstream managers** (activity, content,
+competitor, leads). No parent `growth_manager` — onboarding starts the workstream
+managers; Discord/Ads keep their own onboarding.
 
-**Posture:** read-only at connected sources — the Discord bot **never posts** to
-Discord; Google Ads agents **never mutate** campaigns, budgets, or bids. Humans
-draft Discord replies in Slack `#discord` when needed. Community members are
-**not** CRM customers (no contact matching).
+**Workstream packages** (not platforms): `growth/activity/`, `growth/content/`,
+`growth/competitor/`, `growth/leads/`. Same pattern later for HR/legal.
 
-**Config:** [`config/growth.yaml`](../../config/growth.yaml) — Discord guild/poll
-settings; `google_ads` schedule and pacing threshold.
+**Posture:** read-only / draft-only at external surfaces — Discord bot **never
+posts**; Google Ads **never mutates**; content agents **never post** to X/LinkedIn.
+Community members are **not** CRM customers. Event registration is **human-gated**
+(`@wiki` / CLI / admin console) — never invented from Luma/Partiful/GCal alone.
+
+**Config:** [`config/growth.yaml`](../../config/growth.yaml) — Discord, `google_ads`,
+and workstream sections (`activity`, `content`, `competitor.keywords`, `leads`).
 **Env:** `DISCORD_BOT_TOKEN`; `GOOGLE_ADS_*` (see Google Ads section).
 **Members:** per-member `bindings.discord_id` (+ optional `discord_handle`) in
 [`config/members.yaml`](../../config/members.yaml) for team-member thread suppression.
+
+**CLI:** `company-brain growth onboarding [--no-managers]`, `growth event …`,
+`growth *-manager [--once]`, `growth leads enqueue`, `growth draft`, `growth published-pull`.
+
+---
+
+## Growth workstreams — how it runs
+
+```mermaid
+flowchart TD
+  AM[activity_manager] -->|registered events| Plan[event_plan]
+  Wrap[event_wrap] --> Drafts[content drafts]
+  Wrap --> LeadQ[leads queue]
+  CM[content_manager] --> Sched[posting_schedule]
+  CM -->|weekly| Pull[published_pull + voice]
+  KM[competitor_manager] -->|monthly| Disc[competitor_discover]
+  KM --> Watch[competitor_watch]
+  LM[lead_manager] -->|queue| LR[lead_research]
+  LR --> CRM[crm/contact lead or existing]
+```
+
+### Managers (workstreams)
+
+| Manager | Schedule | Dispatches |
+|---------|----------|------------|
+| `activity_manager.py` | `activity.poll_interval_minutes` (default 30) | `event_plan` for `event_status=registered` |
+| `content_manager.py` | `content.poll_interval_minutes`; weekly pull on `weekly_pull_weekday` | `posting_schedule`, `published_pull` |
+| `competitor_manager.py` | monthly (poll + month gate) | `competitor_discover`, `competitor_watch` |
+| `lead_manager.py` | `leads.poll_interval_minutes` when queue non-empty | `lead_research` |
+
+### Specialists — Activity (`growth/activity/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `event_register.py` | On demand (CLI / `@wiki` / console) | Create `growth/activity/event/{slug}.md` |
+| `event_plan.py` | Via manager + on demand | Assisted planning / logistics checklist |
+| `partnership_brief.py` | On demand | Partner one-pager + event Partners link |
+| `event_wrap.py` | On demand | Wrap page; queue social drafts + lead job |
+
+### Specialists — Content (`growth/content/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `draft_writer.py` | On demand | Draft blog / X / LinkedIn (never posts) |
+| `published_pull.py` | Weekly via manager | Ingest published items; retire drafts; refresh company voice |
+| `trend_watch.py` | On demand | Append `growth/content/trend-watch.md` |
+| `posting_schedule.py` | Via content manager | Open drafts + cadence guidance |
+
+### Specialists — Competitor (`growth/competitor/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `discover.py` | Monthly via manager | Keyword search seed from `competitor.keywords` |
+| `watch.py` | Monthly via manager | Append watch notes on known competitor pages |
+
+### Specialists — Leads (`growth/leads/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `lead_research.py` | Via lead manager | Attendee CSV / GitHub stargazers / uploaded lists → CRM |
+| `queue.py` | — | Wiki JSON queue under `growth/leads/queue/` (helper) |
+
+**CRM:** segment `lead` (`crm/lead/_index.md` + `crm/contact/{slug}.md`). Research
+queries CRM first — if `connection` / `customer` / `investor`, update that contact
+(no duplicate lead). Optional `priority` 1–10.
+
+### `@wiki` growth commands
+
+Allow-listed (not AskWiki): `register event`, `plan event`, `partner one-pager`,
+`wrap event`, `draft <blog|x|linkedin>`, `research leads from event`. Ambiguous NL
+stays Q&A. See Slack `@wiki help`.
+
+### Onboarding (`growth_onboarding.py`)
+
+| | |
+|---|---|
+| **State** | ephemeral |
+| **CLI** | `company-brain growth onboarding [--no-managers]` |
+| **Seeds** | activity/content index pages + CRM seeds; competitor discover from keywords |
+| **Handoff** | `get_runtime().start` activity / content / competitor / lead managers |
 
 ---
 
@@ -158,6 +241,15 @@ Helpers: `growth/shared/growth_slack.py` → `growth_notifier()`, `discord_revie
 
 | Path | Title | Write mode | Agent |
 |------|-------|------------|-------|
+| `growth/activity/_index.md` | Company Activity | update | `event_register` |
+| `growth/activity/event/{slug}.md` | (event) | update | activity specialists |
+| `growth/content/draft/{slug}.md` | Draft — … | update | `draft_writer` / wrap |
+| `growth/content/published.md` | Published Company Content | append | `published_pull` |
+| `growth/content/voice/company.md` | Company Voice | append | `published_pull` |
+| `growth/content/trend-watch.md` | Trend Watch | append | `trend_watch` |
+| `growth/content/posting-schedule.md` | Posting Schedule | update | `posting_schedule` |
+| `growth/competitor/_index.md` | Competitors | update | `competitor_discover` |
+| `growth/competitor/{slug}.md` | (competitor) | append/update | discover / watch |
 | `growth/discord/open-conversation.md` | Open Conversations | update | `open_conversation` |
 | `growth/discord/activity.md` | Discord Activity | update | `activity_snapshot` |
 | `growth/discord/member/{handle}.md` | `{Handle}` | update | `member_scoring` |
@@ -254,6 +346,6 @@ Connect steps: [`project_install.md`](../../project_install.md) → Google Ads s
 | Wiki snapshots, weekly pacing alert | Budgets, bids, conversion setup, serving |
 | Ads-reported CPA display | Optimization / Smart Bidding / keyword tooling |
 
-Deferred: Ads mutates, product-true CPA, keyword research, daily pacing, Notion
-product-progress page, fine-grained Notion teamspace ACL — see
-[`docs/tabled.md`](../tabled.md).
+Deferred: Ads mutates, product-true CPA, keyword research, daily pacing, X/LinkedIn
+write APIs, Luma/Partiful integrations, product signup-spike ROI, Bookface, Notion
+product-progress page — see [`docs/tabled.md`](../tabled.md).

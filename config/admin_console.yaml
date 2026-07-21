@@ -12,6 +12,14 @@ managers:
     label: Google Ads manager
   - name: discord_manager
     label: Discord manager
+  - name: activity_manager
+    label: Growth activity manager
+  - name: content_manager
+    label: Growth content manager
+  - name: competitor_manager
+    label: Growth competitor manager
+  - name: lead_manager
+    label: Growth lead manager
   - name: slack_manager
     label: Slack manager
   - name: notion_manager
@@ -36,3 +44,24 @@ dispatch:
   - id: content_catalog
     label: Rebuild content catalog
     agent: company_brain.agents.external_wiki.content_catalog.ContentCatalogAgent
+  - id: growth_activity_once
+    label: Growth activity manager (once)
+    agent: company_brain.agents.growth.activity_manager.ActivityManager
+    kwargs:
+      once: true
+  - id: growth_content_once
+    label: Growth content manager (once)
+    agent: company_brain.agents.growth.content_manager.ContentManager
+    kwargs:
+      once: true
+  - id: growth_competitor_once
+    label: Growth competitor manager (force month)
+    agent: company_brain.agents.growth.competitor_manager.CompetitorManager
+    kwargs:
+      once: true
+      force: true
+  - id: growth_leads_once
+    label: Growth lead manager (once)
+    agent: company_brain.agents.growth.lead_manager.LeadManager
+    kwargs:
+      once: true

@@ -257,6 +257,28 @@ client **reads only** — no campaign, budget, bid, or recommendation mutates.
 
 Handbook: [`docs/agents/growth.md`](docs/agents/growth.md).
 
+### Growth workstreams — activity / content / competitor / leads
+
+Complements Discord + Ads. No Luma/Partiful API; content agents never post.
+
+1. Set `competitor.keywords` in `config/growth.yaml` (company core-product terms).
+2. Seed pages + start workstream managers:
+   `company-brain growth onboarding` (or `--no-managers` then start individually).
+3. Register events only via human entry:
+   - CLI: `company-brain growth event register "Demo Night" --date 2026-08-01`
+   - Slack: `@wiki register event Demo Night on 2026-08-01`
+   - Admin console Dispatch / Assist (allow-listed)
+4. Plan / partner / wrap: `growth event plan|partner|wrap`, or matching `@wiki` commands.
+5. Lead CSV after events: `growth event wrap <slug> --attendees-csv path.csv` or
+   `growth leads enqueue --source attendee_csv --csv path.csv`.
+6. Drafts: `growth draft blog|x|linkedin "…"`. Published pull:
+   `growth published-pull --item 'x|Title|url|final text'`.
+
+**CLI:** `growth onboarding`, `growth event …`, `growth activity-manager|content-manager|competitor-manager|lead-manager`,
+`growth leads enqueue`, `growth draft`, `growth published-pull`.
+
+Handbook: [`docs/agents/growth.md`](docs/agents/growth.md).
+
 ### Gmail (operations department) — read + labels + DRAFT only, never send
 Gmail is reached over MCP. Pick one path (`GMAIL_MCP_PROVIDER`, default `official`):
 

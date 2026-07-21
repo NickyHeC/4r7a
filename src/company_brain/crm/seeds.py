@@ -7,6 +7,7 @@ from company_brain.crm.config import (
     INBOUND_TYPES,
     customer_index_path,
     investor_index_path,
+    lead_index_path,
     promotion_log_path,
 )
 from company_brain.crm.schema import default_index_body
@@ -30,6 +31,14 @@ def ensure_crm_seeds(*, wiki_root=None) -> int:
             investor_index_path(),
             "Investors",
             default_index_body("Investors", list_heading="Confirmed investors"),
+        ),
+        (
+            lead_index_path(),
+            "Leads",
+            default_index_body(
+                "Leads",
+                list_heading="Potential customers (interest, no existing company relationship)",
+            ),
         ),
         (
             promotion_log_path(),

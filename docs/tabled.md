@@ -127,8 +127,9 @@ Format for new rows:
 | Google Ads mutates / recommendation apply | `growth/google_ads` | Explicit write approval | v1 is read-only snapshots |
 | Google Ads product-true CPA | `growth/google_ads` | Eng + Ads conversion setup | v1 uses Ads-reported CPA only |
 | Google Ads keyword / Smart Bidding tools | `growth/google_ads` | Ads config session | |
-| Company activity agent | Growth | Event sources defined | |
-| X / Twitter | Growth | API access | |
+| X / Twitter write / rich ingest | Growth | API access | Drafts + weekly published pull shipped without write API |
+| Activity ↔ product signup-spike ROI | Growth / product | User tracker built | Match campaigns/events to signup spikes |
+| Luma / Partiful integrations | Growth / activity | Explicit ask | Hosted pages stay human; no API in v1 |
 
 ---
 

@@ -11,6 +11,25 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-20 — Growth workstreams (activity / content / competitor / leads)
+
+- **Shape:** Finance-like peer managers — keep `discord_manager` + `google_ads_manager`;
+  add `activity_manager`, `content_manager`, `competitor_manager`, `lead_manager`.
+  No `growth_manager`. Workstream packages under `growth/{activity,content,competitor,leads}/`
+  (rule note in `agent-organization.mdc`).
+- **CRM:** new segment `lead` + `crm/lead/_index.md`; optional contact `priority` 1–10;
+  research CRM-first (no duplicate when already connection/customer/investor).
+- **Activity:** human-gated register (`@wiki` / CLI / console) → plan / partnership
+  brief / wrap; queues content drafts + lead jobs. No Luma/Partiful API.
+- **Content:** draft-only; weekly `published_pull` retires drafts + refreshes company voice.
+- **Competitor:** monthly discover (from `growth.yaml` keywords) + watch.
+- **Leads:** wiki JSON queue; CSV + GitHub stargazers v1.
+- **Invocation:** allow-listed `@wiki` growth commands; `company-brain growth …` CLI;
+  admin console manager heartbeats + dispatch.
+- **Onboarding:** `growth_onboarding` seeds pages and `start()`s workstream managers.
+- **Tabled:** X write API, signup-spike ROI, Luma/Partiful. Removed stale “company
+  activity agent” row.
+
 ## 2026-07-20 — Auto hygiene after feature builds
 
 - **`governance.mdc` §5:** agents must run the pre-ship gate (`ruff` / `pytest` /

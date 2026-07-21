@@ -51,7 +51,7 @@ flowchart TD
     ENG[Engineering\nGitHub · Linear]
     FIN[Finance\nMercury · Ramp]
     OPS[Operations\nGmail · GCal · Granola]
-    GRO[Growth\nDiscord + Google Ads]
+    GRO[Growth\nplatforms + workstreams]
     EW[Employee Wiki\nper-member work logs]
   end
 
@@ -127,16 +127,19 @@ department (Gmail, Slack ops, Notion ops, ...).
 
 ### Growth
 
-Developer community + paid acquisition snapshots.
+Platform managers (Discord, Google Ads) plus workstream managers (activity, content,
+competitor, leads). See [growth handbook](docs/agents/growth.md).
 
-- **Discord** — read-only community bot: Gateway ingest + poll backup, triage routing records,
-  community intake (bugs → wiki + Linear, features → shared product log with catalog dedup),
-  open-conversation tracker, daily activity snapshot, monthly member scoring, and daily
-  technical-absorb batch. Draft replies for duplicate/in-progress features go to Slack `#discord`;
-  valid features and interesting members notify `#growth`. Dispatched by `discord_manager.py`.
+- **Discord** — read-only community bot: Gateway ingest + poll backup, triage, community
+  intake, open conversations, activity snapshot, member scoring, technical absorb.
+  Drafts for humans → Slack `#discord`. Dispatched by `discord_manager.py`.
 - **Google Ads** — read-only weekly snapshots (campaign status, budget pacing, Ads-reported
-  CPA); `#growth` only on high period spend. Dispatched by `google_ads_manager.py`.
-  See [growth handbook](docs/agents/growth.md).
+  CPA); `#growth` on high period spend. Dispatched by `google_ads_manager.py`.
+- **Activity** — human-gated event register (`@wiki` / CLI / console) → plan / partner
+  brief / wrap; queues content drafts + lead research. No Luma/Partiful API.
+- **Content** — draft-only (never posts); weekly published pull refreshes company voice.
+- **Competitor** — monthly discover (core-product keywords) + watch.
+- **Leads** — queue research into CRM `lead` segment (CRM-first dedupe).
 
 ### Admin
 

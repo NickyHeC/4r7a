@@ -1,7 +1,8 @@
-"""@wiki slash-style commands (threads, help)."""
+"""@wiki slash-style commands (threads, help, growth allow-list)."""
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from company_brain.agents.operations.slack import slack_client
@@ -10,6 +11,22 @@ from company_brain.agents.operations.slack.routing import SlackRoutingStore
 from company_brain.agents.operations.slack.wiki_acl import ask_wiki_allowed
 from company_brain.members_config import load_members_config
 
+# First tokens that enter the command layer (not AskWiki Q&A).
+COMMAND_PREFIXES = frozenset(
+    {
+        "help",
+        "?",
+        "threads",
+        "register",
+        "plan",
+        "partner",
+        "partnership",
+        "draft",
+        "research",
+        "wrap",
+    }
+)
+
 
 def handle_wiki_command(
     *,
@@ -17,6 +34,7 @@ def handle_wiki_command(
     thread_ts: str,
     command: str,
     slack_user_id: str,
+    text: str = "",
 ) -> dict[str, Any]:
     if not ask_wiki_allowed(channel_id):
         return _reply(
@@ -25,21 +43,159 @@ def handle_wiki_command(
             "`@wiki` commands are not available in Connect channels.",
         )
 
-    cmd = (command or "").strip().lower()
-    if cmd in {"help", "?"}:
-        return _reply(
-            channel_id,
-            thread_ts,
-            (
-                "*@wiki commands*\n"
-                "• `@wiki <question>` — search the wiki (scoped to this channel)\n"
-                "• `@wiki threads` — your open Slack threads\n"
-                "• `@wiki help` — this message"
-            ),
-        )
+    raw = (text or command or "").strip()
+    cmd = raw.lower()
+    first = cmd.split(None, 1)[0] if cmd else ""
 
-    if cmd in {"threads", "open-threads", "open threads"}:
+    if first in {"help", "?"}:
+        return _reply(channel_id, thread_ts, _help_text())
+
+    if first in {"threads", "open-threads"} or cmd in {"open threads"}:
         return _list_threads(channel_id, thread_ts, slack_user_id)
+
+    if first not in COMMAND_PREFIXES:
+        return {"status": "not_command"}
+
+    try:
+        result = _dispatch_growth_command(raw)
+    except Exception as exc:
+        return _reply(channel_id, thread_ts, f"Command failed: {exc}")
+
+    if result.get("status") == "not_command":
+        return result
+    return _reply(channel_id, thread_ts, result.get("message") or str(result))
+
+
+def _help_text() -> str:
+    return (
+        "*@wiki commands*\n"
+        "• `@wiki <question>` — search the wiki (scoped to this channel)\n"
+        "• `@wiki threads` — your open Slack threads\n"
+        "• `@wiki register event <name> [on YYYY-MM-DD]` — register a company event\n"
+        "• `@wiki plan event <slug>` — assisted planning doc\n"
+        "• `@wiki partner one-pager <event-slug> for <partner>` — partnership brief\n"
+        "• `@wiki wrap event <slug>` — post-event wrap + queues\n"
+        "• `@wiki draft <blog|x|linkedin> <instructions>` — content draft (never posts)\n"
+        "• `@wiki research leads from event <slug>` — queue attendee lead research "
+        "(CSV via CLI if needed)\n"
+        "• `@wiki help` — this message"
+    )
+
+
+def _dispatch_growth_command(raw: str) -> dict[str, Any]:
+    from company_brain.config import load_config
+    from company_brain.runtime import get_runtime
+
+    text = raw.strip()
+    lower = text.lower()
+    config = load_config()
+    runtime = get_runtime()
+
+    m = re.match(
+        r"register\s+event\s+(.+?)(?:\s+on\s+(\d{4}-\d{2}-\d{2}))?$",
+        text,
+        re.I,
+    )
+    if m:
+        from company_brain.agents.growth.activity.event_register import EventRegisterAgent
+
+        name = m.group(1).strip().strip("\"'")
+        date = (m.group(2) or "").strip()
+        out = runtime.run(
+            EventRegisterAgent,
+            config,
+            name=name,
+            date=date,
+            notes="Registered from Slack @wiki\n\nThread context may follow.",
+            source="slack",
+            notify=False,
+        )
+        return {
+            "status": "ok",
+            "message": f"Event registered: `{out.get('slug')}` → `{out.get('wiki_path')}`",
+        }
+
+    m = re.match(r"plan\s+event\s+([a-z0-9-]+)\s*$", lower)
+    if m:
+        from company_brain.agents.growth.activity.event_plan import EventPlanAgent
+
+        slug = m.group(1)
+        out = runtime.run(EventPlanAgent, config, slug=slug)
+        return {
+            "status": "ok",
+            "message": f"Planning updated for `{slug}` ({out.get('status')})",
+        }
+
+    m = re.match(
+        r"(?:partner(?:ship)?\s+one[- ]pager|partner\s+brief)\s+([a-z0-9-]+)\s+for\s+(.+)$",
+        text,
+        re.I,
+    )
+    if m:
+        from company_brain.agents.growth.activity.partnership_brief import PartnershipBriefAgent
+
+        slug = m.group(1).lower()
+        partner = m.group(2).strip().strip("\"'")
+        out = runtime.run(
+            PartnershipBriefAgent,
+            config,
+            slug=slug,
+            partner_name=partner,
+        )
+        return {
+            "status": "ok",
+            "message": f"Partner brief: `{out.get('wiki_path')}`",
+        }
+
+    m = re.match(r"wrap\s+event\s+([a-z0-9-]+)\s*$", lower)
+    if m:
+        from company_brain.agents.growth.activity.event_wrap import EventWrapAgent
+
+        slug = m.group(1)
+        out = runtime.run(EventWrapAgent, config, slug=slug, notify=False)
+        return {
+            "status": "ok",
+            "message": f"Event wrap done for `{slug}` ({out.get('status')})",
+        }
+
+    m = re.match(r"draft\s+(blog|x|linkedin)\s+(.+)$", text, re.I)
+    if m:
+        from company_brain.agents.growth.content.draft_writer import DraftWriterAgent
+
+        channel = m.group(1).lower()
+        instructions = m.group(2).strip()
+        out = runtime.run(
+            DraftWriterAgent,
+            config,
+            channel=channel,
+            instructions=instructions,
+        )
+        return {
+            "status": "ok",
+            "message": f"Draft ready: `{out.get('wiki_path')}` (never posted)",
+        }
+
+    m = re.match(r"research\s+leads?\s+from\s+event\s+([a-z0-9-]+)\s*$", lower)
+    if m:
+        from company_brain.agents.growth.leads.queue import enqueue_lead_job
+
+        slug = m.group(1)
+        job = enqueue_lead_job(
+            source="attendee_csv",
+            label=f"event:{slug}",
+            payload={
+                "csv_text": "",
+                "event_slug": slug,
+                "note": "Upload CSV via `company-brain growth leads enqueue` with file",
+            },
+        )
+        return {
+            "status": "ok",
+            "message": (
+                f"Lead job `{job['id']}` queued for event `{slug}`. "
+                "Add attendee CSV via CLI when ready."
+            ),
+        }
 
     return {"status": "not_command"}
 

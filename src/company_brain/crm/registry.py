@@ -15,6 +15,7 @@ from company_brain.crm.config import (
     contact_dir,
     customer_index_path,
     investor_index_path,
+    lead_index_path,
     registry_path,
 )
 from company_brain.crm.schema import ContactEntity
@@ -99,6 +100,7 @@ def rebuild_registry(*, wiki_root=None) -> CrmRegistry:
     _ingest_contacts(store, registry, conflicts)
     _ingest_index(store, customer_index_path(), "customer", registry, conflicts)
     _ingest_index(store, investor_index_path(), "investor", registry, conflicts)
+    _ingest_index(store, lead_index_path(), "lead", registry, conflicts)
 
     for msg in conflicts:
         logger.warning("crm registry conflict: %s", msg)

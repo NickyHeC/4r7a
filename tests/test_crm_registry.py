@@ -22,11 +22,12 @@ def test_ensure_crm_seeds_and_rebuild_empty(tmp_path, monkeypatch):
     monkeypatch.setenv("COMPANY_BRAIN_WIKI_DIR", str(wiki))
 
     created = ensure_crm_seeds()
-    assert created >= 3
+    assert created >= 4
 
     store = LocalWikiStore(root=wiki)
     assert store.exists("crm/customer/_index.md")
     assert store.exists("crm/investor/_index.md")
+    assert store.exists("crm/lead/_index.md")
     assert store.exists("crm/promotion-log.md")
 
     registry = rebuild_registry()
@@ -119,3 +120,35 @@ def test_registry_json_roundtrip(tmp_path, monkeypatch):
     raw = json.loads((wiki / "crm/_registry.json").read_text(encoding="utf-8"))
     assert raw["version"] == 1
     assert "updated_at" in raw
+
+
+def test_lead_segment_contact_and_index(tmp_path, monkeypatch):
+    wiki = tmp_path / "wiki"
+    wiki.mkdir()
+    monkeypatch.setenv("COMPANY_BRAIN_WIKI_DIR", str(wiki))
+    ensure_crm_seeds()
+
+    store = LocalWikiStore(root=wiki)
+    store.write(
+        "crm/lead/_index.md",
+        MarkdownDoc(body="# Leads\n\n- prospect@startup.io\n"),
+    )
+    entity = ContactEntity(
+        slug="alex-buyer-com",
+        title="Alex Buyer",
+        segment="lead",
+        canonical_email="alex@buyer.com",
+        priority=7,
+        sources=["event:demo-day"],
+    )
+    write_contact(entity, rebuild=False)
+    registry = rebuild_registry()
+    assert registry.lookup_email("prospect@startup.io").segment == "lead"
+    assert registry.lookup_email("alex@buyer.com").segment == "lead"
+    loaded = ensure_contact_for_email(
+        "alex@buyer.com",
+        title="Alex Buyer",
+        segment="lead",
+    )
+    assert loaded.priority == 7
+    assert loaded.segment == "lead"

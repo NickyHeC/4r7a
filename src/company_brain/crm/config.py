@@ -6,7 +6,7 @@ from typing import Any
 
 from company_brain.agents.operations.shared.config import load_operations_config
 
-SEGMENTS = frozenset({"customer", "investor", "connection"})
+SEGMENTS = frozenset({"customer", "investor", "connection", "lead"})
 INBOUND_TYPES = frozenset(
     {
         "press-podcast",
@@ -46,6 +46,10 @@ def customer_index_path() -> str:
 
 def investor_index_path() -> str:
     return crm_cfg().get("investor_index", "crm/investor/_index.md")
+
+
+def lead_index_path() -> str:
+    return crm_cfg().get("lead_index", "crm/lead/_index.md")
 
 
 def inbound_retention_days() -> int:

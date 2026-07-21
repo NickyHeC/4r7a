@@ -322,9 +322,11 @@ flowchart LR
 ```
 
 **Wiki layout:** `crm/contact/{slug}.md` (canonical person), segment indexes at
-`crm/customer/_index.md` and `crm/investor/_index.md`, typed inbound under
-`crm/inbound/{type}/`, derived lookup at `crm/_registry.json`. Vendors stay in
-**`finance/vendor/`** (not CRM).
+`crm/customer/_index.md`, `crm/investor/_index.md`, and `crm/lead/_index.md`,
+typed inbound under `crm/inbound/{type}/`, derived lookup at `crm/_registry.json`.
+Segments: `customer` | `investor` | `connection` | `lead`. **`lead`** = interest
+without an existing company relationship (growth lead research); optional
+`priority` 1–10 on the contact page. Vendors stay in **`finance/vendor/`** (not CRM).
 
 **CLI:** `company-brain crm seed`, `crm rebuild-registry`, `crm sync-notion`.
 

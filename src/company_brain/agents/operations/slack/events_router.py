@@ -78,13 +78,15 @@ class SlackEventsRouter:
         query = (match.group(1) if match else text).strip()
         first_token = (query.split(None, 1)[0] if query else "").lower()
 
-        first_token = (query.split(None, 1)[0] if query else "").lower()
-        if first_token in {"threads", "help", "?"}:
+        from company_brain.agents.operations.slack.wiki_commands import COMMAND_PREFIXES
+
+        if first_token in COMMAND_PREFIXES:
             cmd_result = handle_wiki_command(
                 channel_id=channel_id,
                 thread_ts=thread_ts,
                 command=first_token,
                 slack_user_id=user_id,
+                text=query,
             )
         else:
             cmd_result = {"status": "not_command"}

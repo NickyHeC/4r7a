@@ -16,6 +16,7 @@ Keep the agent tree organized as **department → platform → agents**. Use `_`
 - **Cross-platform agents** (that draw from more than one platform and aren't tied to a single one) also live **directly under the department folder**, next to the managers.
 - A platform-specific **specialist** completes one type of task and lives directly under its platform folder.
 - Shared helpers used across a department's agents may live in a `shared/` subpackage under the department folder.
+- **Workstream packages** (not connected platforms) are allowed for multi-source department domains — e.g. `growth/activity/`, `growth/content/`, `growth/competitor/`, `growth/leads/`. Same pattern later for HR/legal. Workstream managers still live at the department root; specialists live in the workstream folder. Do not invent a fake platform name for a workstream.
 
 ## Folder Structure
 

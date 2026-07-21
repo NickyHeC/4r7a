@@ -384,6 +384,7 @@ crm:
   promotion_log: crm/promotion-log.md
   customer_index: crm/customer/_index.md
   investor_index: crm/investor/_index.md
+  lead_index: crm/lead/_index.md
   inbound_retention_days: 7
   slack_score_threshold: 6
   growth_channel: "#growth"

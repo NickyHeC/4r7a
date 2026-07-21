@@ -23,3 +23,19 @@ google_ads:
 
 slack:
   discord_channel: "#discord"
+
+# Workstreams (not platforms) — persistent managers + specialists.
+activity:
+  poll_interval_minutes: 30
+
+content:
+  poll_interval_minutes: 60
+  weekly_pull_weekday: 0   # 0=Monday — published content pull + voice refresh
+
+competitor:
+  poll_interval_minutes: 360
+  # Core product keywords seed discover + onboarding candidate list.
+  keywords: []
+
+leads:
+  poll_interval_minutes: 15

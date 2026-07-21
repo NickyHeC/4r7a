@@ -1064,6 +1064,239 @@ def google_ads_onboarding_run(no_manager: bool) -> None:
     click.echo(result)
 
 
+@main.group("growth")
+def growth() -> None:
+    """Growth workstreams — activity, content, competitor, leads."""
+
+
+@growth.command("onboarding")
+@click.option("--no-managers", is_flag=True, help="Skip starting workstream managers.")
+def growth_onboarding_cmd(no_managers: bool) -> None:
+    """Seed growth workstream pages and start workstream managers."""
+    from company_brain.agents.growth.growth_onboarding import GrowthOnboardingAgent
+
+    config = load_config()
+    result = GrowthOnboardingAgent(config).run(start_managers=not no_managers)
+    click.echo(result)
+
+
+@growth.group("event")
+def growth_event() -> None:
+    """Company activity — register / plan / partner / wrap."""
+
+
+@growth_event.command("register")
+@click.argument("name")
+@click.option("--date", default="", help="Event date YYYY-MM-DD.")
+@click.option("--format", "event_format", default="", help="Event format.")
+@click.option("--notes", default="", help="Extra context.")
+@click.option("--quiet", is_flag=True, help="Skip Slack notify.")
+def growth_event_register(name: str, date: str, event_format: str, notes: str, quiet: bool) -> None:
+    """Register a company event (human-gated)."""
+    from company_brain.agents.growth.activity.event_register import EventRegisterAgent
+
+    config = load_config()
+    result = EventRegisterAgent(config).run(
+        name=name,
+        date=date,
+        format=event_format,
+        notes=notes,
+        source="cli",
+        notify=not quiet,
+    )
+    click.echo(result)
+
+
+@growth_event.command("plan")
+@click.argument("slug")
+@click.option("--notes", default="", help="Extra context to append.")
+def growth_event_plan(slug: str, notes: str) -> None:
+    """Run assisted planning on a registered event."""
+    from company_brain.agents.growth.activity.event_plan import EventPlanAgent
+
+    config = load_config()
+    click.echo(EventPlanAgent(config).run(slug=slug, extra_notes=notes))
+
+
+@growth_event.command("partner")
+@click.argument("slug")
+@click.argument("partner_name")
+@click.option("--bio", default="")
+@click.option("--email", default="")
+@click.option("--logo-notes", default="")
+def growth_event_partner(
+    slug: str, partner_name: str, bio: str, email: str, logo_notes: str
+) -> None:
+    """Draft a partnership one-pager for an event."""
+    from company_brain.agents.growth.activity.partnership_brief import PartnershipBriefAgent
+
+    config = load_config()
+    click.echo(
+        PartnershipBriefAgent(config).run(
+            slug=slug,
+            partner_name=partner_name,
+            partner_bio=bio,
+            partner_email=email,
+            logo_notes=logo_notes,
+        )
+    )
+
+
+@growth_event.command("wrap")
+@click.argument("slug")
+@click.option(
+    "--attendees-csv",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="Attendee CSV to queue for lead research.",
+)
+@click.option("--quiet", is_flag=True, help="Skip Slack notify.")
+def growth_event_wrap(slug: str, attendees_csv: Path | None, quiet: bool) -> None:
+    """Wrap an event and queue content drafts + optional lead research."""
+    from company_brain.agents.growth.activity.event_wrap import EventWrapAgent
+
+    csv_text = attendees_csv.read_text(encoding="utf-8") if attendees_csv else ""
+    config = load_config()
+    click.echo(EventWrapAgent(config).run(slug=slug, attendees_csv=csv_text, notify=not quiet))
+
+
+@growth.command("activity-manager")
+@click.option("--once", is_flag=True, help="Run one pass and exit.")
+def growth_activity_manager(once: bool) -> None:
+    """Run the activity workstream manager."""
+    from company_brain.agents.growth.activity_manager import ActivityManager
+
+    config = load_config()
+    mgr = ActivityManager(config)
+    click.echo(mgr.run(once=True) if once else mgr.run())
+
+
+@growth.command("content-manager")
+@click.option("--once", is_flag=True, help="Run one pass and exit.")
+def growth_content_manager(once: bool) -> None:
+    """Run the content workstream manager."""
+    from company_brain.agents.growth.content_manager import ContentManager
+
+    config = load_config()
+    mgr = ContentManager(config)
+    click.echo(mgr.run(once=True) if once else mgr.run())
+
+
+@growth.command("competitor-manager")
+@click.option("--once", is_flag=True, help="Run one pass and exit.")
+@click.option("--force", is_flag=True, help="Ignore monthly cost gate.")
+def growth_competitor_manager(once: bool, force: bool) -> None:
+    """Run the competitor workstream manager."""
+    from company_brain.agents.growth.competitor_manager import CompetitorManager
+
+    config = load_config()
+    mgr = CompetitorManager(config)
+    if once:
+        click.echo(mgr.run(once=True, force=force))
+        return
+    mgr.run()
+
+
+@growth.command("lead-manager")
+@click.option("--once", is_flag=True, help="Run one pass and exit.")
+def growth_lead_manager(once: bool) -> None:
+    """Run the lead research workstream manager."""
+    from company_brain.agents.growth.lead_manager import LeadManager
+
+    config = load_config()
+    mgr = LeadManager(config)
+    click.echo(mgr.run(once=True) if once else mgr.run())
+
+
+@growth.group("leads")
+def growth_leads() -> None:
+    """Lead research queue helpers."""
+
+
+@growth_leads.command("enqueue")
+@click.option(
+    "--source",
+    type=click.Choice(["attendee_csv", "github_stargazers", "uploaded_list"]),
+    required=True,
+)
+@click.option("--label", default="", help="Job label.")
+@click.option("--repo", default="", help="org/repo for github_stargazers.")
+@click.option(
+    "--csv",
+    "csv_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+)
+def growth_leads_enqueue(source: str, label: str, repo: str, csv_path: Path | None) -> None:
+    """Enqueue a lead research job."""
+    from company_brain.agents.growth.leads.queue import enqueue_lead_job
+
+    payload: dict = {}
+    if source in {"attendee_csv", "uploaded_list"}:
+        if not csv_path:
+            raise click.ClickException("--csv required for this source")
+        payload["csv_text"] = csv_path.read_text(encoding="utf-8")
+    if source == "github_stargazers":
+        if not repo:
+            raise click.ClickException("--repo required for github_stargazers")
+        payload["repo"] = repo
+    job = enqueue_lead_job(
+        source=source,
+        label=label or source,
+        payload=payload,
+    )
+    click.echo(job)
+
+
+@growth.command("draft")
+@click.argument("channel", type=click.Choice(["blog", "x", "linkedin"]))
+@click.argument("instructions")
+@click.option("--title", default="")
+@click.option("--author", default="")
+def growth_draft(channel: str, instructions: str, title: str, author: str) -> None:
+    """Create a content draft (never posts)."""
+    from company_brain.agents.growth.content.draft_writer import DraftWriterAgent
+
+    config = load_config()
+    click.echo(
+        DraftWriterAgent(config).run(
+            channel=channel,
+            instructions=instructions,
+            title=title,
+            suggested_author=author,
+        )
+    )
+
+
+@growth.command("published-pull")
+@click.option(
+    "--item",
+    "items",
+    multiple=True,
+    help="channel|title|url|text (repeatable).",
+)
+@click.option("--force", is_flag=True)
+def growth_published_pull(items: tuple[str, ...], force: bool) -> None:
+    """Ingest published company content; retire drafts; refresh voice."""
+    from company_brain.agents.growth.content.published_pull import PublishedPullAgent
+
+    parsed = []
+    for raw in items:
+        parts = raw.split("|", 3)
+        while len(parts) < 4:
+            parts.append("")
+        parsed.append(
+            {
+                "channel": parts[0],
+                "title": parts[1],
+                "url": parts[2],
+                "text": parts[3],
+            }
+        )
+    config = load_config()
+    click.echo(PublishedPullAgent(config).run(items=parsed, force=force))
+
+
 @main.group()
 def hr() -> None:
     """HR roster and offboarding helpers."""
