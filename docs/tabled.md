@@ -133,6 +133,17 @@ Format for new rows:
 
 ---
 
+## Product / PostHog
+
+| Item | Department / platform | Trigger to build | Notes |
+|------|----------------------|------------------|-------|
+| Richer PostHog agents (replay, retention, persons) | `product/posthog` | Heavy PostHog use | v1: audit, usage, experiments, signup funnel only |
+| PostHog write-back (flags/experiments) | `product/posthog` | Explicit write approval | v1 is read-only private REST |
+| Daily experiment watch | `product/posthog` | Weekly cadence too slow | v1 weekly with all specialists |
+| Auto-sync feature↔event naming contract | `product/posthog` | Eng naming conventions stable | v1 heuristic match vs `product/feature.md` |
+
+---
+
 ## HR
 
 | Item | Department / platform | Trigger to build | Notes |

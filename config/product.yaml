@@ -1,0 +1,21 @@
+# Product department settings (non-secret).
+# Secrets: POSTHOG_PERSONAL_API_KEY, POSTHOG_PROJECT_ID in the environment only.
+# Optional: POSTHOG_HOST (default https://us.posthog.com).
+
+posthog:
+  enabled: true
+  timezone: America/Los_Angeles
+  run_weekday: 0          # 0=Monday
+  run_hour: 9
+  run_minute: 0
+  min_exposures: 100
+  probability_threshold: 0.95
+  signup_funnel:
+    dashboard_name: Signup
+    funnel_insight_name: Landing to signup
+    landing_paths:
+      - /
+    signup_event: user_signed_up
+
+slack:
+  product_channel: "#product"

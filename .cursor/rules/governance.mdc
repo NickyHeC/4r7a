@@ -92,3 +92,8 @@ Fix failures before declaring the build complete. For large / multi-session plat
 builds, also run the post-feature hygiene passes in that checklist (and no-sus when
 the change is security-sensitive). Do not run destructive cleanup without explicit
 approval.
+
+**Cursor autorun:** `.cursor/hooks/pre_ship_gate.py` (wired in `.cursor/hooks.json`
+`stop`) re-runs that gate when the agent turn ends with relevant code diffs and
+auto-follows up on failure (`loop_limit: 2`). Still run the gate yourself before
+claiming shipped — the hook is a backstop, not a license to skip.

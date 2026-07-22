@@ -229,6 +229,34 @@ Add per-member `bindings.discord_id` (and optional `discord_handle`) in
 
 Handbook: [`docs/agents/growth.md`](docs/agents/growth.md).
 
+### PostHog (product department) — read-only snapshots
+
+Weekly wiki snapshots (tracking audit, feature usage, experiments, signup funnel).
+The client **reads only** — no flag, experiment, or capture mutates. Admin connects
+PostHog; instrumentation stays in the product app / PostHog UI.
+
+1. In PostHog, create a **personal API key** with read scopes for query, feature flags,
+   and experiments (Project settings → Personal API keys).
+2. Note the **project ID** and cloud host (`https://us.posthog.com` or
+   `https://eu.posthog.com`).
+3. Optionally create a Signup dashboard and a funnel insight named
+   `Landing to signup` (landing → create account). Event names can match
+   `config/product.yaml` → `posthog.signup_funnel` or override there.
+4. Set in `.env`:
+   - `POSTHOG_PERSONAL_API_KEY`
+   - `POSTHOG_PROJECT_ID`
+   - `POSTHOG_HOST` (optional; default `https://us.posthog.com`)
+5. Adjust `posthog:` in `config/product.yaml` (timezone, Monday 09:00 run,
+   `min_exposures`, funnel names/steps). Ensure Slack channel `#product` exists
+   (or change `slack.product_channel`).
+6. Snapshot + start manager: `company-brain posthog onboarding run`
+   (30-day lookback when prior events exist; `--no-manager` to skip handoff).
+7. Or run the persistent loop alone: `company-brain posthog manager`
+
+**CLI:** `posthog manager`, `posthog onboarding run` (`--no-manager`).
+
+Handbook: [`docs/agents/product.md`](docs/agents/product.md).
+
 ### Google Ads (growth department) — read-only snapshots
 
 Weekly wiki snapshots (campaign status, budget pacing, Ads-reported CPA). The

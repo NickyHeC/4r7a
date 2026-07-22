@@ -48,6 +48,9 @@ allow_hosts = [
   "oauth2.googleapis.com",
   "accounts.google.com",
   "www.googleapis.com",
+  # PostHog (product) — private REST API (US / EU cloud)
+  "us.posthog.com",
+  "eu.posthog.com",
   # Google Calendar (operations) — REST + official MCP
   "calendarmcp.googleapis.com",
   "calendar.googleapis.com",

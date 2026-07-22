@@ -62,6 +62,17 @@ agents/
     ramp/
       ramp_client.py
       card_spend.py
+  product/
+    posthog_manager.py              # manager scoped to PostHog
+    shared/
+      product_slack.py
+    posthog/
+      posthog_client.py
+      tracking_audit.py
+      feature_usage.py
+      experiment_watch.py
+      signup_funnel.py
+      posthog_onboarding.py
   admin/
     weave_triage.py
     weave.py

@@ -1,0 +1,1 @@
+"""Product department shared helpers."""

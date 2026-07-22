@@ -141,6 +141,12 @@ competitor, leads). See [growth handbook](docs/agents/growth.md).
 - **Competitor** — monthly discover (core-product keywords) + watch.
 - **Leads** — queue research into CRM `lead` segment (CRM-first dedupe).
 
+### Product
+
+- **PostHog** — read-only weekly wiki snapshots (tracking audit vs Product Features,
+  feature usage, experiment watch, landing→signup funnel); selective `#product` alerts.
+  Dispatched by `posthog_manager.py`. See [product handbook](docs/agents/product.md).
+
 ### Admin
 
 - **Admin console** — logged-in FastAPI/HTMX cockpit on the wiki host (status

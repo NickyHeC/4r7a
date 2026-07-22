@@ -1026,6 +1026,42 @@ def discord_onboarding_run(
     click.echo(result)
 
 
+@main.group("posthog")
+def posthog() -> None:
+    """PostHog — read-only weekly product analytics snapshots."""
+
+
+@posthog.command("manager")
+@click.option("--once", is_flag=True, help="Run one snapshot pass and exit.")
+@click.option("--force", is_flag=True, help="Ignore the weekly cost gate (with --once).")
+def posthog_manager_cmd(once: bool, force: bool) -> None:
+    """Run the persistent PostHog manager loop (or one pass with --once)."""
+    from company_brain.agents.product.posthog_manager import PosthogManager
+
+    config = load_config()
+    manager = PosthogManager(config)
+    if once:
+        click.echo(manager.run(once=True, force=force))
+        return
+    manager.run()
+
+
+@posthog.group("onboarding")
+def posthog_onboarding_group() -> None:
+    """PostHog platform onboarding — snapshot and start manager."""
+
+
+@posthog_onboarding_group.command("run")
+@click.option("--no-manager", is_flag=True, help="Skip starting posthog_manager.")
+def posthog_onboarding_run(no_manager: bool) -> None:
+    """Run PostHog specialists (30d lookback when data exists) and start the manager."""
+    from company_brain.agents.product.posthog.posthog_onboarding import PosthogOnboardingAgent
+
+    config = load_config()
+    result = PosthogOnboardingAgent(config).run(start_manager=not no_manager)
+    click.echo(result)
+
+
 @main.group("google-ads")
 def google_ads() -> None:
     """Google Ads — read-only weekly campaign / pacing / CPA snapshots."""

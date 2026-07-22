@@ -10,6 +10,7 @@ flowchart LR
   FIN[Finance] --> WIKI
   OPS[Operations] --> WIKI
   GRO[Growth] --> WIKI
+  PRO[Product] --> WIKI
   WIKI --> Notion[Notion mirror]
 ```
 
@@ -20,6 +21,7 @@ flowchart LR
 | **Engineering** | GitHub — PRs, branches, feature updates | [engineering.md](engineering.md) |
 | **Finance** | Mercury + Ramp — expenses, quarterly metrics, subscriptions | [finance.md](finance.md) |
 | **Growth** | Discord + Google Ads; activity / content / competitor / lead workstreams | [growth.md](growth.md) |
+| **Product** | PostHog — tracking audit, feature usage, experiments, signup funnel | [product.md](product.md) |
 | **Operations** | Gmail, Slack, Granola, Notion (wiki mirror + task/CRM/Weave) | [operations.md](operations.md) |
 | **Admin** | Admin console, Weave (`@weave`), monthly LLM ops, daily `wiki_commit` backup | [admin.md](admin.md) |
 | **HR** | Roster promotion, offboarding proposals | [hr.md](hr.md) |

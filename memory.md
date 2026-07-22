@@ -11,6 +11,28 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Pre-ship gate autorun (Cursor stop hook)
+
+- **Hook:** `.cursor/hooks.json` → `pre_ship_gate.py` on agent `stop`.
+- Runs `ruff` / `pytest` / `doctor code --min-score 85` when the tree has relevant
+  code diffs; `followup_message` on failure (`loop_limit: 2`); `{}` on success.
+- Documented in `hygiene_checklist.md` + `governance.mdc` §5 (complements agent
+  obligation; does not replace it).
+
+## 2026-07-22 — Product department + PostHog (read-only)
+
+- **Shape:** New `agents/product/` with `posthog_manager` + `product/posthog/`
+  specialists (Google Ads pattern). GitHub `product_features` stays under
+  engineering; still owns `product/feature.md`.
+- **Specialists:** `tracking_audit` (feature.md × flags/events table),
+  `feature_usage` (L7D/L30D), `experiment_watch` (conclusive ≥95% + min exposures),
+  `signup_funnel` (saved insight or landing→`user_signed_up`).
+- **Onboarding:** 30d lookback when events exist; `start(posthog_manager)`.
+- **Config/CLI:** `config/product.yaml`; `POSTHOG_*` env; `company-brain posthog
+  manager|onboarding`; `#product` via `product_notifier`; admin console heartbeat.
+- **Boundary:** PostHog owns capture/flags/experiments; wiki snapshots only.
+- **Tabled:** richer agents, write-back, daily experiment watch, auto contract sync.
+
 ## 2026-07-20 — Growth workstreams (activity / content / competitor / leads)
 
 - **Shape:** Finance-like peer managers — keep `discord_manager` + `google_ads_manager`;
