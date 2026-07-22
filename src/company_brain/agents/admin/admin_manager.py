@@ -1,6 +1,7 @@
-"""Admin Manager — monthly LLM ops maintenance period.
+"""Admin Manager — monthly LLM ops + investor newsletter dispatch.
 
-Dispatches ``llm_expense_report`` then ``admin_maintain`` on a shared cadence.
+Dispatches ``llm_expense_report`` then ``admin_maintain`` on the llm_ops cadence,
+and ``investor_newsletter`` on its own run_day offset.
 SDK: Neither (orchestration only).
 """
 
@@ -11,15 +12,30 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from company_brain.agents.admin.admin_maintain import AdminMaintainAgent
+from company_brain.agents.admin.investor_newsletter import InvestorNewsletterAgent
 from company_brain.agents.admin.llm_expense_report import LlmExpenseReportAgent
-from company_brain.agents.admin.llm_ops_config import llm_ops_config, parse_hhmm, previous_month
+from company_brain.agents.admin.llm_ops_config import (
+    llm_ops_config,
+    load_operations_raw,
+    parse_hhmm,
+    previous_month,
+)
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.gates import StateStore
 from company_brain.llm.run_context import ambient_scope, new_run_id
 from company_brain.runtime import get_runtime
 
 
+def _investor_cfg() -> dict[str, Any]:
+    raw = (load_operations_raw().get("admin") or {}).get("investor_newsletter") or {}
+    return {
+        "run_day": int(raw.get("run_day") or 3),
+        "time": str(raw.get("time") or "09:00"),
+    }
+
+
 class AdminManager(BaseAgent):
-    """Persistent manager for the monthly LLM expense + maintain pair."""
+    """Persistent manager for monthly LLM ops + investor newsletter."""
 
     name = "admin_manager"
     track_duration = False
@@ -44,17 +60,27 @@ class AdminManager(BaseAgent):
             record_heartbeat(self.name, detail="idle")
             now = datetime.now()
             nxt = self._next_run_time(now)
-            wait = max((nxt - now).total_seconds(), 30)
-            # Wake periodically so heartbeats stay fresh while waiting for monthly run.
+            inv_nxt = self._next_investor_time(now)
+            wait = max(min((nxt - now).total_seconds(), (inv_nxt - now).total_seconds()), 30)
             chunk = min(wait, 300)
-            self.logger.info("Next admin LLM-ops run at %s (sleep %.0fs)", nxt.isoformat(), wait)
+            self.logger.info(
+                "Next admin LLM-ops %s / investor %s (sleep %.0fs)",
+                nxt.isoformat(),
+                inv_nxt.isoformat(),
+                wait,
+            )
             await asyncio.sleep(chunk)
-            if datetime.now() < nxt:
-                continue
-            try:
-                self.run_once(month=previous_month(), sync=True)
-            except Exception:
-                self.logger.exception("Admin monthly LLM-ops run failed")
+            now = datetime.now()
+            if now >= nxt:
+                try:
+                    self.run_once(month=previous_month(), sync=True)
+                except Exception:
+                    self.logger.exception("Admin monthly LLM-ops run failed")
+            if now >= inv_nxt:
+                try:
+                    self._run_investor(month=previous_month(), sync=True)
+                except Exception:
+                    self.logger.exception("Admin investor newsletter run failed")
 
     def run_once(self, *, month: str | None = None, sync: bool = True) -> dict[str, Any]:
         from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
@@ -81,6 +107,26 @@ class AdminManager(BaseAgent):
             )
         record_dispatch(self.name, result_status="ok")
         return {"month": month, "expense": expense, "maintain": maintain}
+
+    def _run_investor(self, *, month: str, sync: bool = True) -> dict[str, Any]:
+        store = StateStore()
+        key = f"admin_manager:investor_newsletter:{month}"
+        if store.get(key):
+            return {"status": "skipped", "month": month, "reason": "already_ran"}
+        runtime = get_runtime()
+        with ambient_scope(
+            manager=self.name,
+            run_id=new_run_id(),
+            reason="investor_newsletter",
+        ):
+            result = runtime.run(
+                InvestorNewsletterAgent,
+                self.config,
+                month=month,
+                sync=sync,
+            )
+        store.set(key, {"at": datetime.now().isoformat(), "result": str(result)[:200]})
+        return {"status": "ok", "month": month, "investor": result}
 
     def _next_run_time(self, now: datetime) -> datetime:
         cfg = llm_ops_config()
@@ -114,6 +160,43 @@ class AdminManager(BaseAgent):
             )
         if now >= candidate:
             # jump to next month
+            year = candidate.year + (1 if candidate.month == 12 else 0)
+            month = 1 if candidate.month == 12 else candidate.month + 1
+            try:
+                candidate = candidate.replace(year=year, month=month, day=day)
+            except ValueError:
+                nxt = datetime(year, month, 28) + timedelta(days=4)
+                last = nxt.replace(day=1) - timedelta(days=1)
+                candidate = last.replace(
+                    hour=target_t.hour,
+                    minute=target_t.minute,
+                    second=0,
+                    microsecond=0,
+                )
+        return candidate
+
+    def _next_investor_time(self, now: datetime) -> datetime:
+        cfg = _investor_cfg()
+        day = int(cfg.get("run_day") or 3)
+        target_t = parse_hhmm(str(cfg.get("time") or "09:00"))
+        try:
+            candidate = now.replace(
+                day=day,
+                hour=target_t.hour,
+                minute=target_t.minute,
+                second=0,
+                microsecond=0,
+            )
+        except ValueError:
+            nxt_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
+            last = nxt_month - timedelta(days=1)
+            candidate = last.replace(
+                hour=target_t.hour,
+                minute=target_t.minute,
+                second=0,
+                microsecond=0,
+            )
+        if now >= candidate:
             year = candidate.year + (1 if candidate.month == 12 else 0)
             month = 1 if candidate.month == 12 else candidate.month + 1
             try:

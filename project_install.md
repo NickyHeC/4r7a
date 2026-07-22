@@ -44,6 +44,17 @@ of specialist agents across their platforms. Follow this runbook step by step.
 
 ## Step 0 — Choose deployment mode
 
+**Preferred (coding agent):** follow
+[`.cursor/skills/4r7a-install/SKILL.md`](.cursor/skills/4r7a-install/SKILL.md) and:
+
+```bash
+company-brain install profile          # decisions → config/install_profile.yaml
+company-brain install credentials      # keys/OAuth for enabled platforms only
+company-brain install foundation       # repos + Notion + wiki_git checks
+company-brain install onboard          # eng → ops → product → growth → finance → hr
+company-brain install status
+```
+
 Ask the user: local or cloud?
 
 - **local** (default): wiki Markdown lives in `./wiki` (gitignored). Good for a
@@ -58,7 +69,13 @@ Runtime is co-located: one host runs the **private agent checkout** and mounts t
 **MD volume** (`COMPANY_BRAIN_WIKI_DIR`, employee wiki, `raw/`). GitHub separation
 does not require two machines.
 
-Copy `.env.example` to `.env` and fill values as you go.
+**Repos repos (admin creates these):** private company **4r7a** clone (brain) and
+an empty private **company-wiki**. Paste both URLs into
+`company-brain install profile` — the installer validates access; it does not
+create GitHub repos.
+
+Copy `.env.example` to `.env` and fill values as you go (or from
+`install credentials`).
 
 ### Wiki GitHub backup (`wiki_commit`) — optional but recommended
 

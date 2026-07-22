@@ -375,6 +375,14 @@ admin:
     work_dir: ""
     branch: main
     poll_interval_minutes: 60
+  # Monthly investor newsletter draft (admin_only; never sends).
+  investor_newsletter:
+    run_day: 3
+    time: "09:00"
+  knowledge_paste:
+    max_body_bytes: 524288
+    default_sync: admin_only
+    default_section: admin/knowledge
 
 # CRM — entity-per-person contacts + typed inbound (see docs/agents/operations.md).
 crm:

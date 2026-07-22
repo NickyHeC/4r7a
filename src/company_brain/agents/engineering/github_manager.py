@@ -66,16 +66,24 @@ class GitHubManager(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
+        from company_brain.admin_console.heartbeats import record_heartbeat
+
         self.logger.info("GitHub manager starting persistent loop")
         while True:
+            record_heartbeat(self.name, detail="idle")
             now = datetime.now()
             next_check = self._next_run_time(now)
             wait_seconds = (next_check - now).total_seconds()
+            # Heartbeat while waiting for the morning check.
+            chunk = min(max(wait_seconds, 30), 300)
             self.logger.info(
                 "Next check at %s (sleeping %.0f seconds)", next_check.isoformat(), wait_seconds
             )
-            await asyncio.sleep(wait_seconds)
+            await asyncio.sleep(chunk)
+            if datetime.now() < next_check:
+                continue
             await self._morning_check()
+            record_heartbeat(self.name, detail="morning_check_done")
 
     async def _morning_check(self) -> None:
         """Run the daily morning check and dispatch specialists as needed."""

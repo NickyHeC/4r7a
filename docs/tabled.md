@@ -17,8 +17,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending. **Partial:** daily `wiki_commit` → admin-only GitHub backup shipped. Full in-wiki versioning / rollback agents still pending |
-| Wiki volume rollback admin agents | `admin/` | After `wiki_commit` backup is in production | Restore volume from a GitHub commit; stop writers → rsync/clone → rebuild indexes. Not auto-clobber |
+| Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending. **Partial:** daily `wiki_commit` → admin-only GitHub backup shipped. Full in-wiki versioning still pending. **Volume restore:** manual admin only (documented in `project_install.md`) — no rollback agents |
 | Automated upstream sync into private 4r7a | Admin / deploy | Company asks for dependabot-style upstream PRs | v1: admin-driven `fetch upstream` only; Weave never targets public 4r7a |
 | Weave coding beyond allow-list / auto-merge | admin/weave | Explicit product ask | Draft PR + no auto-merge stays; expanding `.py` edit scope is a separate ship |
 | Bidirectional GitHub ↔ wiki volume | Wiki git | Never without conflict design | v1 one-way volume → GitHub; GitHub is backup only |
@@ -47,14 +46,13 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Wiki git bootstrap (empty repo first push) | Admin onboarding | First company enabling `wiki_commit` without a pre-cloned repo | Admin pre-creates private `{org}/company-wiki`; first-run init+push UX belongs in onboarding, not steady-state agent. Manual clone documented in `project_install.md` |
-| Member bridge MCP | Cross / `bridge/` | First multi-member deploy using coding agents | Co-located with wiki; private mesh; token hashes; ledger → `bridge_manager` → materializer → rollup 08:00; **no Linear**; per-dept bridge index; skills `_index.yaml` per dept; rate limits 60 reads/min + 20 report/day; **read: dept-scoped** — `bridge.departments` required; engineering uses `sync: location:engineering`; `sync: company` only for cross-dept pages (master table); own employee tree; `bridge_readiness` doctor |
+| Wiki git empty-repo API create | Admin onboarding | Product ask for API provisioning | **Shipped guided path:** admin creates repos; `install profile/foundation` captures URLs + validates. No programmatic `gh repo create` in v1 |
+| Member bridge MCP | Cross / `bridge/` | Admin specs + pushes upstream at Smol multi-member install | Co-located with wiki; private mesh; token hashes; ledger → `bridge_manager` → materializer → rollup 08:00; **no Linear**; per-dept bridge index; skills `_index.yaml` per dept; rate limits 60 reads/min + 20 report/day; **read: dept-scoped** — `bridge.departments` required; engineering uses `sync: location:engineering`; `sync: company` only for cross-dept pages (master table); own employee tree; `bridge_readiness` doctor |
 | Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP implementation lands | After employee wiki onboarding; Tailscale; `company-brain bridge issue-token`; env-var token in Cursor |
 | Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | Tabled — rsync, re-issue tokens, URL change |
 | Senior `propose_practice_update` via MCP | Engineering / bridge | Read-only bridge stable | Tabled |
 | Human vs agent Notion/MD sync lag | Bridge / Notion | Bridge MCP ships | Signature-gated bidirectional sync shipped; bridge citation lag TBD |
-| Platform connection order | Admin / `project_install.md` | Almost all platforms specced | Canonical connect sequence for new installs; ties stacks together last |
-| Process mining from Loom (evolving agents) | Admin onboarding | Last part of 4r7a onboarding | Observe how admin actually works; suggest/write agents that evolve with behavior — needs design time before build |
+| Company process mining (evolving agents) | Cross / admin | Explicit design pass later | Expanded beyond Loom/admin-only — observe company processes in general; suggest/write agents that evolve with behavior |
 | Quarterly doc pass | Admin / docs | First multi-member deploy or major release | Handbooks vs code paths, `migrate-names`, trim stale plans |
 
 ---
@@ -105,7 +103,6 @@ Format for new rows:
 | Admin console pause/resume managers | `admin_console` | Weave pause-resume | Status heartbeats only in v1 |
 | Admin console non-LLM cost (host/Ads) | `admin_console` | Finance/growth ask | v1 Costs = LLM budget only |
 | Work logs in Notion | `employee_wiki` | Employee wiki Notion pull built | |
-| Investor newsletter drafting | Admin | Admin content / ops ask | Draft-only; admin audience (not product customer newsletter). Rehomed from Growth/Gmail |
 | Product progress Discord feature-dedup v2 | `product/` + growth | After progress_compile stable | Progress page shipped; Discord dedup still deferred |
 | Company admin API analytics | `product/admin_api` | Concrete API + env contract | Yaml stub only in product hybrid v1 |
 | Billing / margin provider | `product/billing` | Provider API chosen | Yaml stub only in product hybrid v1 |
@@ -117,7 +114,7 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Bookface integration | Growth | Platform connected | Department TBD |
+| Bookface API integration | Growth / admin | Platform API available | **Shipped without API:** admin `knowledge paste` for misc Bookface/notes. Full Bookface connector still TBD |
 
 ---
 
@@ -170,4 +167,4 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Wiki-level operators | Admin | Catalog + mount stable | Cross-building maintenance agents |
+| Deeper wiki-level operators | Admin | After install operators in production use | **Shipped v1:** `install_*`, investor newsletter, knowledge paste. Remaining: richer cross-building maintenance / optimization scout (see Admin / LLM ops) |

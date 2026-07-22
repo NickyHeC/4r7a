@@ -4,13 +4,44 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
+from typing import TYPE_CHECKING
 
 from company_brain.config import load_config, resolve_llm_provider
 from company_brain.doctor.types import CheckResult, DoctorReport
 
+if TYPE_CHECKING:
+    from company_brain.agents.admin.install_profile import InstallProfile
 
-def run_connect_doctor() -> DoctorReport:
+
+def _gh_auth_ok() -> bool:
+    if not shutil.which("gh"):
+        return False
+    try:
+        proc = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+        return proc.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def run_connect_doctor(profile: InstallProfile | None = None) -> DoctorReport:
+    """Run connect checks.
+
+    When ``profile`` is provided, platforms disabled in the install profile are
+    treated as optional so unused stacks do not fail the score.
+    """
     report = DoctorReport(name="connect")
+
+    def enabled(platform: str) -> bool:
+        if profile is None:
+            return True
+        return profile.platform_enabled(platform)
 
     def add(
         check_id: str,
@@ -41,11 +72,37 @@ def run_connect_doctor() -> DoctorReport:
         notion_ok,
         "Notion CLI (ntn) authenticated",
         "install ntn + run 'ntn login', then 'company-brain init'",
+        optional=not enabled("notion"),
     )
 
-    add("gh_cli", shutil.which("gh") is not None, "GitHub CLI (gh) installed", "install gh")
-    add("mercury_token", bool(os.getenv("MERCURY_TOKEN")), "Mercury token set", "set MERCURY_TOKEN")
-    add("ramp_token", bool(os.getenv("RAMP_TOKEN")), "Ramp token set", "set RAMP_TOKEN")
+    add(
+        "gh_cli",
+        shutil.which("gh") is not None,
+        "GitHub CLI (gh) installed",
+        "install gh",
+        optional=not enabled("github"),
+    )
+    add(
+        "gh_auth",
+        _gh_auth_ok(),
+        "gh auth status ok",
+        "gh auth login",
+        optional=not enabled("github"),
+    )
+    add(
+        "mercury_token",
+        bool(os.getenv("MERCURY_TOKEN")),
+        "Mercury token set",
+        "set MERCURY_TOKEN",
+        optional=not enabled("mercury"),
+    )
+    add(
+        "ramp_token",
+        bool(os.getenv("RAMP_TOKEN")),
+        "Ramp token set",
+        "set RAMP_TOKEN",
+        optional=not enabled("ramp"),
+    )
     add(
         "slack_token",
         bool(
@@ -54,6 +111,7 @@ def run_connect_doctor() -> DoctorReport:
         ),
         "Slack wiki bot token set",
         "set SLACK_WIKI_BOT_TOKEN (legacy: SLACK_BOT_TOKEN)",
+        optional=not enabled("slack"),
     )
     add(
         "slack_weave_token",
@@ -98,6 +156,7 @@ def run_connect_doctor() -> DoctorReport:
         gmail_ok,
         f"Gmail connection configured ({gmail_provider})",
         "see project_install.md",
+        optional=not enabled("gmail"),
     )
 
     try:
@@ -111,6 +170,7 @@ def run_connect_doctor() -> DoctorReport:
         linear_ok,
         "Linear connection configured",
         "set LINEAR_API_KEY — see project_install.md",
+        optional=not enabled("linear"),
     )
 
     try:
@@ -125,6 +185,7 @@ def run_connect_doctor() -> DoctorReport:
                 granola_ok,
                 f"Granola meeting notes ({granola_mode})",
                 "set GRANOLA_API_KEY or GRANOLA_MEMBER_KEYS",
+                optional=not enabled("granola"),
             )
         else:
             add(
@@ -134,7 +195,13 @@ def run_connect_doctor() -> DoctorReport:
                 optional=True,
             )
     except Exception:
-        add("granola_connection", False, "Granola check failed", "see project_install.md")
+        add(
+            "granola_connection",
+            False,
+            "Granola check failed",
+            "see project_install.md",
+            optional=not enabled("granola"),
+        )
 
     try:
         from company_brain.agents.operations.gcal import gcal_rest as gcal_api
@@ -157,12 +224,81 @@ def run_connect_doctor() -> DoctorReport:
     except Exception:
         add("gcal_connection", False, "Google Calendar check failed", "see project_install.md")
 
+    # Newly covered platforms (profile-aware optionality)
+    try:
+        from company_brain.agents.product.posthog.posthog_client import posthog_is_configured
+
+        add(
+            "posthog_connection",
+            posthog_is_configured(),
+            "PostHog configured",
+            "set POSTHOG_API_KEY / project — see project_install.md",
+            optional=not enabled("posthog"),
+        )
+    except Exception:
+        add(
+            "posthog_connection",
+            False,
+            "PostHog check failed",
+            optional=not enabled("posthog"),
+        )
+
+    try:
+        from company_brain.agents.growth.discord.discord_client import discord_is_configured
+
+        add(
+            "discord_connection",
+            discord_is_configured(),
+            "Discord configured",
+            "set DISCORD_BOT_TOKEN — see project_install.md",
+            optional=not enabled("discord"),
+        )
+    except Exception:
+        add(
+            "discord_connection",
+            False,
+            "Discord check failed",
+            optional=not enabled("discord"),
+        )
+
+    try:
+        from company_brain.agents.growth.google_ads.google_ads_client import (
+            google_ads_is_configured,
+        )
+
+        add(
+            "google_ads_connection",
+            google_ads_is_configured(),
+            "Google Ads configured",
+            "set GOOGLE_ADS_* — see project_install.md",
+            optional=not enabled("google_ads"),
+        )
+    except Exception:
+        add(
+            "google_ads_connection",
+            False,
+            "Google Ads check failed",
+            optional=not enabled("google_ads"),
+        )
+
+    wiki_git_needed = True
+    if profile is not None:
+        wiki_git_needed = bool(profile.wiki_git_backup)
+    add(
+        "wiki_git_token",
+        bool(os.getenv("COMPANY_BRAIN_WIKI_GIT_TOKEN", "").strip()),
+        "COMPANY_BRAIN_WIKI_GIT_TOKEN set",
+        "token with contents:write on company-wiki only",
+        optional=not wiki_git_needed,
+    )
+
     config = load_config()
     add(
         "wiki_initialized",
         config.notion.is_initialized,
         "Wiki initialized in Notion",
         "run 'company-brain init'",
+        optional=profile is not None and not profile.notion_sync,
     )
 
     lsearch_ok = bool(shutil.which("lsearch") or shutil.which("local-search"))

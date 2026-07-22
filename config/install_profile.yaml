@@ -1,0 +1,70 @@
+# Guided install profile for company-brain (pointers/toggles only — secrets stay in .env).
+# Edit via `company-brain install profile` or by hand. Best-practice defaults below.
+
+runtime: local # local | cloud
+brain_repo_url: "" # private company 4r7a (agent code) clone URL
+wiki_repo_url: "" # private admin-only company-wiki clone URL
+
+notion_sync: true
+employee_wiki: true
+wiki_git_backup: true
+bridge: false # deferred until member bridge MCP is wired
+
+notify:
+  admin_channel: "#wiki-admin"
+
+# Department enablement. Onboarding order after foundation:
+# engineering → operations → product → growth → finance → hr
+departments:
+  engineering: true
+  operations: true
+  product: true
+  growth: true
+  finance: true
+  hr: true
+
+# Platform enablement (unused → skip onboarding + credentials). Cleanup deletion
+# always requires an explicit admin confirm — never automatic.
+platforms:
+  github:
+    enabled: true
+    department: engineering
+  linear:
+    enabled: true
+    department: engineering
+  notion:
+    enabled: true
+    department: operations
+  slack:
+    enabled: true
+    department: operations
+  gmail:
+    enabled: true
+    department: operations
+  granola:
+    enabled: true
+    department: operations
+  posthog:
+    enabled: true
+    department: product
+  product_workstreams:
+    enabled: true
+    department: product
+  google_ads:
+    enabled: true
+    department: growth
+  discord:
+    enabled: true
+    department: growth
+  growth_workstreams:
+    enabled: true
+    department: growth
+  mercury:
+    enabled: true
+    department: finance
+  ramp:
+    enabled: true
+    department: finance
+  linkedin:
+    enabled: true
+    department: hr

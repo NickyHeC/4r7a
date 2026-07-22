@@ -893,6 +893,102 @@ def admin_console_cmd(host: str | None, port: int | None) -> None:
     serve(host=host, port=port)
 
 
+@admin.command("investor-newsletter")
+@click.option("--month", default=None, help="Target month YYYY-MM (default: current).")
+@click.option("--force", is_flag=True, help="Overwrite existing draft.")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_investor_newsletter_cmd(month: str | None, force: bool, no_sync: bool) -> None:
+    """Draft monthly investor newsletter (admin_only; never sends)."""
+    from company_brain.agents.admin.investor_newsletter import InvestorNewsletterAgent
+
+    config = load_config()
+    result = InvestorNewsletterAgent(config).execute(month=month, force=force, sync=not no_sync)
+    click.echo(result)
+
+
+@admin.group("knowledge")
+def admin_knowledge_group() -> None:
+    """Safe paste-in of miscellaneous external knowledge."""
+
+
+@admin_knowledge_group.command("paste")
+@click.option("--title", required=True, help="Note title.")
+@click.option("--body", default="", help="Markdown body (or use --file / stdin).")
+@click.option("--file", "file_path", default="", help="Read body from a .md file.")
+@click.option("--dest", default=None, help="Promote dest path (default admin/knowledge/{slug}.md).")
+@click.option("--to-raw", is_flag=True, help="On approve, write raw/entries for absorb.")
+@click.option(
+    "--sync-label",
+    default="admin_only",
+    help="Frontmatter sync label (admin_only|company|location:…).",
+)
+@click.option("--approve", is_flag=True, help="Promote immediately if scan passes.")
+@click.option(
+    "--force-approve",
+    is_flag=True,
+    help="Promote even if scan blocked (audited; use sparingly).",
+)
+def admin_knowledge_paste_cmd(
+    title: str,
+    body: str,
+    file_path: str,
+    dest: str | None,
+    to_raw: bool,
+    sync_label: str,
+    approve: bool,
+    force_approve: bool,
+) -> None:
+    """Quarantine + scan a pasted note; open admin knowledge-review page."""
+    import sys
+
+    from company_brain.agents.admin.knowledge_paste import KnowledgePasteAgent
+
+    if not body and not file_path and not sys.stdin.isatty():
+        body = sys.stdin.read()
+    config = load_config()
+    result = KnowledgePasteAgent(config).execute(
+        title=title,
+        body=body,
+        file_path=file_path,
+        dest=dest,
+        to_raw=to_raw,
+        sync_label=sync_label,
+        approve=approve,
+        force_approve=force_approve,
+    )
+    click.echo(result)
+
+
+@admin_knowledge_group.command("approve")
+@click.option("--import-id", required=True, help="Paste import id from review page.")
+@click.option("--title", default="Knowledge note", help="Article title.")
+@click.option("--dest", default=None, help="Wiki dest path (broader company path allowed).")
+@click.option("--to-raw", is_flag=True, help="Write raw/entries instead of wiki page.")
+@click.option("--sync-label", default="admin_only", help="Frontmatter sync label.")
+@click.option("--force", is_flag=True, help="Force promote despite scan findings.")
+def admin_knowledge_approve_cmd(
+    import_id: str,
+    title: str,
+    dest: str | None,
+    to_raw: bool,
+    sync_label: str,
+    force: bool,
+) -> None:
+    """Promote a quarantined paste into wiki or raw intake."""
+    from company_brain.agents.admin.knowledge_paste import KnowledgePasteAgent
+
+    config = load_config()
+    result = KnowledgePasteAgent(config).approve(
+        import_id=import_id,
+        title=title,
+        dest=dest,
+        to_raw=to_raw,
+        sync_label=sync_label,
+        force=force,
+    )
+    click.echo(result)
+
+
 @weave.command("events")
 @click.option("--http", is_flag=True, help="Use HTTP mode instead of Socket Mode.")
 @click.option("--host", default="0.0.0.0", help="HTTP bind host.")
@@ -1607,3 +1703,311 @@ def notion_onboarding_run(confirm_mirror: bool, no_manager: bool, no_ingest: boo
         ingest_existing=not no_ingest,
     )
     click.echo(result)
+
+
+@main.group()
+def install() -> None:
+    """Guided company-brain install (profile, credentials, foundation, onboard)."""
+
+
+@install.command("profile")
+@click.option("--interactive/--no-interactive", default=None, help="Prompt for decisions.")
+@click.option("--runtime", type=click.Choice(["local", "cloud"]), default=None)
+@click.option("--brain-repo-url", default=None, help="Private 4r7a clone URL.")
+@click.option("--wiki-repo-url", default=None, help="Private company-wiki URL.")
+@click.option("--disable-department", multiple=True, help="Disable a department.")
+@click.option("--enable-department", multiple=True, help="Enable a department.")
+@click.option("--disable-platform", multiple=True, help="Disable a platform.")
+@click.option("--enable-platform", multiple=True, help="Enable a platform.")
+@click.option("--notion-sync/--no-notion-sync", default=None)
+@click.option("--employee-wiki/--no-employee-wiki", default=None)
+@click.option("--wiki-git-backup/--no-wiki-git-backup", default=None)
+@click.option("--bridge/--no-bridge", default=None)
+@click.option("--show", is_flag=True, help="Print current profile and exit.")
+def install_profile_cmd(
+    interactive: bool | None,
+    runtime: str | None,
+    brain_repo_url: str | None,
+    wiki_repo_url: str | None,
+    disable_department: tuple[str, ...],
+    enable_department: tuple[str, ...],
+    disable_platform: tuple[str, ...],
+    enable_platform: tuple[str, ...],
+    notion_sync: bool | None,
+    employee_wiki: bool | None,
+    wiki_git_backup: bool | None,
+    bridge: bool | None,
+    show: bool,
+) -> None:
+    """Compile or update config/install_profile.yaml."""
+    from company_brain.agents.admin.install_profile import (
+        apply_profile_flags,
+        load_install_profile,
+        profile_summary,
+        prompt_profile,
+    )
+
+    if show:
+        click.echo(profile_summary(load_install_profile()))
+        return
+
+    flag_touch = any(
+        [
+            runtime,
+            brain_repo_url is not None,
+            wiki_repo_url is not None,
+            disable_department,
+            enable_department,
+            disable_platform,
+            enable_platform,
+            notion_sync is not None,
+            employee_wiki is not None,
+            wiki_git_backup is not None,
+            bridge is not None,
+        ]
+    )
+    if interactive is True or (interactive is None and not flag_touch and sys.stdin.isatty()):
+        profile = prompt_profile()
+    else:
+        profile = apply_profile_flags(
+            runtime=runtime,
+            brain_repo_url=brain_repo_url,
+            wiki_repo_url=wiki_repo_url,
+            disable_department=disable_department,
+            enable_department=enable_department,
+            disable_platform=disable_platform,
+            enable_platform=enable_platform,
+            notion_sync=notion_sync,
+            employee_wiki=employee_wiki,
+            wiki_git_backup=wiki_git_backup,
+            bridge=bridge,
+        )
+        click.secho("Updated config/install_profile.yaml", fg="green")
+    click.echo(profile_summary(profile))
+
+
+@install.command("credentials")
+def install_credentials_cmd() -> None:
+    """Print credential/OAuth checklist for enabled platforms only."""
+    from company_brain.agents.admin.install_credentials import format_checklist
+
+    click.echo(format_checklist())
+
+
+@install.command("foundation")
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON report.")
+def install_foundation_cmd(as_json: bool) -> None:
+    """Validate repos, Notion, and wiki_git readiness from the install profile."""
+    import json as json_lib
+
+    from company_brain.agents.admin.install_foundation import (
+        format_foundation_report,
+        run_foundation_checks,
+    )
+
+    report = run_foundation_checks()
+    if as_json:
+        click.echo(json_lib.dumps(report.to_dict(), indent=2))
+    else:
+        click.echo(format_foundation_report(report))
+    if not report.ok:
+        raise SystemExit(1)
+
+
+@install.command("verify")
+def install_verify_cmd() -> None:
+    """Run foundation checks + profile-scoped connect doctor hints."""
+    from company_brain.agents.admin.install_foundation import (
+        format_foundation_report,
+        run_foundation_checks,
+    )
+    from company_brain.agents.admin.install_profile import load_install_profile
+    from company_brain.doctor.connect import run_connect_doctor
+
+    profile = load_install_profile()
+    foundation = run_foundation_checks(profile)
+    click.echo(format_foundation_report(foundation))
+    report = run_connect_doctor(profile=profile)
+    click.echo(f"# connect doctor ({report.name}) score={report.score}")
+    for check in report.checks:
+        click.echo(f"- [{check.status}] {check.check}: {check.message}")
+        if check.hint and check.status != "pass":
+            click.echo(f"    hint: {check.hint}")
+    if not foundation.ok:
+        raise SystemExit(1)
+
+
+@install.command("onboard")
+@click.option("--strict", is_flag=True, help="Stop department sequence on first failure.")
+@click.option("--no-managers", is_flag=True, help="Skip starting persistent managers.")
+@click.option("--skip-foundation-check", is_flag=True, help="Skip foundation gate.")
+@click.option(
+    "--confirm-cleanup",
+    is_flag=True,
+    help="Admin confirms cleanup checklist review (still no auto-delete).",
+)
+def install_onboard_cmd(
+    strict: bool,
+    no_managers: bool,
+    skip_foundation_check: bool,
+    confirm_cleanup: bool,
+) -> None:
+    """Run department onboarding in order (eng → ops → product → growth → finance → hr)."""
+    from company_brain.agents.admin.install_orchestrator import InstallOrchestratorAgent
+
+    if not confirm_cleanup:
+        click.secho(
+            "Note: cleanup deletion is never automatic. Pass --confirm-cleanup after the "
+            "admin explicitly approves reviewing unused-platform removal on a private fork.",
+            fg="yellow",
+        )
+    config = load_config()
+    result = InstallOrchestratorAgent(config).execute(
+        strict=strict,
+        start_managers=not no_managers,
+        skip_foundation_check=skip_foundation_check,
+        confirm_cleanup=confirm_cleanup,
+    )
+    click.echo(result)
+
+
+@install.command("status")
+def install_status_cmd() -> None:
+    """Show install progress state keys + profile summary."""
+    from company_brain.agents.admin.install_orchestrator import read_install_states
+    from company_brain.agents.admin.install_profile import load_install_profile, profile_summary
+
+    click.echo(profile_summary(load_install_profile()))
+    click.echo("")
+    states = read_install_states()
+    if not states:
+        click.echo("No install:* state keys yet.")
+        return
+    for key in sorted(states):
+        click.echo(f"{key}: {states[key]}")
+
+
+@install.command("cleanup")
+@click.option(
+    "--confirm",
+    is_flag=True,
+    help="Required. Confirms admin reviewed cleanup; still prints checklist only.",
+)
+def install_cleanup_cmd(confirm: bool) -> None:
+    """Print unused-platform cleanup checklist (never deletes files)."""
+    from company_brain.agents.admin.install_orchestrator import cleanup_checklist
+
+    if not confirm:
+        click.secho(
+            "Refusing to emit cleanup steps without --confirm "
+            "(admin must explicitly approve reviewing deletions).",
+            fg="red",
+        )
+        raise SystemExit(2)
+    click.echo(cleanup_checklist())
+
+
+@main.group("github")
+def github_group() -> None:
+    """GitHub platform commands."""
+
+
+@github_group.group("onboarding")
+def github_onboarding_group() -> None:
+    """GitHub onboarding."""
+
+
+@github_onboarding_group.command("run")
+@click.option("--no-manager", is_flag=True, help="Skip starting github_manager.")
+def github_onboarding_run(no_manager: bool) -> None:
+    """Backfill GitHub wiki pages and hand off to github_manager."""
+    from company_brain.agents.engineering.github.github_onboarding import GitHubOnboardingAgent
+
+    config = load_config()
+    click.echo(GitHubOnboardingAgent(config).execute(start_manager=not no_manager))
+
+
+@main.group("linear")
+def linear_group() -> None:
+    """Linear platform commands."""
+
+
+@linear_group.group("onboarding")
+def linear_onboarding_group() -> None:
+    """Linear onboarding."""
+
+
+@linear_onboarding_group.command("run")
+@click.option("--no-manager", is_flag=True, help="Skip starting linear_manager.")
+def linear_onboarding_run(no_manager: bool) -> None:
+    """Run Linear onboarding backfill."""
+    from company_brain.agents.engineering.linear.linear_onboarding import LinearOnboardingAgent
+
+    config = load_config()
+    click.echo(LinearOnboardingAgent(config).execute(start_manager=not no_manager))
+
+
+@main.group("gmail")
+def gmail_group() -> None:
+    """Gmail platform commands."""
+
+
+@gmail_group.group("onboarding")
+def gmail_onboarding_group() -> None:
+    """Gmail onboarding."""
+
+
+@gmail_onboarding_group.command("run")
+@click.option("--no-manager", is_flag=True, help="Skip starting gmail managers.")
+def gmail_onboarding_run(no_manager: bool) -> None:
+    """Run Gmail onboarding backfill."""
+    from company_brain.agents.operations.gmail.gmail_onboarding import GmailOnboardingAgent
+
+    config = load_config()
+    click.echo(GmailOnboardingAgent(config).execute(start_manager=not no_manager))
+
+
+@main.group("granola")
+def granola_group() -> None:
+    """Granola platform commands."""
+
+
+@granola_group.group("onboarding")
+def granola_onboarding_group() -> None:
+    """Granola onboarding."""
+
+
+@granola_onboarding_group.command("run")
+@click.option("--no-manager", is_flag=True, help="Skip starting meeting_watch.")
+def granola_onboarding_run(no_manager: bool) -> None:
+    """Run Granola onboarding backfill."""
+    from company_brain.agents.operations.granola.granola_onboarding import GranolaOnboardingAgent
+
+    config = load_config()
+    click.echo(GranolaOnboardingAgent(config).execute(start_manager=not no_manager))
+
+
+@main.group("finance")
+def finance_group() -> None:
+    """Finance department commands."""
+
+
+@finance_group.group("onboarding")
+def finance_onboarding_group() -> None:
+    """Finance onboarding."""
+
+
+@finance_onboarding_group.command("run")
+@click.option("--no-managers", is_flag=True, help="Skip starting finance managers.")
+@click.option("--start-month", default=None, help="Earliest YYYY-MM to backfill.")
+def finance_onboarding_run(no_managers: bool, start_month: str | None) -> None:
+    """Backfill expense/quarterly pages and start finance managers."""
+    from company_brain.agents.finance.finance_onboarding import FinanceOnboardingAgent
+
+    config = load_config()
+    click.echo(
+        FinanceOnboardingAgent(config).execute(
+            start_managers=not no_managers,
+            start_month=start_month,
+        )
+    )

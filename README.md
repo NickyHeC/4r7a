@@ -156,23 +156,26 @@ progress, attribution). See [product handbook](docs/agents/product.md).
 
 ### Admin
 
+- **Guided install** — `company-brain install …` + skill `4r7a-install` compile
+  `install_profile.yaml`, credentials, foundation checks, and department onboarding
+  (eng → ops → product → growth → finance → HR). See [admin handbook](docs/agents/admin.md).
 - **Admin console** — logged-in FastAPI/HTMX cockpit on the wiki host (status
   heartbeats, LLM costs, wiki edit, allow-listed dispatch, Assist). Private mesh only;
-  separate from member bridge. See [admin handbook](docs/agents/admin.md).
+  separate from member bridge.
 - **Two-repo deploy** — private company **4r7a / company-brain** (agents; Weave draft
   PRs) and admin-only **company-wiki** (MD backup). Live SoT is the host MD volume;
   daily `wiki_commit` pushes volume → wiki repo (`main` only). Separate bots: wiki git
-  token vs Weave/`gh`. See [admin handbook](docs/agents/admin.md) and
-  `project_install.md`.
-- **LLM ops** — monthly `admin_manager` runs expense report + maintain (coding-session
-  request) from measured usage/duration/verify; wiki under `admin/llm-expense/` and
-  `admin/maintain/`. CLI: `company-brain admin manager`.
+  token vs Weave/`gh`. See `project_install.md`.
+- **LLM ops + investor draft** — monthly `admin_manager` runs expense report, maintain,
+  and a short `admin/investor-newsletter/` draft (never sends). CLI: `company-brain admin …`.
+- **Knowledge paste** — safe admin CLI/console path for misc external notes (quarantine →
+  scan → review → promote).
 - **Weave** — separate Slack app for system-change requests (`@weave`). Triage writes
   `admin/change-request/{id}.md`, mirrors to a Notion change-request DB when configured,
   and for `config_only` runs **implement+prove** in a smol VM (default: smol registry
   Codex; opt-in `in_house`) then opens a draft PR on the **private agent repo**.
   Allow-list is `config/` YAML/JSON; overflows go to `admin/weave-queue.md`. W2
-  `members.yaml` only; roster cannot invoke. See [admin handbook](docs/agents/admin.md).
+  `members.yaml` only; roster cannot invoke.
 
 ### HR
 
@@ -232,9 +235,10 @@ The same `Smolfile` spec describes image, egress allow-list, and shared wiki vol
 
 company-brain is designed to be installed with the help of an AI coding agent.
 Open this repo in your AI coding agent and ask it to **"set up company-brain"** —
-it follows [`project_install.md`](project_install.md), a step-by-step runbook that picks the mode,
-installs the CLIs, connects your platforms (with read-only finance tokens), runs
-the onboarding agents, and verifies everything with `company-brain doctor`.
+it should follow [`.cursor/skills/4r7a-install/SKILL.md`](.cursor/skills/4r7a-install/SKILL.md)
+(`company-brain install …`) and [`project_install.md`](project_install.md): pick the mode,
+install CLIs, connect platforms (read-only finance tokens), run onboarding agents, and
+verify with `company-brain doctor`.
 
 Manual fallback:
 

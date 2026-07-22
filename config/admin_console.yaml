@@ -30,6 +30,8 @@ managers:
     label: Notion manager
   - name: wiki_commit
     label: Wiki commit backup
+  - name: github_manager
+    label: GitHub manager
 
 # Allow-listed one-shot dispatches (get_runtime().run / Force → .run).
 dispatch:
@@ -39,6 +41,18 @@ dispatch:
   - id: llm_expense_report
     label: LLM expense report (once)
     agent: company_brain.agents.admin.llm_expense_report.LlmExpenseReportAgent
+  - id: investor_newsletter
+    label: Investor newsletter draft (force)
+    agent: company_brain.agents.admin.investor_newsletter.InvestorNewsletterAgent
+    kwargs:
+      force: true
+  - id: install_orchestrator
+    label: Install orchestrator (no managers)
+    agent: company_brain.agents.admin.install_orchestrator.InstallOrchestratorAgent
+    kwargs:
+      start_managers: false
+      skip_foundation_check: false
+      confirm_cleanup: false
   - id: google_ads_snapshots
     label: Google Ads snapshots (force week)
     agent: company_brain.agents.growth.google_ads_manager.GoogleAdsManager

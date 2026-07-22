@@ -1,10 +1,52 @@
 # Admin department — agents
 
-System-change intake via **Weave** (`@weave` Slack app), monthly **LLM ops**
-maintenance (expense report + coding-session request), daily **wiki commit**
+System-change intake via **Weave** (`@weave` Slack app), guided **install**
+operators (`install_profile` + orchestrator), monthly **LLM ops** and
+**investor newsletter**, safe **knowledge paste**, daily **wiki commit**
 (MD volume → admin-only company-wiki GitHub backup), and the **admin console**
 (logged-in web ops cockpit on the wiki host). Wiki MD volume is source of
 truth; Notion mirrors when configured; GitHub wiki repo is backup only.
+
+Coding-agent companion: [`.cursor/skills/4r7a-install/SKILL.md`](../../.cursor/skills/4r7a-install/SKILL.md).
+
+---
+
+## Install — how it runs
+
+One-shot guided setup (not a persistent manager). Admin creates private 4r7a +
+empty company-wiki repos; the installer asks for URLs, compiles
+`config/install_profile.yaml`, emits credentials, validates foundation, then
+onboards departments in order.
+
+```mermaid
+flowchart TD
+  profile[install_profile.yaml] --> creds[credentials checklist]
+  creds --> foundation[foundation checks]
+  foundation --> onboard[install_orchestrator]
+  onboard --> eng[engineering]
+  eng --> ops[operations]
+  ops --> prod[product]
+  prod --> growth[growth]
+  growth --> fin[finance]
+  fin --> hr[HR]
+  onboard --> progress[admin/install-progress.md]
+```
+
+| Agent / surface | Schedule | Description |
+|-----------------|----------|-------------|
+| `install_profile.py` | On demand | Load/save profile; interactive decision compiler |
+| `install_orchestrator.py` | On demand | Sequence platform onboardings; progress + cleanup checklist |
+
+**CLI:** `company-brain install profile|credentials|foundation|verify|onboard|status|cleanup`
+
+**Order after foundation:** engineering → operations → product → growth → finance → HR.
+Unused platforms are skipped. Cleanup deletion requires `--confirm` / `--confirm-cleanup`
+and still never auto-deletes files.
+
+**New platforms later:** check upstream 4r7a first; else design via
+`docs/design_process.md` with the admin’s coding agent; optional upstream PR ask.
+
+Connect steps: [`project_install.md`](../../project_install.md) Step 0–3.
 
 ---
 
@@ -75,8 +117,9 @@ flowchart LR
 `remote_url`, `work_dir`, `branch`). Env: `COMPANY_BRAIN_WIKI_GIT_TOKEN`,
 optional `COMPANY_BRAIN_WIKI_GIT_DIR`. Wiki bot must not access the private 4r7a repo.
 
-**Tabled:** empty-repo bootstrap (admin onboarding), volume rollback agents — see
-`docs/tabled.md`.
+**Repos:** admin creates empty private company-wiki, clones it, sets token +
+`remote_url` in profile/ops config (`company-brain install foundation` validates).
+Volume rollback stays **manual** — see `project_install.md` recovery notes.
 
 ---
 
@@ -100,13 +143,21 @@ flowchart TD
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `admin_manager.py` | Monthly (`admin.llm_ops`) | Dispatch expense then maintain |
+| `admin_manager.py` | Monthly (`admin.llm_ops` + investor day) | Dispatch expense, maintain, investor newsletter |
 | `llm_expense_report.py` | Via manager | Month spend by agent/category; verify + duration summary |
 | `admin_maintain.py` | Via manager | Drift list + agent-runtime page; request admin coding session |
+| `investor_newsletter.py` | Via manager (`admin.investor_newsletter`, default day 3) | Concise admin_only investor draft; never sends |
+| `knowledge_paste.py` | On demand | Quarantine → scan → review → promote misc external notes |
 
-**CLI:** `company-brain admin manager`, `company-brain admin expense-report`, `company-brain admin maintain`
+**CLI:** `company-brain admin manager`, `admin expense-report`, `admin maintain`,
+`admin investor-newsletter`, `admin knowledge paste|approve`
 
-**Notify:** `#wiki-admin` actionable only on budget pressure, duration drift, or verify fail rates; quiet months stay silent.
+**Notify:** `#wiki-admin` actionable on budget/duration/verify drift, investor draft
+ready, and knowledge-paste review; quiet months stay silent for LLM ops.
+
+**Knowledge paste:** default promote `admin/knowledge/{slug}.md` (`sync: admin_only`);
+`--dest` / `--sync-label` for broader company wiki; `--to-raw` for absorb intake.
+Admin console Wiki save blocks untrusted namespaces (`external/`, `admin/knowledge/`, `raw/`).
 
 **Tabled:** Monthly optimization scout — see `docs/tabled.md`.
 

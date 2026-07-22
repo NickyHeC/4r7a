@@ -11,6 +11,20 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Admin wiki-level operators (install + content)
+
+- **Install:** `config/install_profile.yaml` + `install_profile` /
+  `install_credentials` / `install_foundation` / `install_orchestrator`;
+  CLI `company-brain install …`; skill `.cursor/skills/4r7a-install/SKILL.md`.
+- **Order:** foundation (repos/Notion/wiki_git) → eng → ops → product → growth →
+  finance → HR; skip disabled/unconfigured; cleanup never auto-deletes.
+- **Content:** `investor_newsletter` (admin_only draft via `admin_manager` day 3);
+  `knowledge_paste` quarantine/scan/review/promote; console save hardened.
+- **Also:** missing onboarding CLIs (github/linear/gmail/granola/finance);
+  doctor connect profile-aware + PostHog/Discord/Ads/wiki_git/gh auth.
+- **Tabled:** bridge MCP (admin will spec at Smol), company process mining
+  (expanded), no programmatic repo create / volume rollback agents.
+
 ## 2026-07-22 — Product hybrid workstreams
 
 - **Shape:** Growth-like hybrid — keep `posthog_manager`; add workstream managers

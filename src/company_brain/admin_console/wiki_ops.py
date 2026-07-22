@@ -38,6 +38,21 @@ def save_page(rel_path: str, title: str, body: str, *, sync: bool = True) -> dic
     rel = rel_path.strip().lstrip("/")
     if not rel.endswith(".md"):
         raise ValueError("rel_path must end with .md")
+    from company_brain.agents.admin.knowledge_paste import is_untrusted_wiki_path
+    from company_brain.wiki.import_scan import ImportLimits, scan_import_files
+
+    if is_untrusted_wiki_path(rel):
+        raise ValueError(
+            f"Path `{rel}` must use `company-brain admin knowledge paste` "
+            "(quarantine + scan); console save blocked for untrusted namespaces."
+        )
+    scan = scan_import_files(
+        {rel: body},
+        limits=ImportLimits(max_files=1, max_file_bytes=1_048_576),
+    )
+    if not scan.ok:
+        reasons = "; ".join(f.reason for f in scan.blocked())
+        raise ValueError(f"Blocked by import scan: {reasons}")
     section = rel.split("/", 1)[0] if "/" in rel else "admin"
     audit.append_event("wiki_edit", rel_path=rel, title=title)
     write_wiki_page(

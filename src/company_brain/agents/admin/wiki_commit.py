@@ -205,6 +205,8 @@ class WikiCommitAgent(BaseAgent):
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
+        from company_brain.admin_console.heartbeats import record_heartbeat
+
         interval = cfg.wiki_commit_poll_interval_minutes()
         self.logger.info(
             "wiki_commit persistent loop (every %d min, hour_utc>=%d)",
@@ -212,9 +214,11 @@ class WikiCommitAgent(BaseAgent):
             cfg.wiki_commit_hour_utc(),
         )
         while True:
+            record_heartbeat(self.name, detail="idle")
             try:
                 if self.should_run():
                     self.run_once(force=False)
+                    record_heartbeat(self.name, detail="pass")
             except Exception:
                 self.logger.exception("wiki_commit pass failed")
             await asyncio.sleep(interval * 60)
