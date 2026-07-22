@@ -12,6 +12,8 @@ managers:
     label: Google Ads manager
   - name: posthog_manager
     label: PostHog manager
+  - name: hr_manager
+    label: HR manager
   - name: discord_manager
     label: Discord manager
   - name: activity_manager
@@ -46,6 +48,12 @@ dispatch:
   - id: posthog_snapshots
     label: PostHog snapshots (force week)
     agent: company_brain.agents.product.posthog_manager.PosthogManager
+    kwargs:
+      once: true
+      force: true
+  - id: hr_once
+    label: HR manager (force once)
+    agent: company_brain.agents.hr.hr_manager.HrManager
     kwargs:
       once: true
       force: true

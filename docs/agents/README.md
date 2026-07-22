@@ -24,7 +24,7 @@ flowchart LR
 | **Product** | PostHog — tracking audit, feature usage, experiments, signup funnel | [product.md](product.md) |
 | **Operations** | Gmail, Slack, Granola, Notion (wiki mirror + task/CRM/Weave) | [operations.md](operations.md) |
 | **Admin** | Admin console, Weave (`@weave`), monthly LLM ops, daily `wiki_commit` backup | [admin.md](admin.md) |
-| **HR** | Roster promotion, offboarding proposals | [hr.md](hr.md) |
+| **HR** | Status, LinkedIn bio/voice, offboard confirm + wiki archive | [hr.md](hr.md) |
 | **Employee Wiki** | Per-member work buildings — ledger materializers, zip import | [employee_wiki.md](employee_wiki.md) |
 | **External Wiki** | Admin one-shot external wiki mounts + content catalog | [external_wiki.md](external_wiki.md) |
 | **Member Bridge** | Scoped MCP for member coding agents — blockers, priorities, practices | [bridge.md](bridge.md) |

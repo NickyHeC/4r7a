@@ -1,0 +1,14 @@
+# Default web search for agents (LinkedIn pull, subscription audit, …).
+# Prefer local-search (https://github.com/Kevin-Liu-01/local-search) — zero API cost.
+# Falls back to Claude Agent SDK WebSearch when lsearch is unavailable.
+
+backend: auto   # auto | lsearch | claude
+
+lsearch:
+  binary: lsearch          # also accepts local-search if on PATH
+  engine: google           # google | duckduckgo | bing
+  limit: 5
+  timeout_seconds: 90
+  with_content: false
+  content_chars: 1200
+  cleanup_after: true      # lsearch cleanup --kill after gather

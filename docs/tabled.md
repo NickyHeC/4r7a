@@ -50,7 +50,6 @@ Format for new rows:
 | Wiki git bootstrap (empty repo first push) | Admin onboarding | First company enabling `wiki_commit` without a pre-cloned repo | Admin pre-creates private `{org}/company-wiki`; first-run init+push UX belongs in onboarding, not steady-state agent. Manual clone documented in `project_install.md` |
 | Member bridge MCP | Cross / `bridge/` | First multi-member deploy using coding agents | Co-located with wiki; private mesh; token hashes; ledger → `bridge_manager` → materializer → rollup 08:00; **no Linear**; per-dept bridge index; skills `_index.yaml` per dept; rate limits 60 reads/min + 20 report/day; **read: dept-scoped** — `bridge.departments` required; engineering uses `sync: location:engineering`; `sync: company` only for cross-dept pages (master table); own employee tree; `bridge_readiness` doctor |
 | Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP implementation lands | After employee wiki onboarding; Tailscale; `company-brain bridge issue-token`; env-var token in Cursor |
-| Bridge token revoke on offboard | operations/slack | Offboard actuation ships | `employee_offboarding` proposal exists; auto-revoke after actuation |
 | Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | Tabled — rsync, re-issue tokens, URL change |
 | Senior `propose_practice_update` via MCP | Engineering / bridge | Read-only bridge stable | Tabled |
 | Human vs agent Notion/MD sync lag | Bridge / Notion | Bridge MCP ships | Signature-gated bidirectional sync shipped; bridge citation lag TBD |
@@ -115,7 +114,6 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Bridge token revoke on offboard | hr / bridge | Offboard actuation ships | Proposal agent exists; auto-revoke tabled |
 | Bookface integration | Growth | Platform connected | Department TBD |
 
 ---
@@ -148,10 +146,11 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Roster scopes by employment type | `hr` / `config/roster.yaml` | HR design session | Roster + promote shipped; per-type scopes TBD |
-| Google Workspace offboard signal | `hr` | Full Workspace API integration | v1 stub on offboard proposal |
-| Notion user removal signal | `hr` | Notion admin API integration | v1 stub on offboard proposal |
-| Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Extend **`inbound_crm`** candidate type |
+| Roster scopes by employment type | `hr` / `config/roster.yaml` | Explicit product ask | Department scope shipped; per-type ingest scopes TBD |
+| Google Workspace offboard actuation | `hr` | Full Workspace Admin API | v1 detect/ask stub only; no account removal |
+| Notion user removal actuation | `hr` | Notion admin API | v1 detect/ask stub only; no account removal |
+| Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Manual/seed + LinkedIn bio shipped; CRM candidate type still TBD |
+| Social beyond LinkedIn WebSearch | `hr` | API / export available | Monthly LinkedIn WebSearch only in v1 |
 
 ---
 

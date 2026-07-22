@@ -22,6 +22,7 @@ If yes: integrate, configure, or surface a gap in the wiki — **do not reimplem
 | **Notion** | Mirror from wiki MD | Read ACL via teamspaces |
 | **Google Ads** | Wiki snapshots (campaigns, pacing, Ads CPA); selective pacing alert | Budgets, bids, conversion setup, serving, optimization |
 | **PostHog** | Wiki snapshots (tracking audit, feature usage, experiments, signup funnel); selective `#product` alerts | Event capture, feature flags, experiment actuation, dashboards, instrumentation |
+| **LinkedIn** (HR, via WebSearch) | Monthly public bio/voice into employee wiki; hiring log | Profile ownership, posting, messaging, Recruiter / HRIS |
 
 ## Rules
 

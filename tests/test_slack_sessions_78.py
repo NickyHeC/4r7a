@@ -131,9 +131,14 @@ def test_offboard_proposal(tmp_path, monkeypatch):
         "company_brain.agents.hr.employee_offboarding.append_hiring_log",
         lambda *a, **k: None,
     )
+
+    class _Silent:
+        def emit(self, *a, **k):
+            return None
+
     monkeypatch.setattr(
-        "company_brain.agents.hr.employee_offboarding.EmployeeOffboardingAgent._notify_admin",
-        lambda *a, **k: None,
+        "company_brain.agents.hr.employee_offboarding.hr_notifier",
+        lambda: _Silent(),
     )
     members = MembersConfig(
         members={

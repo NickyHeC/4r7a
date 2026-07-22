@@ -1,0 +1,19 @@
+# HR department settings (non-secret).
+# Seed lists for first onboarding: config/hr_seed.yaml
+
+archive_delay_days: 30
+timezone: America/Los_Angeles
+
+linkedin:
+  # Day of month (1–28) for monthly LinkedIn bio/voice pull
+  # Search backend: config/web_search.yaml (default lsearch / Claude fallback)
+  run_day: 1
+  run_hour: 9
+  run_minute: 0
+
+manager:
+  poll_interval_minutes: 60
+
+slack:
+  # Admin asks for departure confirmation (falls back to weave admin notifier)
+  hr_channel: ""

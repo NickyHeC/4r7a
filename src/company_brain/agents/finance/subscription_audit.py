@@ -6,9 +6,10 @@ Ramp card specialists), cross-verifies pricing via online search, flags
 overlapping services, updates the Notion "Company Subscriptions" database, and
 posts a service-overlap report to Slack #finance with a link.
 
-SDK: Anthropic Claude Agent SDK with web search. Recurring-charge detection is
-deterministic; pricing verification and overlap reasoning use the model's web
-search. Falls back to a deterministic report if the SDK is unavailable.
+SDK: Anthropic Claude Agent SDK. Recurring-charge detection is deterministic;
+pricing verification uses ``company_brain.web_search`` (default ``lsearch``,
+Claude ``WebSearch`` fallback). Falls back to a deterministic report if the
+SDK is unavailable.
 """
 
 from __future__ import annotations
@@ -175,6 +176,10 @@ class SubscriptionAuditAgent(BaseAgent):
     async def _build_with_claude(self, recurring: list[dict]) -> str:
         from claude_agent_sdk import ClaudeAgentOptions
 
+        from company_brain import web_search as ws
+        from company_brain.llm import claude as llm_claude
+        from company_brain.llm.tracking import iter_claude_query
+
         vendor_block = "\n".join(
             f"- {v['name']}: {v['charge_count']} charges over {v['months_active']} months, "
             f"avg {transactions.fmt_money(v['avg_amount'])}, "
@@ -182,7 +187,39 @@ class SubscriptionAuditAgent(BaseAgent):
             f"(source: {v['sources']})"
             for v in recurring
         )
-        prompt = f"""You are a subscription auditing agent. Below is pre-computed
+
+        pricing_context = ""
+        allow_tools: list[str] = []
+        if recurring and ws.resolve_backend() == "lsearch":
+            names = [str(v["name"]) for v in recurring[:12]]
+            query = "public pricing " + ", ".join(names)
+            gathered = ws.gather_markdown(query, limit=8, with_content=False, cleanup=True)
+            if gathered.get("ok") and gathered.get("markdown"):
+                pricing_context = str(gathered["markdown"])
+            else:
+                allow_tools = ["WebSearch"]
+        else:
+            allow_tools = ["WebSearch"]
+
+        if pricing_context:
+            prompt = f"""You are a subscription auditing agent. Below is pre-computed
+recurring-charge data and gathered public pricing search results. Verify each
+vendor's public pricing from the gathered data, then flag overlapping services
+and suggest consolidations.
+
+RECURRING VENDORS:
+{vendor_block or "(none detected)"}
+
+GATHERED PRICING SEARCH:
+{pricing_context}
+
+Produce a markdown report titled "# Subscription Audit" with:
+- a summary table (vendor, avg charge, annual estimate, verified price, notes)
+- a "Service Overlap" section grouping vendors with overlapping functionality
+
+Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
+        else:
+            prompt = f"""You are a subscription auditing agent. Below is pre-computed
 recurring-charge data. Use web search to verify each vendor's public pricing,
 then flag overlapping services and suggest consolidations.
 
@@ -195,11 +232,8 @@ Produce a markdown report titled "# Subscription Audit" with:
 
 Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
 
-        from company_brain.llm import claude as llm_claude
-        from company_brain.llm.tracking import iter_claude_query
-
         options = ClaudeAgentOptions(
-            allowed_tools=["WebSearch"],
+            allowed_tools=allow_tools,
             env=llm_claude.options_env(),
             **llm_claude.model_kwargs(self.model, agent_name="subscription_audit"),
         )

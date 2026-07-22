@@ -15,8 +15,10 @@ from pydantic import BaseModel, Field
 from company_brain.config import CONFIG_DIR, _load_yaml
 from company_brain.members_config import (
     MemberBindings,
+    MemberBridgeConfig,
     MemberSpec,
     load_members_config,
+    save_members_config,
 )
 
 ROSTER_FILE = CONFIG_DIR / "roster.yaml"
@@ -25,9 +27,14 @@ ROSTER_FILE = CONFIG_DIR / "roster.yaml"
 class RosterPerson(BaseModel):
     email: str = ""
     employment_type: str = "contractor"
+    department: str = ""
+    status: str = "active"
+    departed_at: str = ""
     slack_user_id: str = ""
+    linkedin_url: str = ""
     bindings: dict[str, Any] = Field(default_factory=dict)
     ingest: dict[str, Any] = Field(default_factory=dict)
+    bridge: dict[str, Any] = Field(default_factory=dict)
 
 
 class RosterConfig(BaseModel):
@@ -78,29 +85,28 @@ def promote_roster_to_member(
     if key in members.members:
         raise ValueError(f"member already exists: {key}")
 
+    depts = list((person.bridge or {}).get("departments") or [])
+    if person.department and person.department not in depts:
+        depts.insert(0, person.department)
+
     bindings = MemberBindings(
         slack_user_id=person.slack_user_id,
         gmail_mailbox=str(person.bindings.get("gmail_mailbox") or person.email),
         linear_user_id=str(person.bindings.get("linear_user_id") or ""),
         granola_label=str(person.bindings.get("granola_label") or key),
+        linkedin_url=person.linkedin_url or str(person.bindings.get("linkedin_url") or ""),
+        discord_id=str(person.bindings.get("discord_id") or ""),
+        discord_handle=str(person.bindings.get("discord_handle") or ""),
     )
     members.members[key] = MemberSpec(
         email=person.email,
         role=role,
         status="active",
+        department=person.department,
+        bridge=MemberBridgeConfig(departments=depts),
         bindings=bindings,
     )
-
-    members_path = CONFIG_DIR / "members.yaml"
-    tmp = members_path.with_suffix(".yaml.tmp")
-    tmp.write_text(
-        yaml.safe_dump(
-            {"members": {k: v.model_dump() for k, v in members.members.items()}},
-            default_flow_style=False,
-            sort_keys=False,
-        )
-    )
-    tmp.replace(members_path)
+    save_members_config(members)
 
     del roster.people[roster_key]
     save_roster_config(roster)

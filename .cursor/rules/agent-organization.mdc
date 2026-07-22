@@ -77,8 +77,17 @@ agents/
     weave_triage.py
     weave.py
   hr/
-    employee_offboarding.py
+    hr_manager.py
+    hr_onboarding.py
+    status_watch.py
+    offboard_confirm.py
+    wiki_archive.py
     hiring_log.py
+    employee_offboarding.py
+    shared/
+      hr_slack.py
+    linkedin/
+      pull.py
   operations/
     slack_manager.py
     customer_support.py

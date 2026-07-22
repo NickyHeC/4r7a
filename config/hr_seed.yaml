@@ -1,0 +1,26 @@
+# Admin-provided seed lists for first HR onboarding.
+# company-brain hr onboard --seed
+#
+# current_employees: active people to bootstrap (employee wiki + LinkedIn pull)
+# past_hires: historical hires for hiring-log backfill only (no live wiki)
+
+current_employees: []
+# Example:
+#   - key: alice
+#     email: alice@company.com
+#     employment_type: w2          # trial | intern | contractor | w2
+#     department: engineering
+#     linkedin_url: https://www.linkedin.com/in/alice
+#     start_date: "2024-01-15"
+#     role: member                 # admin | member (w2 only)
+#     slack_user_id: U0123ABC
+
+past_hires: []
+# Example:
+#   - key: bob
+#     email: bob@example.com
+#     employment_type: intern
+#     department: product
+#     start_date: "2023-06-01"
+#     end_date: "2023-09-01"
+#     notes: Summer intern

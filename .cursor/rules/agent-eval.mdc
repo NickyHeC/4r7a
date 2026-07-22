@@ -31,7 +31,8 @@ Every agent runs the loop in `BaseAgent.execute()`:
  - Finance: `from company_brain.notify import from_finance_config` → `from_finance_config(cfg).emit(Signal(...))`.
  - Operations: `operations.shared.operations_slack` returns Notifiers (`ingest_notifier()`, `customer_support_notifier()`, `events_notifier()`, `growth_notifier()`, `partnership_digest_notifier()`, or `channel_notifier(channel)`); the Slack SDK is only the transport behind them.
  - Product: `product.shared.product_slack.product_notifier()` → `#product` (from `config/product.yaml`).
-- New platforms add their own `Notifier` builder (a channel-bound `channel_post` callable wrapped by `Notifier`); they do not expose raw posting functions to agents.
+ - HR: `hr.shared.hr_slack.hr_notifier()` → optional `hr.slack.hr_channel`, else weave admin.
+ - New platforms add their own `Notifier` builder (a channel-bound `channel_post` callable wrapped by `Notifier`); they do not expose raw posting functions to agents.
 
 ## Default posture
 

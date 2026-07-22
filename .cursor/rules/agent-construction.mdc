@@ -103,6 +103,18 @@ automatic; vLLM needs `--enable-prefix-caching`).
 
 ## Integration SDKs
 
+### Web search (default: local-search)
+
+Agents that need public web data use ``company_brain.web_search``
+(``config/web_search.yaml``). **Default backend is ``auto``:** prefer the
+[local-search](https://github.com/Kevin-Liu-01/local-search) CLI (`lsearch`)
+when installed; fall back to Claude Agent SDK ``WebSearch``. Do not hardcode
+``allowed_tools=["WebSearch"]`` when structured results can be gathered first
+via ``web_search.gather_markdown(...)``.
+
+**Install:** `cargo install local-search` then `lsearch launch` (see
+`project_install.md`). Cloud hosts without Chromium keep the Claude fallback.
+
 ### Notion (via the wiki store)
 
 The Markdown wiki is the source of truth; Notion is a synced mirror. Agents must **not** write to Notion directly. Instead:

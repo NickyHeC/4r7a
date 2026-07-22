@@ -5,8 +5,13 @@ people: {}
 # Example:
 #   jane_contractor:
 #     email: jane@contractor.com
-#     employment_type: contractor
+#     employment_type: contractor   # trial | intern | contractor
+#     department: engineering
+#     status: active
 #     slack_user_id: U0123ABC
+#     linkedin_url: https://www.linkedin.com/in/jane
+#     bridge:
+#       departments: [engineering]
 #     bindings: {}
 #     ingest:
 #       slack: limited

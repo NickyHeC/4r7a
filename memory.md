@@ -11,6 +11,29 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Default web search via local-search (`lsearch`)
+
+- **Package:** `company_brain.web_search` + `config/web_search.yaml`
+  (`backend: auto|lsearch|claude`).
+- **Default:** [local-search](https://github.com/Kevin-Liu-01/local-search) CLI
+  when on PATH; Claude Agent SDK `WebSearch` fallback (cloud / no Chromium).
+- **Wired:** HR `linkedin/pull`, finance `subscription_audit`. Doctor connect
+  optional check for `lsearch`.
+
+## 2026-07-22 — HR lifecycle v1
+
+- **Shape:** `hr_manager` + specialists: `status_watch`, `offboard_confirm`,
+  `wiki_archive`, `linkedin/pull`, `hr_onboarding`. Keep proposal-only
+  `employee_offboarding` + Slack `offboard_signal`.
+- **Status SoT:** admin `hr confirm-offboard` → `departed` + ingest off + bridge
+  revoke + `departed_at`; T+30 `archive/employee/{member}` then unmount.
+- **LinkedIn:** monthly Claude WebSearch → employee `bio.md` / `voice.md`.
+- **Onboarding:** `hr_seed.yaml` current_employees + past_hires; per-joiner
+  `hr onboard {key}`; `start(hr_manager)`.
+- **Config:** `config/hr.yaml`, department + `linkedin_url` on members/roster.
+- **Tabled:** employment-type ingest scopes; Workspace/Notion *removal*; CRM
+  inbound hiring log; social beyond LinkedIn. Bridge revoke on offboard shipped.
+
 ## 2026-07-22 — Pre-ship gate autorun (Cursor stop hook)
 
 - **Hook:** `.cursor/hooks.json` → `pre_ship_gate.py` on agent `stop`.

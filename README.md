@@ -169,9 +169,10 @@ competitor, leads). See [growth handbook](docs/agents/growth.md).
 
 ### HR
 
-- **Roster + offboarding** — `config/roster.yaml` for trial/intern/contractor; promote to
-  `members.yaml` via `company-brain hr promote`. Offboarding is proposal-only at
-  `hr/offboard-proposal/{member}.md` (Workspace/Notion removal stubs in v1). See
+- **Lifecycle** — department-scoped roster/members; monthly LinkedIn WebSearch →
+  employee `bio.md` / `voice.md`; multi-signal departure *asks*; admin
+  `hr confirm-offboard` revokes bridge token and schedules T+30 GitHub archive
+  branch + unmount. Seed via `hr onboard --seed` (`config/hr_seed.yaml`). See
   [HR handbook](docs/agents/hr.md).
 
 ### Employee Wiki

@@ -1,10 +1,9 @@
 """Employee Offboarding — proposal-only HR runbook (admin confirms actuation).
 
-Marks member ``status: departed`` in proposal wiki page; stubs Google Workspace
-and Notion removal signals for v1. Bridge token revoke remains tabled until
-this agent ships steady-state.
+Writes ``hr/offboard-proposal/{member}.md`` and asks admin. Actuation is
+``offboard_confirm`` via ``company-brain hr confirm-offboard``.
 
-SDK: Neither (wiki + config proposals).
+SDK: Neither (wiki + notify).
 """
 
 from __future__ import annotations
@@ -14,7 +13,9 @@ from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.hr.hiring_log import append_hiring_log
+from company_brain.agents.hr.shared.hr_slack import hr_notifier
 from company_brain.members_config import load_members_config
+from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 
 PROPOSAL_DIR = "hr/offboard-proposal"
@@ -61,7 +62,16 @@ class EmployeeOffboardingAgent(BaseAgent):
             why=member_key,
         )
 
-        self._notify_admin(member_key, rel_path)
+        hr_notifier().emit(
+            Signal(
+                text=(
+                    f"*Offboard proposal* — `{member_key}`\n"
+                    f"Review `{rel_path}`. Confirm: "
+                    f"`company-brain hr confirm-offboard {member_key}`"
+                ),
+                severity=ACTIONABLE,
+            )
+        )
         return {
             "status": "proposed",
             "member": member_key,
@@ -74,22 +84,8 @@ class EmployeeOffboardingAgent(BaseAgent):
             "slack": "detected" if spec.bindings.slack_user_id else "not_applicable",
             "google_workspace": "stub_pending",
             "notion": "stub_pending",
-            "bridge_token_revoke": "tabled_until_ship",
+            "bridge_token_revoke": "on_confirm",
         }
-
-    def _notify_admin(self, member_key: str, rel_path: str) -> None:
-        from company_brain.agents.admin.weave_notify import weave_admin_notifier
-        from company_brain.notify import ACTIONABLE, Signal
-
-        weave_admin_notifier().emit(
-            Signal(
-                text=(
-                    f"*Offboard proposal* — `{member_key}`\n"
-                    f"Review `{rel_path}` and confirm removals manually."
-                ),
-                severity=ACTIONABLE,
-            )
-        )
 
 
 def _proposal_body(member_key: str, spec, *, reason: str, slack_user_id: str) -> str:
@@ -101,20 +97,24 @@ def _proposal_body(member_key: str, spec, *, reason: str, slack_user_id: str) ->
         f"**Proposed at:** {now}",
         f"**Reason:** {reason}",
         f"**Email:** {spec.email}",
+        f"**Department:** {spec.department or '—'}",
         "",
         "## Checklist (admin confirms)",
         "",
-        "- [ ] Mark `members.yaml` `status: departed`",
-        "- [ ] Revoke Slack access",
-        "- [ ] Google Workspace — _stub (v1 manual)_",
-        "- [ ] Notion user removal — _stub (v1 manual)_",
-        "- [ ] Bridge token revoke — _tabled until offboard ships_",
+        f"- [ ] Run `company-brain hr confirm-offboard {member_key}`",
+        "  - Sets `status: departed`, stops ingest, sets `departed_at`",
+        "  - Revokes bridge token immediately",
+        "  - Schedules wiki archive (GitHub branch + unmount after delay)",
+        "- [ ] Revoke Slack access (platform)",
+        "- [ ] Google Workspace — _detect only in v1; remove manually_",
+        "- [ ] Notion user removal — _detect only in v1; remove manually_",
         "",
         "## Bindings snapshot",
         "",
         f"- Slack: `{slack_id or '—'}`",
         f"- Gmail: `{spec.bindings.gmail_mailbox or '—'}`",
         f"- Linear: `{spec.bindings.linear_user_id or '—'}`",
+        f"- LinkedIn: `{spec.bindings.linkedin_url or '—'}`",
         "",
     ]
     return "\n".join(lines)

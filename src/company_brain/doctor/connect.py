@@ -165,4 +165,13 @@ def run_connect_doctor() -> DoctorReport:
         "run 'company-brain init'",
     )
 
+    lsearch_ok = bool(shutil.which("lsearch") or shutil.which("local-search"))
+    add(
+        "lsearch_cli",
+        lsearch_ok,
+        "local-search CLI (lsearch) installed — default web search",
+        "cargo install local-search && lsearch launch — see project_install.md",
+        optional=True,
+    )
+
     return report

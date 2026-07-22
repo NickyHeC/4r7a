@@ -1,4 +1,6 @@
-"""Hiring Log — append roster promotions and HR events to the wiki.
+"""Hiring Log — append roster / member HR events to the wiki.
+
+Tracks trial, intern, contractor, and W2 join / promote / depart.
 
 SDK: Neither (wiki writes).
 """
@@ -52,3 +54,62 @@ def append_hiring_log(heading: str, body: str, *, trigger: str, why: str = "") -
     from company_brain.config import load_config
 
     HiringLogAgent(load_config()).run(heading=heading, body=body, trigger=trigger, why=why)
+
+
+def backfill_hire_entry(
+    *,
+    key: str,
+    employment_type: str,
+    department: str = "",
+    email: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    notes: str = "",
+) -> None:
+    """Append a historical hire row (used by hr_onboarding seed backfill)."""
+    lines = [
+        f"- **Key:** `{key}`",
+        f"- **Employment type:** {employment_type or '—'}",
+        f"- **Department:** {department or '—'}",
+        f"- **Email:** {email or '—'}",
+        f"- **Start:** {start_date or '—'}",
+    ]
+    if end_date:
+        lines.append(f"- **End:** {end_date}")
+    if notes:
+        lines.append(f"- **Notes:** {notes}")
+    heading = f"Past hire — {key}"
+    if start_date:
+        heading = f"Past hire — {key} ({start_date})"
+    append_hiring_log(
+        heading,
+        "\n".join(lines),
+        trigger="hr_onboarding_backfill",
+        why=key,
+    )
+
+
+def join_hire_entry(
+    *,
+    key: str,
+    employment_type: str,
+    department: str = "",
+    email: str = "",
+    start_date: str = "",
+    linkedin_url: str = "",
+) -> None:
+    lines = [
+        f"- **Key:** `{key}`",
+        f"- **Employment type:** {employment_type or '—'}",
+        f"- **Department:** {department or '—'}",
+        f"- **Email:** {email or '—'}",
+        f"- **Start:** {start_date or datetime.now(timezone.utc).date().isoformat()}",
+    ]
+    if linkedin_url:
+        lines.append(f"- **LinkedIn:** {linkedin_url}")
+    append_hiring_log(
+        f"Joined — {key}",
+        "\n".join(lines),
+        trigger="hr_onboarding",
+        why=key,
+    )

@@ -1361,12 +1361,76 @@ def hr_promote(roster_key: str, member_key: str | None, role: str) -> None:
 @click.argument("member_key")
 @click.option("--reason", default="manual", help="Offboarding reason label.")
 def hr_offboard(member_key: str, reason: str) -> None:
-    """Create an offboarding proposal for a member."""
+    """Create an offboarding proposal for a member (ask only)."""
     from company_brain.agents.hr.employee_offboarding import EmployeeOffboardingAgent
 
     config = load_config()
     result = EmployeeOffboardingAgent(config).run(member_key=member_key, reason=reason)
     click.echo(result)
+
+
+@hr.command("confirm-offboard")
+@click.argument("member_key")
+@click.option("--reason", default="admin_confirm", help="Confirmation reason label.")
+def hr_confirm_offboard(member_key: str, reason: str) -> None:
+    """Admin-confirmed offboard: status departed, revoke bridge, schedule archive."""
+    from company_brain.agents.hr.offboard_confirm import OffboardConfirmAgent
+
+    config = load_config()
+    result = OffboardConfirmAgent(config).run(member_key=member_key, reason=reason)
+    click.echo(result)
+
+
+@hr.command("onboard")
+@click.argument("member_key", required=False, default="")
+@click.option("--seed", is_flag=True, help="Bootstrap from config/hr_seed.yaml.")
+@click.option("--no-manager", is_flag=True, help="Skip starting hr_manager.")
+@click.option("--no-linkedin", is_flag=True, help="Skip LinkedIn WebSearch pull.")
+def hr_onboard(
+    member_key: str,
+    seed: bool,
+    no_manager: bool,
+    no_linkedin: bool,
+) -> None:
+    """Onboard from seed lists or a single member/roster key."""
+    from company_brain.agents.hr.hr_onboarding import HrOnboardingAgent
+
+    if not seed and not (member_key or "").strip():
+        raise click.UsageError("Provide MEMBER_KEY or pass --seed")
+    config = load_config()
+    result = HrOnboardingAgent(config).run(
+        seed=seed,
+        member_key=member_key,
+        start_manager=not no_manager,
+        pull_linkedin=not no_linkedin,
+    )
+    click.echo(result)
+
+
+@hr.command("manager")
+@click.option("--once", is_flag=True, help="Run a single manager pass then exit.")
+@click.option("--force", is_flag=True, help="Force LinkedIn pull + archive due check.")
+def hr_manager_cmd(once: bool, force: bool) -> None:
+    """Start or run the persistent HR manager."""
+    from company_brain.agents.hr.hr_manager import HrManager
+
+    config = load_config()
+    agent = HrManager(config)
+    if once or force:
+        click.echo(agent.run_once(force=force))
+    else:
+        agent.run(once=False)
+
+
+@hr.command("status-watch")
+@click.argument("member_key")
+@click.option("--reason", default="status_watch", help="Signal reason label.")
+def hr_status_watch(member_key: str, reason: str) -> None:
+    """Ask admin whether a member/roster person has departed."""
+    from company_brain.agents.hr.status_watch import StatusWatchAgent
+
+    config = load_config()
+    click.echo(StatusWatchAgent(config).run(member_key=member_key, reason=reason))
 
 
 @main.group()

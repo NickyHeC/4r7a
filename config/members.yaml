@@ -7,6 +7,9 @@ members: {}
 #     email: alice@company.com
 #     role: admin                 # admin | member (rate-limit exempt when admin)
 #     status: active              # active | departed
+#     department: engineering     # primary department (HR scope)
+#     departed_at: ""             # ISO timestamp when admin confirmed offboard
+#     wiki_archived: false        # true after T+30 archive branch + unmount
 #     notion_teamspace: member_alice
 #     bridge:
 #       departments: [engineering]   # required for AI agent dept read scope
@@ -18,6 +21,7 @@ members: {}
 #       discord_id: "123456789012345678"
 #       discord_handle: "nickym"
 #       linear_user_id: ""
+#       linkedin_url: https://www.linkedin.com/in/alice
 #     ingest:
 #       granola: full             # full | action_items_only | off
 #       gmail: work_related

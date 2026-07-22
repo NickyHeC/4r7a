@@ -119,6 +119,19 @@ cloud VM provider, set `COMPANY_BRAIN_VM_PROVIDER` to your provider key.
 `doctor` prints the mode, wiki dir, runtime, and which platforms are connected.
 Re-run it after each step below to confirm progress.
 
+**Web search (recommended on always-on hosts):** agents default to
+[local-search](https://github.com/Kevin-Liu-01/local-search) (`lsearch`) — free
+structured search via a local Chrome profile. Install Rust/`cargo`, then:
+
+```bash
+cargo install local-search
+lsearch launch          # once — managed Chromium profile; sign in if needed
+lsearch doctor --pretty
+```
+
+Config: `config/web_search.yaml` (`backend: auto` prefers `lsearch`, else Claude
+`WebSearch`). Cloud VMs without a browser keep working via the Claude fallback.
+
 ## Step 2 — Connect platforms
 
 Do these in any order the user wants; only connect what they use. After each,
@@ -199,8 +212,15 @@ runs. Opt into the in-house builder with `WEAVE_BUILDER=in_house` or
 (proposal markdown PR only). Builder egress is GitHub + model host only — never bank
 or Slack tokens in the VM.
 
-**Admin CLI:** `slack channel list|tag|enable-connect`, `weave poll-approvals [--builder …]`,
-`hr promote {roster_key}`, `hr offboard {member_key}`.
+**Admin CLI:** `slack channel list|tag|enable-connect`, `weave poll-approvals [--builder …]`.
+
+**HR lifecycle:** fill `config/hr_seed.yaml` (current employees + past hires), then
+`company-brain hr onboard --seed`. New joiners: add to `members.yaml` /
+`roster.yaml` (include `linkedin_url` + `department`) →
+`company-brain hr onboard {key}`. Departure: Slack signal or
+`hr offboard {key}` proposes; admin actuates with
+`hr confirm-offboard {key}` (bridge revoke + T+30 wiki archive). Steady-state:
+`company-brain hr manager`. Also: `hr promote {roster_key}`.
 
 Verify with `doctor` (Slack wiki / Weave lines). Handbook:
 `docs/agents/operations.md` (Slack), `docs/agents/admin.md` (Weave), `docs/agents/hr.md`.
