@@ -10,12 +10,53 @@ posthog:
   run_minute: 0
   min_exposures: 100
   probability_threshold: 0.95
+  usage_drop:
+    drop_ratio: 0.5       # alert when L7D falls by this fraction vs prior week
+    min_prior_l7d: 20     # ignore small baselines
   signup_funnel:
     dashboard_name: Signup
     funnel_insight_name: Landing to signup
     landing_paths:
       - /
     signup_event: user_signed_up
+
+# Workstreams (not connected platforms)
+update:
+  poll_interval_minutes: 360
+  timezone: America/Los_Angeles
+  run_day: 1              # day of month for newsletter draft
+
+use_case:
+  poll_interval_minutes: 360
+  query_suffix: "product use cases"
+
+docs:
+  poll_interval_minutes: 360
+  # Public site root; leave empty to skip fetch (audit still writes a stub).
+  base_url: ""
+  llms_txt_path: /llms.txt
+  sitemap_path: /sitemap.xml
+  docs_root_path: /docs
+  proprietary_patterns: []   # substrings; matching features stay "intentionally internal"
+
+progress:
+  poll_interval_minutes: 360
+
+attribution:
+  poll_interval_minutes: 180
+  # Signup feed: wiki_crm | csv_path | http_json | none
+  signup_source:
+    type: wiki_crm
+    # csv_path: /path/to/signups.csv
+    # http_json: https://example.com/api/signups
+  match_window_days: 7
+  min_signups_for_match: 3
+
+# Deferred platforms (stubs only — not wired)
+# admin_api:
+#   enabled: false
+# billing:
+#   enabled: false
 
 slack:
   product_channel: "#product"

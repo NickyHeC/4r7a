@@ -1062,6 +1062,123 @@ def posthog_onboarding_run(no_manager: bool) -> None:
     click.echo(result)
 
 
+@main.group("product")
+def product() -> None:
+    """Product workstreams — update, use cases, docs, progress, attribution."""
+
+
+@product.command("onboarding")
+@click.option("--no-managers", is_flag=True, help="Skip starting workstream managers.")
+def product_onboarding_cmd(no_managers: bool) -> None:
+    """Seed product workstream pages and start workstream managers."""
+    from company_brain.agents.product.product_onboarding import ProductOnboardingAgent
+
+    config = load_config()
+    click.echo(ProductOnboardingAgent(config).run(start_managers=not no_managers))
+
+
+@product.command("update-manager")
+@click.option("--once", is_flag=True)
+@click.option("--force", is_flag=True)
+def product_update_manager(once: bool, force: bool) -> None:
+    from company_brain.agents.product.update_manager import UpdateManager
+
+    config = load_config()
+    mgr = UpdateManager(config)
+    click.echo(mgr.run(once=True, force=force) if once else mgr.run())
+
+
+@product.command("use-case-manager")
+@click.option("--once", is_flag=True)
+@click.option("--force", is_flag=True)
+def product_use_case_manager(once: bool, force: bool) -> None:
+    from company_brain.agents.product.use_case_manager import UseCaseManager
+
+    config = load_config()
+    mgr = UseCaseManager(config)
+    click.echo(mgr.run(once=True, force=force) if once else mgr.run())
+
+
+@product.command("docs-manager")
+@click.option("--once", is_flag=True)
+@click.option("--force", is_flag=True)
+def product_docs_manager(once: bool, force: bool) -> None:
+    from company_brain.agents.product.docs_manager import DocsManager
+
+    config = load_config()
+    mgr = DocsManager(config)
+    click.echo(mgr.run(once=True, force=force) if once else mgr.run())
+
+
+@product.command("progress-manager")
+@click.option("--once", is_flag=True)
+@click.option("--force", is_flag=True)
+def product_progress_manager(once: bool, force: bool) -> None:
+    from company_brain.agents.product.progress_manager import ProgressManager
+
+    config = load_config()
+    mgr = ProgressManager(config)
+    click.echo(mgr.run(once=True, force=force) if once else mgr.run())
+
+
+@product.command("attribution-manager")
+@click.option("--once", is_flag=True)
+@click.option("--force", is_flag=True)
+def product_attribution_manager(once: bool, force: bool) -> None:
+    from company_brain.agents.product.attribution_manager import AttributionManager
+
+    config = load_config()
+    mgr = AttributionManager(config)
+    click.echo(mgr.run(once=True, force=force) if once else mgr.run())
+
+
+@product.command("newsletter")
+@click.option("--month", default=None, help="YYYY-MM (default: current month).")
+@click.option("--force", is_flag=True)
+def product_newsletter(month: str | None, force: bool) -> None:
+    """Draft the customer product newsletter (wiki only; never sends)."""
+    from company_brain.agents.product.update.product_update import ProductUpdateAgent
+
+    config = load_config()
+    click.echo(ProductUpdateAgent(config).run(month=month, force=force))
+
+
+@product.command("docs-audit")
+@click.option("--force", is_flag=True)
+def product_docs_audit(force: bool) -> None:
+    from company_brain.agents.product.docs.audit import DocsAuditAgent
+
+    config = load_config()
+    click.echo(DocsAuditAgent(config).run(force=force))
+
+
+@product.command("progress")
+@click.option("--force", is_flag=True)
+def product_progress(force: bool) -> None:
+    from company_brain.agents.product.progress.compile import ProgressCompileAgent
+
+    config = load_config()
+    click.echo(ProgressCompileAgent(config).run(force=force))
+
+
+@product.command("signup-match")
+@click.option("--force", is_flag=True)
+def product_signup_match(force: bool) -> None:
+    from company_brain.agents.product.attribution.signup_match import SignupMatchAgent
+
+    config = load_config()
+    click.echo(SignupMatchAgent(config).run(force=force))
+
+
+@product.command("use-cases")
+@click.option("--force", is_flag=True)
+def product_use_cases(force: bool) -> None:
+    from company_brain.agents.product.use_case.track import UseCaseTrackAgent
+
+    config = load_config()
+    click.echo(UseCaseTrackAgent(config).run(force=force))
+
+
 @main.group("google-ads")
 def google_ads() -> None:
     """Google Ads — read-only weekly campaign / pacing / CPA snapshots."""

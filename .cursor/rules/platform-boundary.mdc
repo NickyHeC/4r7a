@@ -21,7 +21,9 @@ If yes: integrate, configure, or surface a gap in the wiki — **do not reimplem
 | **Granola** | Daily ingest of meeting notes | Note access scopes, summaries, transcripts |
 | **Notion** | Mirror from wiki MD | Read ACL via teamspaces |
 | **Google Ads** | Wiki snapshots (campaigns, pacing, Ads CPA); selective pacing alert | Budgets, bids, conversion setup, serving, optimization |
-| **PostHog** | Wiki snapshots (tracking audit, feature usage, experiments, signup funnel); selective `#product` alerts | Event capture, feature flags, experiment actuation, dashboards, instrumentation |
+| **PostHog** | Wiki snapshots (tracking audit, feature usage + drop alerts, experiments, signup funnel); selective `#product` alerts | Event capture, feature flags, experiment actuation, dashboards, instrumentation |
+| **Public product docs** | Gap audit vs `product/feature.md` (llms.txt / sitemap / docs); proprietary stay internal | Publishing docs, sitemap ownership |
+| **Customer email** | Monthly product newsletter **draft** in wiki only | Send / ESP / CRM mail blasts |
 | **LinkedIn** (HR, via WebSearch) | Monthly public bio/voice into employee wiki; hiring log | Profile ownership, posting, messaging, Recruiter / HRIS |
 
 ## Rules

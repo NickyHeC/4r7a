@@ -64,8 +64,15 @@ agents/
       card_spend.py
   product/
     posthog_manager.py              # manager scoped to PostHog
+    update_manager.py
+    use_case_manager.py
+    docs_manager.py
+    progress_manager.py
+    attribution_manager.py
+    product_onboarding.py           # workstreams only
     shared/
       product_slack.py
+      workstream_config.py
     posthog/
       posthog_client.py
       tracking_audit.py
@@ -73,6 +80,17 @@ agents/
       experiment_watch.py
       signup_funnel.py
       posthog_onboarding.py
+    update/
+      product_update.py
+    use_case/
+      track.py
+    docs/
+      audit.py
+    progress/
+      compile.py
+    attribution/
+      signup_match.py
+      signup_sources.py
   admin/
     weave_triage.py
     weave.py

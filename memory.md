@@ -11,6 +11,19 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Product hybrid workstreams
+
+- **Shape:** Growth-like hybrid — keep `posthog_manager`; add workstream managers
+  `update` / `use_case` / `docs` / `progress` / `attribution` + `product_onboarding`.
+- **Specialists:** `product_update` (wiki newsletter draft, never send),
+  `use_case_track` (adjacent web search; customer page via absorb), `docs_audit`,
+  `progress_compile` (GitHub wiki + Linear → `product/progress.md`),
+  `signup_match` (pluggable signup source, default `wiki_crm`).
+- **PostHog:** `feature_usage` detects L7D drops → `#product` ACTIONABLE.
+- **Config/CLI:** `config/product.yaml` workstream sections; `company-brain product …`.
+- **Tabled cleanup:** progress + signup-spike shipped; investor newsletter → Admin;
+  admin_api / billing / Gmail draft / Discord dedup v2 deferred.
+
 ## 2026-07-22 — Default web search via local-search (`lsearch`)
 
 - **Package:** `company_brain.web_search` + `config/web_search.yaml`

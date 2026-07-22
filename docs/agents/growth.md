@@ -347,5 +347,5 @@ Connect steps: [`project_install.md`](../../project_install.md) → Google Ads s
 | Ads-reported CPA display | Optimization / Smart Bidding / keyword tooling |
 
 Deferred: Ads mutates, product-true CPA, keyword research, daily pacing, X/LinkedIn
-write APIs, Luma/Partiful integrations, product signup-spike ROI, Bookface, Notion
-product-progress page — see [`docs/tabled.md`](../tabled.md).
+write APIs, Luma/Partiful integrations, Bookface — see [`docs/tabled.md`](../tabled.md).
+Product progress + activity↔signup match live under the product handbook.

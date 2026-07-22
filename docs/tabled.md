@@ -97,7 +97,6 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Product progress page (Notion) | `operations/notion` + `product/` | Product asks | Mirror catalog + roadmap; Discord feature dedup v2 |
 | Review queue UX for actionable outputs | `operations/notion` | Accounting/CRM promotions follow-on | Stale review shipped; drafts/accounting proposals still deferred |
 | Human-added pages ingest | `operations/notion` | Broader ingest polish | Onboarding ingest shipped; live orphan discovery still TBD |
 | Version control | Wiki | Same as cross-cutting versioning | |
@@ -106,7 +105,11 @@ Format for new rows:
 | Admin console pause/resume managers | `admin_console` | Weave pause-resume | Status heartbeats only in v1 |
 | Admin console non-LLM cost (host/Ads) | `admin_console` | Finance/growth ask | v1 Costs = LLM budget only |
 | Work logs in Notion | `employee_wiki` | Employee wiki Notion pull built | |
-| Investor newsletter drafting | Growth / Gmail | Content pipeline exists | |
+| Investor newsletter drafting | Admin | Admin content / ops ask | Draft-only; admin audience (not product customer newsletter). Rehomed from Growth/Gmail |
+| Product progress Discord feature-dedup v2 | `product/` + growth | After progress_compile stable | Progress page shipped; Discord dedup still deferred |
+| Company admin API analytics | `product/admin_api` | Concrete API + env contract | Yaml stub only in product hybrid v1 |
+| Billing / margin provider | `product/billing` | Provider API chosen | Yaml stub only in product hybrid v1 |
+| Customer newsletter Gmail draft | `product/update` | After wiki draft proven | v1 is wiki MD draft only; never send |
 
 ---
 
@@ -126,7 +129,6 @@ Format for new rows:
 | Google Ads product-true CPA | `growth/google_ads` | Eng + Ads conversion setup | v1 uses Ads-reported CPA only |
 | Google Ads keyword / Smart Bidding tools | `growth/google_ads` | Ads config session | |
 | X / Twitter write / rich ingest | Growth | API access | Drafts + weekly published pull shipped without write API |
-| Activity ↔ product signup-spike ROI | Growth / product | User tracker built | Match campaigns/events to signup spikes |
 | Luma / Partiful integrations | Growth / activity | Explicit ask | Hosted pages stay human; no API in v1 |
 
 ---

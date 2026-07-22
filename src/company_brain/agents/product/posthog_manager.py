@@ -91,7 +91,8 @@ class PosthogManager(BaseAgent):
         try:
             audit = runtime.run(TrackingAuditAgent, self.config)
             results["tracking_audit"] = audit
-            results["feature_usage"] = runtime.run(FeatureUsageAgent, self.config)
+            usage = runtime.run(FeatureUsageAgent, self.config)
+            results["feature_usage"] = usage
             exp = runtime.run(ExperimentWatchAgent, self.config)
             results["experiment_watch"] = exp
             funnel = runtime.run(SignupFunnelAgent, self.config)
@@ -104,6 +105,7 @@ class PosthogManager(BaseAgent):
         self._state.set(FAIL_KEY, 0)
         self._maybe_notify(
             audit if isinstance(audit, dict) else {},
+            usage if isinstance(usage, dict) else {},
             exp if isinstance(exp, dict) else {},
             funnel if isinstance(funnel, dict) else {},
         )
@@ -113,6 +115,7 @@ class PosthogManager(BaseAgent):
     def _maybe_notify(
         self,
         audit: dict[str, Any],
+        usage: dict[str, Any],
         exp: dict[str, Any],
         funnel: dict[str, Any],
     ) -> None:
@@ -124,6 +127,17 @@ class PosthogManager(BaseAgent):
                 lines.append(f"• {feature}")
             if len(new_missing) > 20:
                 lines.append(f"• …and {len(new_missing) - 20} more")
+
+        new_drops = list(usage.get("new_usage_drops") or [])
+        if new_drops:
+            lines.append("Significant feature usage drops (L7D vs prior week) — action item:")
+            for item in new_drops[:20]:
+                lines.append(
+                    f"• {item.get('feature')}: {item.get('prior')} → {item.get('current')} "
+                    f"(-{item.get('drop_pct')}%)"
+                )
+            if len(new_drops) > 20:
+                lines.append(f"• …and {len(new_drops) - 20} more")
 
         newly = list(exp.get("newly_conclusive") or [])
         if newly:

@@ -143,9 +143,16 @@ competitor, leads). See [growth handbook](docs/agents/growth.md).
 
 ### Product
 
-- **PostHog** — read-only weekly wiki snapshots (tracking audit vs Product Features,
-  feature usage, experiment watch, landing→signup funnel); selective `#product` alerts.
-  Dispatched by `posthog_manager.py`. See [product handbook](docs/agents/product.md).
+Hybrid like growth: **PostHog** platform plus workstreams (update, use_case, docs,
+progress, attribution). See [product handbook](docs/agents/product.md).
+
+- **PostHog** — read-only weekly wiki snapshots (tracking audit, feature usage +
+  drop alerts, experiment watch, signup funnel); selective `#product` alerts.
+- **Update** — monthly customer newsletter draft (wiki only; never sends).
+- **Use cases** — customer page (absorb/humans) + adjacent web-search discoveries.
+- **Docs** — audit public llms.txt / sitemap / docs vs Product Features.
+- **Progress** — rough feature status from GitHub wiki signals + Linear projects.
+- **Attribution** — activity events matched to signup spikes (pluggable signup source).
 
 ### Admin
 

@@ -272,8 +272,13 @@ PostHog; instrumentation stays in the product app / PostHog UI.
 6. Snapshot + start manager: `company-brain posthog onboarding run`
    (30-day lookback when prior events exist; `--no-manager` to skip handoff).
 7. Or run the persistent loop alone: `company-brain posthog manager`
+8. Product **workstreams** (newsletter, use cases, docs audit, progress,
+   attribution): `company-brain product onboarding`. Optional:
+   `docs.base_url` and `attribution.signup_source` in `config/product.yaml`.
 
-**CLI:** `posthog manager`, `posthog onboarding run` (`--no-manager`).
+**CLI:** `posthog manager`, `posthog onboarding run` (`--no-manager`);
+`product onboarding`, `product *-manager [--once]`,
+`product newsletter|docs-audit|progress|signup-match|use-cases`.
 
 Handbook: [`docs/agents/product.md`](docs/agents/product.md).
 
