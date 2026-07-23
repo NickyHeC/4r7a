@@ -1,7 +1,7 @@
 """Parse and strip plain-text ``@wiki`` directives from Notion/MD page bodies.
 
 Directives are not a bot identity — sync/edit watchers spot ``@wiki`` and act on
-the **current page only**. See ``docs/plans/notion.md`` Session 3.
+the **current page only**.
 """
 
 from __future__ import annotations

@@ -48,17 +48,24 @@ class ContentManager(BaseAgent):
             await asyncio.sleep(interval)
 
     def run_once(
-        self, *, items: list[dict[str, str]] | None = None, **kwargs: Any
+        self,
+        *,
+        items: list[dict[str, str]] | None = None,
+        trend_items: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
         from company_brain.agents.growth.content.posting_schedule import PostingScheduleAgent
         from company_brain.agents.growth.content.published_pull import PublishedPullAgent
+        from company_brain.agents.growth.content.trend_watch import TrendWatchAgent
         from company_brain.runtime import get_runtime
 
         record_heartbeat(self.name, detail="run_once")
         runtime = get_runtime()
         out: dict[str, Any] = {"status": "ok"}
         out["posting_schedule"] = runtime.run(PostingScheduleAgent, self.config)
+        # Daily trend log — TrendWatchAgent self-gates to once per day.
+        out["trend_watch"] = runtime.run(TrendWatchAgent, self.config, items=trend_items or [])
 
         now = datetime.now(timezone.utc)
         week = now.strftime("%G-W%V")

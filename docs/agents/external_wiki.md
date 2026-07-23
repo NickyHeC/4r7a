@@ -8,7 +8,6 @@ employee zip import scan and duplicate detection patterns.
 
 **Config:** [`config/external_sources.yaml`](../../config/external_sources.yaml) (source registry),
 [`config/operations.yaml`](../../config/operations.yaml) → `external_wiki`.
-**Plan:** [`docs/plans/external-wiki-mount.md`](../plans/external-wiki-mount.md).
 
 ---
 

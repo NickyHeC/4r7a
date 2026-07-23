@@ -10,7 +10,6 @@ from __future__ import annotations
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.operations.slack import slack_client
 from company_brain.agents.operations.slack.rate_limits import (
     RateLimitExceeded,
     check_wiki_query_limit,
@@ -135,8 +134,7 @@ Reply in Slack mrkdwn (short, bullet-friendly). End with a "Sources:" list of li
         return "\n".join(lines)
 
     def _reply(self, channel_id: str, thread_ts: str, text: str) -> dict[str, Any]:
-        try:
-            ts = slack_client.post_thread_reply(channel_id, thread_ts, text)
-            return {"status": "replied", "ts": ts}
-        except slack_client.SlackClientError as exc:
-            return {"status": "error", "reason": str(exc)}
+        from company_brain.agents.operations.shared.operations_slack import reply_in_thread
+
+        delivered, ts = reply_in_thread(channel_id, thread_ts, text)
+        return {"status": "replied" if delivered else "suppressed", "ts": ts}

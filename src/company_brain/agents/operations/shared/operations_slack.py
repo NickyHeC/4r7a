@@ -12,7 +12,7 @@ import os
 from typing import Any
 
 from company_brain.agents.operations.shared.gmail_config import slack_cfg
-from company_brain.notify import Notifier
+from company_brain.notify import ACTIONABLE, Notifier, Signal
 
 
 class _SlackChannel:
@@ -52,6 +52,48 @@ class _SlackChannel:
 def channel_notifier(channel: str) -> Notifier:
     """Severity-gated Notifier that posts to a specific operations Slack channel."""
     return Notifier(channel_post=_SlackChannel(channel).post)
+
+
+class _ThreadReply:
+    """Slack transport: a thread-bound reply callable for request/response Notifiers."""
+
+    def __init__(self, channel: str, thread_ts: str, *, app: str = "wiki"):
+        self.channel = channel
+        self.thread_ts = thread_ts
+        self.app = app
+        self.last_ts: str | None = None
+
+    def post(self, text: str) -> str | None:
+        from company_brain.agents.operations.slack import slack_client
+
+        try:
+            self.last_ts = slack_client.post_thread_reply(
+                self.channel, self.thread_ts, text, app=self.app
+            )
+        except slack_client.SlackClientError:
+            self.last_ts = None
+        return self.last_ts
+
+
+def reply_in_thread(
+    channel: str,
+    thread_ts: str,
+    text: str,
+    *,
+    severity: str = ACTIONABLE,
+    app: str = "wiki",
+    silent: bool = False,
+) -> tuple[bool, str | None]:
+    """Route a Slack thread reply through the severity gate.
+
+    Request/response replies (a human invoked the agent) default to ``ACTIONABLE``
+    so they are delivered; returns ``(delivered, ts)``. Keeps all Slack posting in
+    the notifier transport layer per the notify rule.
+    """
+    transport = _ThreadReply(channel, thread_ts, app=app)
+    notifier = Notifier(channel_post=transport.post)
+    delivered = notifier.emit(Signal(text=text, severity=severity, silent=silent))
+    return delivered, transport.last_ts
 
 
 def ingest_notifier() -> Notifier:

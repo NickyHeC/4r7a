@@ -7,7 +7,6 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.engineering.linear.task_bindings import TaskBinding, TaskBindingStore
 from company_brain.agents.engineering.linear.task_propagate import record_status_change
-from company_brain.agents.operations.slack import slack_client
 from company_brain.config import AppConfig
 
 SYSTEM_SOURCE = "system:linear_completed"
@@ -38,10 +37,11 @@ class SlackThreadRespondAgent(BaseAgent):
         if url:
             text += f" <{url}|Open in Linear>"
 
-        try:
-            reply_ts = slack_client.post_thread_reply(channel, thread_ts, text)
-        except slack_client.SlackClientError:
-            self.logger.exception("Slack thread reply failed for %s", binding.task_id)
+        from company_brain.agents.operations.shared.operations_slack import reply_in_thread
+
+        delivered, reply_ts = reply_in_thread(channel, thread_ts, text)
+        if not delivered:
+            self.logger.warning("Slack thread reply not delivered for %s", binding.task_id)
             return {"status": "error"}
 
         binding.platforms.setdefault("slack", {})

@@ -150,7 +150,7 @@ def test_events_router_app_mention_help(monkeypatch):
         lambda _cid: True,
     )
     monkeypatch.setattr(
-        "company_brain.agents.operations.slack.wiki_commands.slack_client.post_thread_reply",
+        "company_brain.agents.operations.slack.slack_client.post_thread_reply",
         lambda *_a, **_k: "ts",
     )
     router = SlackEventsRouter(MagicMock())
@@ -179,7 +179,7 @@ def test_wiki_command_threads_no_member(monkeypatch):
         lambda: MembersConfig(members={}),
     )
     monkeypatch.setattr(
-        "company_brain.agents.operations.slack.wiki_commands.slack_client.post_thread_reply",
+        "company_brain.agents.operations.slack.slack_client.post_thread_reply",
         lambda *_a, **_k: "ts",
     )
     out = handle_wiki_command(

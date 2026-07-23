@@ -80,7 +80,6 @@ class WeaveEventsRouter:
         return {"status": "weave_triage", "result": result}
 
     def _reply(self, channel_id: str, thread_ts: str, text: str) -> None:
-        try:
-            slack_client.post_thread_reply(channel_id, thread_ts, text, app="weave")
-        except slack_client.SlackClientError:
-            pass
+        from company_brain.agents.operations.shared.operations_slack import reply_in_thread
+
+        reply_in_thread(channel_id, thread_ts, text, app="weave")

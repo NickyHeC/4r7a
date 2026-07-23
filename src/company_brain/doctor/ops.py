@@ -39,7 +39,10 @@ def run_ops_doctor() -> DoctorReport:
         rel = path.relative_to(AGENTS_ROOT).as_posix()
         if rel in _SLACK_ALLOW:
             continue
-        if "chat_postMessage" in path.read_text():
+        text = path.read_text()
+        # Raw posts (chat_postMessage) and thread replies must go through the
+        # notifier transport (operations_slack.reply_in_thread / channel_notifier).
+        if "chat_postMessage" in text or "post_thread_reply(" in text:
             slack_bypass.append(rel)
 
     if slack_bypass:
@@ -47,8 +50,8 @@ def run_ops_doctor() -> DoctorReport:
             CheckResult(
                 "slack_notifier_bypass",
                 "fail",
-                f"Raw chat_postMessage outside transport: {', '.join(slack_bypass)}",
-                "use operations_slack / from_finance_config Notifier",
+                f"Raw Slack post outside transport: {', '.join(slack_bypass)}",
+                "use operations_slack reply_in_thread / channel_notifier Notifier",
             )
         )
     else:

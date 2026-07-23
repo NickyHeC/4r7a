@@ -1,7 +1,7 @@
 """Stale Review — flag active-but-idle pages onto the Conflict-adjacent review queue.
 
 Does not archive. Appends to ``operations/notion/review.md`` and optionally creates
-a Notion review DB row. See ``docs/plans/notion.md`` Session 6.
+a Notion review DB row.
 
 SDK: Neither (WikiStore + optional Notion DB).
 """

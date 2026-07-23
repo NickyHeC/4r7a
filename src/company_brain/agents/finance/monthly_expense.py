@@ -94,6 +94,11 @@ class MonthlyExpenseManager(BaseAgent):
         page_id = self._publish_notion(month, report)
         self._publish_slack(month, grand_total, page_id)
 
+        # Snapshot total assets for the reported month-end (≈ start of the new
+        # month, which is when this manager runs). Best-effort; Mercury may be
+        # unavailable in some installs.
+        assets = self._dispatch_asset_snapshot(month)
+
         uncategorized = [
             t for t in txns if cat.classify_budget(t, self.keyword_maps) == cat.UNCATEGORIZED
         ]
@@ -109,8 +114,20 @@ class MonthlyExpenseManager(BaseAgent):
             "grand_total": grand_total,
             "uncategorized_count": len(uncategorized),
             "notion_page_id": page_id,
+            "total_assets": (assets or {}).get("total_assets"),
             "report": report,
         }
+
+    def _dispatch_asset_snapshot(self, month: str) -> dict[str, Any] | None:
+        from company_brain.runtime import get_runtime
+
+        from .mercury.asset_compile import AssetCompileAgent
+
+        try:
+            return get_runtime().run(AssetCompileAgent, self.config, month=month)
+        except Exception:
+            self.logger.exception("Asset snapshot unavailable; continuing without it")
+            return None
 
     def _gather_outflows(self, start: str, end: str) -> list[dict]:
         from company_brain.runtime import get_runtime

@@ -11,6 +11,30 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Maintenance-phase audit fixes (post A–L)
+
+Deep audit as build→maintenance transition. Gates were already green; fixed
+coherence drift + structural debt:
+
+- **Dead links:** removed 3 handbook links to deleted `docs/plans/*`
+  (employee_wiki/external_wiki/engineering) + 4 code comments to deleted
+  `docs/plans/notion.md`. Fixed README `query` description (citation-only).
+- **Placement:** moved `engineering/linear/linear_manager.py` →
+  `engineering/linear_manager.py` (managers live under the department).
+- **Cost gate:** `subscription_audit.should_run` no longer bypasses when
+  `quarter is None` — gates on current quarter; `force=True` to override.
+- **Wired orphans:** `asset_compile` now dispatched by `monthly_expense`
+  (start-of-month asset snapshot); `trend_watch` dispatched daily by
+  `content_manager` (self-gates once/day, selective `#growth` notify).
+- **Removed** orphaned `operations/gcal/gcal_client.py` (MCP wrapper; agents
+  use `gcal_rest.py`).
+- **Notify rule:** added `operations_slack.reply_in_thread` transport; routed
+  `ask_wiki`, `internal_meeting_scheduler`, `wiki_commands`,
+  `weave_events_router`, and `slack_thread_respond` replies through
+  Notifier/Signal. Tightened `doctor/ops` to flag `post_thread_reply` outside
+  the transport allowlist.
+- Docs: finance/growth handbooks updated for the newly-scheduled agents.
+
 ## 2026-07-22 — Sessions K+L shipped (Ramp reconcile / Discord dedupe / admin cluster)
 
 - **K:** Ramp path in `llm/reconcile.py` (Mercury+Ramp); Costs UI cached reconcile +

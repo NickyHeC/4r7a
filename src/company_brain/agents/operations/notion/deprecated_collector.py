@@ -2,7 +2,7 @@
 
 MD content is retained; Notion page is re-parented under the teamspace Archive
 parent. Eligibility: no MD edits, done/end_date, no Notion edits, no shared link
-(all required). See ``docs/plans/notion.md`` Session 6.
+(all required).
 
 SDK: Neither (WikiStore + Notion API).
 """

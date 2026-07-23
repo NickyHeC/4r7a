@@ -28,6 +28,12 @@ from .shared.config import load_finance_config
 SUBSCRIPTIONS_KEY = "subscription"
 SUBSCRIPTIONS_TERMS = ["Subscriptions"]
 
+
+def _current_quarter() -> str:
+    today = date.today()
+    return f"{today.year}-Q{(today.month - 1) // 3 + 1}"
+
+
 _RESULT_START = "<<<AUDIT_MD>>>"
 _RESULT_END = "<<<END_AUDIT_MD>>>"
 
@@ -47,13 +53,18 @@ class SubscriptionAuditAgent(BaseAgent):
         self.model = model
         self.finance_config = load_finance_config()
 
-    def should_run(self, *, quarter: str | None = None, **kwargs: Any) -> bool:
-        """Cost gate: audit a given quarter at most once (dedup re-fires)."""
-        if not quarter:
-            return True  # ad-hoc runs always proceed
+    def should_run(self, *, quarter: str | None = None, force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate: audit a given quarter at most once (dedup re-fires).
+
+        Ad-hoc runs (no ``quarter``) gate on the current quarter so repeated
+        invocations stand down; pass ``force=True`` to bypass explicitly.
+        """
+        if force:
+            return True
         from company_brain.agents.gates import changed_since
 
-        return changed_since(f"subscription_audit:{quarter}", quarter)
+        effective = quarter or _current_quarter()
+        return changed_since(f"subscription_audit:{effective}", effective)
 
     def verify(self, output: Any, **kwargs: Any):
         """Triage: no recurring vendors is 'noise' (suppress the ping)."""

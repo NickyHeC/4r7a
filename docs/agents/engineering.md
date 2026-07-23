@@ -87,8 +87,6 @@ Linear issues.
 3. Run **`slot_check`** once
 4. Start **`linear_manager`** and **`task_scanner`** (when task DBs configured) via `get_runtime().start()` and exit
 
-Plan reference: [`docs/plans/linear-task-platform.md`](../plans/linear-task-platform.md).
-
 ---
 
 ## GitHub — how it runs

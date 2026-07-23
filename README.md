@@ -286,7 +286,7 @@ switches the model:
 | `company-brain notion sync-pull` | One-shot Notion → MD pull for bound pages                            |
 | `company-brain ingest <source>`  | Run an ingestion agent; writes raw Markdown entries to `raw/entries/`|
 | `company-brain absorb`           | LLM writer compiles raw entries into wiki Markdown articles, then syncs to Notion |
-| `company-brain query <question>` | Query the wiki (reads the Markdown index/backlinks)                  |
+| `company-brain query <question>` | Citation-only wiki query (snippets + Notion cites; grant-aware, admin bypass) |
 | `company-brain sync`             | Push changed wiki Markdown pages to Notion (MD is the source of truth)|
 | `company-brain status`           | Show wiki statistics                                                 |
 | `company-brain cleanup`          | Audit and enrich articles                                            |

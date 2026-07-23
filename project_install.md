@@ -471,7 +471,7 @@ Agents:
 - **`daily_agenda`** — optional morning Slack DM (`gcal.daily_agenda.enabled: false` by default)
 
 Docs: https://developers.google.com/workspace/calendar/api/guides/configure-mcp-server
-· Connection: `operations/gcal/gcal_client.py` + `gcal_rest.py`. Verify with
+· Connection: `operations/gcal/gcal_rest.py` (REST client). Verify with
 `doctor` ("Google Calendar …").
 
 ### LLM provider and model tiers

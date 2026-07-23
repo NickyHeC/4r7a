@@ -12,7 +12,6 @@ manager questions via citation-only query. Platform ingest feeds them through a
 **Config:** [`config/members.yaml`](../../config/members.yaml) (member index),
 [`config/operations.yaml`](../../config/operations.yaml) → `employee_wiki`.
 **Env:** `COMPANY_BRAIN_EMPLOYEE_WIKI_DIR` (defaults to a sibling of the company wiki).
-**Plan:** [`docs/plans/employee-wiki.md`](../plans/employee-wiki.md).
 
 ---
 

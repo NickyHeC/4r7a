@@ -90,7 +90,7 @@ def test_slack_thread_respond_posts_reply(tmp_path, monkeypatch):
     agent = SlackThreadRespondAgent(MagicMock())
 
     with patch(
-        "company_brain.agents.engineering.linear.linear_completed.slack_thread_respond.slack_client.post_thread_reply",
+        "company_brain.agents.operations.slack.slack_client.post_thread_reply",
         return_value="3000.1",
     ):
         result = agent.run(binding=binding, linear_status="Done")

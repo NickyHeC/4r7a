@@ -107,7 +107,7 @@ class LinearOnboardingAgent(BaseAgent):
         return SlotCheckAgent(self.config).run(sync=True)
 
     def _start_manager(self) -> None:
-        from company_brain.agents.engineering.linear.linear_manager import LinearManagerAgent
+        from company_brain.agents.engineering.linear_manager import LinearManagerAgent
         from company_brain.runtime import get_runtime
 
         self.logger.info("Starting linear_manager (persistent poll loop)")

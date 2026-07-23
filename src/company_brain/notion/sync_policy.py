@@ -1,7 +1,7 @@
 """Bidirectional wiki ↔ Notion sync policy (signature gate + pull decisions).
 
 MD remains the durable source of truth. Humans may edit Notion; agents reassert
-only when their factual ``agent_signature`` changes. See ``docs/plans/notion.md``.
+only when their factual ``agent_signature`` changes.
 """
 
 from __future__ import annotations

@@ -32,6 +32,7 @@ flowchart TD
   Wrap[event_wrap] --> Drafts[content drafts]
   Wrap --> LeadQ[leads queue]
   CM[content_manager] --> Sched[posting_schedule]
+  CM -->|daily| Trend[trend_watch]
   CM -->|weekly| Pull[published_pull + voice]
   KM[competitor_manager] -->|monthly| Disc[competitor_discover]
   KM --> Watch[competitor_watch]
@@ -44,7 +45,7 @@ flowchart TD
 | Manager | Schedule | Dispatches |
 |---------|----------|------------|
 | `activity_manager.py` | `activity.poll_interval_minutes` (default 30) | `event_plan` for `event_status=registered` |
-| `content_manager.py` | `content.poll_interval_minutes`; weekly pull on `weekly_pull_weekday` | `posting_schedule`, `published_pull` |
+| `content_manager.py` | `content.poll_interval_minutes`; weekly pull on `weekly_pull_weekday` | `posting_schedule`, `published_pull`, `trend_watch` (daily) |
 | `competitor_manager.py` | monthly (poll + month gate) | `competitor_discover`, `competitor_watch` |
 | `lead_manager.py` | `leads.poll_interval_minutes` when queue non-empty | `lead_research` |
 
@@ -63,7 +64,7 @@ flowchart TD
 |-------|----------|-------------|
 | `draft_writer.py` | On demand | Draft blog / X / LinkedIn (never posts) |
 | `published_pull.py` | Weekly via manager | Ingest published items; retire drafts; refresh company voice |
-| `trend_watch.py` | On demand | Append `growth/content/trend-watch.md` |
+| `trend_watch.py` | Daily via content manager (self-gates) | Append `growth/content/trend-watch.md`; selective `#growth` notify on actionable items |
 | `posting_schedule.py` | Via content manager | Open drafts + cadence guidance |
 
 ### Specialists — Competitor (`growth/competitor/`)

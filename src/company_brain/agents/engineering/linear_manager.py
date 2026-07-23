@@ -1,5 +1,6 @@
 """Linear Manager Agent — persistent poll for terminal issues and dispatch completion.
 
+Department-level manager (dispatches Linear specialists based on polled issues).
 SDK: Neither (orchestration only).
 """
 

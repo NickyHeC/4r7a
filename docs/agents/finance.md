@@ -127,13 +127,15 @@ the source manager.
 | | |
 |---|---|
 | **State** | ephemeral |
-| **Schedule** | On demand (e.g. quarter-end snapshot) |
+| **Schedule** | Monthly via `monthly_expense` (start-of-month snapshot); also on demand (quarter-end) |
 | **Source** | Mercury bank + treasury balances/statements |
 | **Destination** | `finance/total-asset.md` |
 | **Notion** | Total Assets |
 | **Write mode** | append |
 
-Snapshots total assets for month-end, quarter-end, or current date.
+Snapshots total assets for month-end, quarter-end, or current date. Dispatched by
+`monthly_expense` each month so the Total Assets page gets a start-of-month balance
+alongside the expense report.
 
 ### `bank_transaction.py`
 

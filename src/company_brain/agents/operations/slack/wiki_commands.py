@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from company_brain.agents.operations.slack import slack_client
 from company_brain.agents.operations.slack.open_threads import open_threads_for_member
 from company_brain.agents.operations.slack.routing import SlackRoutingStore
 from company_brain.agents.operations.slack.wiki_acl import ask_wiki_allowed
@@ -259,8 +258,7 @@ def _list_threads(channel_id: str, thread_ts: str, slack_user_id: str) -> dict[s
 
 
 def _reply(channel_id: str, thread_ts: str, text: str) -> dict[str, Any]:
-    try:
-        ts = slack_client.post_thread_reply(channel_id, thread_ts, text)
-        return {"status": "replied", "ts": ts}
-    except slack_client.SlackClientError as exc:
-        return {"status": "error", "reason": str(exc)}
+    from company_brain.agents.operations.shared.operations_slack import reply_in_thread
+
+    delivered, ts = reply_in_thread(channel_id, thread_ts, text)
+    return {"status": "replied" if delivered else "suppressed", "ts": ts}
