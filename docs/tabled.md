@@ -3,9 +3,8 @@
 Canonical backlog of **deferred** work — features specced or discussed but not built.
 The agent reads this file when starting work in a matching department/platform.
 
-**Active build program:** [`docs/plans/tabled-revisit-2026-07.md`](plans/tabled-revisit-2026-07.md)
-(sessions A–L). Items in that plan are **not** listed here; remove plan rows from the
-plan (and fold into steady-state docs) as each session ships.
+**2026-07 tabled revisit (sessions A–L):** shipped and folded into handbooks /
+`memory.md`; plan file removed. Remaining rows below are still deferred.
 
 **Not here:** intentional out-of-scope items in README (nudge/chase agents).
 **Scratch pad:** `notepad.md` (migrate rows here when a deferral is real).
@@ -39,7 +38,7 @@ Won’t build unless product explicitly reverses:
 | Latent Briefing (KV cache handoff) | LLM / runtime | Self-hosted GLM-5 / Kimi (or equiv.) | Needs internal KV access — not hosted API-only |
 | Semantic / embedding hybrid search | wiki + `@wiki` + bridge | Lexical retrieve inadequate in practice | **Shipped v1:** TF+IDF+title+age in `wiki/retrieve.py` |
 | Live custom-source query plugins | ingest / `@wiki` | After scheduled ingest connectors prove useful | Plan Session F/connectors = ingest-only; live query stays here |
-| Cloud builder maintenance loop | runtime | Multi-VM fleet real | Self-heal draft PRs are in plan Session L; this loop stays deferred |
+| Cloud builder maintenance loop | runtime | Multi-VM fleet real | Self-heal v1 queues / optional draft PR shipped; builder loop stays deferred |
 | Admin console SPA / public expose | `admin_console` | Product ask after private-mesh HTMX limits | Stay Tailscale / private mesh |
 
 ---
@@ -94,7 +93,7 @@ Won’t build unless product explicitly reverses:
 |------|----------------------|------------------|-------|
 | Roster scopes by employment type | `hr` / `config/roster.yaml` | Explicit product ask | Department scope shipped |
 | Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Manual/seed + LinkedIn bio shipped |
-| Additional social pullers | `hr` | Per-platform WebSearch puller | Config `hr.social_profiles[]` in plan Session L; LinkedIn only implemented today |
+| Additional social pullers | `hr` | Per-platform WebSearch puller | `hr.social_profiles[]` stub shipped; LinkedIn only implemented |
 
 ---
 

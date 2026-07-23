@@ -11,6 +11,17 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Sessions K+L shipped (Ramp reconcile / Discord dedupe / admin cluster)
+
+- **K:** Ramp path in `llm/reconcile.py` (Mercury+Ramp); Costs UI cached reconcile +
+  drift; `progress/compile` Discord evidence column (fuzzy match / dedupe; never SoT).
+- **L:** `process_scout`, `wiki_ops_audit`, `doc_hygiene` review pages + console Review
+  prefixes; `self_heal` Weave-queue (optional draft PR if `head`); BaseAgent hook on
+  verify rework / exception; richer offboard checklist (no Workspace/Notion deletion);
+  `hr.social_profiles[]` stub (LinkedIn only).
+- Config: `operations.yaml` admin scouts/self_heal; `hr.yaml` social_profiles.
+- Docs: admin / finance / product / hr; plan A–L complete → removed.
+
 ## 2026-07-22 — Sessions H+I+J shipped (Query / Gmail / who_knows)
 
 - **H:** Citation-only Query (`wiki/citation_query.py`) — `query_grants` + admin
@@ -59,9 +70,8 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ## 2026-07-22 — Tabled revisit design locked
 
-- Design debate closed; plan:
-  [`docs/plans/tabled-revisit-2026-07.md`](docs/plans/tabled-revisit-2026-07.md)
-  (sessions **A–L**). `docs/tabled.md` refreshed to deferred-only.
+- Design debate closed; sessions **A–L** built (plan removed after K+L).
+  `docs/tabled.md` holds remaining deferred-only rows.
 - **Dropped:** in-wiki versioning, GitHub↔wiki content sync, Bookface/X/Luma APIs,
   Ramp receipt cross-check, employee auto-promote / per-page ACL / comparative
   query, offboard API deletion, newsletter Gmail draft.

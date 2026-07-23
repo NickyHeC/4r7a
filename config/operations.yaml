@@ -396,6 +396,30 @@ admin:
     time: "10:00"
     upstream_repo: "https://github.com/4r7a/4r7a.git"
     draft: true
+  # Monthly process observations → admin/process-scout/ (proposals only; never auto-merge).
+  process_scout:
+    enabled: true
+    day: 7
+    time: "09:30"
+  # Monthly wiki maintenance suggestions → admin/wiki-ops/ (never auto-apply).
+  wiki_ops_audit:
+    enabled: true
+    day: 8
+    time: "09:45"
+    max_items: 40
+  # Quarterly doc drift report → admin/doc-hygiene/ (never auto-edit docs).
+  doc_hygiene:
+    enabled: true
+    months: [1, 4, 7, 10]
+    day: 10
+    time: "10:00"
+    stale_days: 90
+  # On verify failure / exception → Weave queue (optional draft PR if head provided).
+  self_heal:
+    enabled: true
+    draft_pr: true
+    sandbox_first: true
+    queue_on_fail: true
   knowledge_paste:
     max_body_bytes: 524288
     default_sync: admin_only

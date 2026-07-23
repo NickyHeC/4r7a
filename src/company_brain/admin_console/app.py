@@ -293,6 +293,7 @@ def create_app():
                 expense_rel=snap["expense_rel"],
                 expense_body=snap["expense_body"],
                 reconcile=snap["reconcile"],
+                reconcile_cached=snap.get("reconcile_cached", False),
                 vm=snap["vm"],
                 total_month_usd=snap["total_month_usd"],
                 total_is_estimate=snap["total_is_estimate"],

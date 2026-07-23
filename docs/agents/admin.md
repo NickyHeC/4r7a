@@ -75,7 +75,7 @@ flowchart TD
 | Status | Fleet pause/resume + redeploy cue; manager heartbeats (stale after `stale_minutes`) |
 | Review | Union of admin action items (import/mount/knowledge reviews, conflicts, weave queue, offboard, redeploy, …); triage + deep-links only |
 | Query | Citation-only search (`wiki/citation_query.py`); snippets + Notion cite; expand one result; admin bypasses `query_grants` |
-| Costs | LLM `budget_status` + optional VM estimate (`costs.vm_hourly_usd`) + Mercury reconcile |
+| Costs | LLM `budget_status` + optional VM estimate (`costs.vm_hourly_usd`) + Mercury/Ramp vendor reconcile (estimates labeled) |
 | Wiki | Full-tree search (`retrieve`) / read / edit via `write_wiki_page` |
 | Dispatch | Allow-list in `config/admin_console.yaml`; Force bypasses `should_run` (audited) |
 | Assist | LLM tools; wiki edits + dispatches require UI confirm |
@@ -132,48 +132,62 @@ clone it, set token + `remote_url` in profile/ops config. Volume rollback stays
 
 ---
 
-## LLM ops — how it runs
+## LLM ops + scouts — how it runs
 
 Monthly maintenance period (default 1st at 09:00, `config/operations.yaml` → `admin.llm_ops`).
 Persistent **`admin_manager`** dispatches expense/maintain, investor newsletter,
-and monthly **upstream_sync**.
+upstream sync, process scout, wiki ops audit, and quarterly doc hygiene.
 
 ```mermaid
 flowchart TD
   AM[admin_manager] -->|1 expense| EXP[llm_expense_report]
   AM -->|2 maintain| MNT[admin_maintain]
   AM -->|monthly| UP[upstream_sync]
+  AM -->|monthly| PS[process_scout]
+  AM -->|monthly| WO[wiki_ops_audit]
+  AM -->|quarterly| DH[doc_hygiene]
   SPEC[ephemeral specialists] -->|usage + duration + verify| ST[(StateStore)]
+  SPEC -->|verify rework / exception| SH[self_heal]
   ST --> EXP
   ST --> MNT
   EXP -->|write_wiki_page| W1[admin/llm-expense/YYYY-MM.md]
   MNT -->|write_wiki_page| W2[admin/maintain/YYYY-MM.md]
   MNT -->|refresh| W3[admin/agent-runtime.md]
-  MNT -->|actionable if drift| SL[#wiki-admin]
+  PS --> R1[admin/process-scout/YYYY-MM.md]
+  WO --> R2[admin/wiki-ops/YYYY-MM.md]
+  DH --> R3[admin/doc-hygiene/YYYY-Qn.md]
+  SH -->|queue| Q[admin/weave-queue.md]
   UP -->|draft PR| GH[private brain repo]
 ```
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `admin_manager.py` | Monthly (`admin.llm_ops` + investor + upstream) | Dispatch expense, maintain, investor, upstream_sync |
+| `admin_manager.py` | Monthly / quarterly schedules in `admin.*` | Dispatch expense, maintain, investor, upstream, scouts |
 | `llm_expense_report.py` | Via manager | Month spend by agent/category; verify + duration summary |
 | `admin_maintain.py` | Via manager | Drift list + agent-runtime page; request admin coding session |
 | `investor_newsletter.py` | Via manager (`admin.investor_newsletter`, default day 3) | Concise admin_only investor draft; never sends |
 | `upstream_sync.py` | Via manager (`admin.upstream_sync`, default day 15) | Filtered draft PR from public upstream; never auto-merge |
+| `process_scout.py` | Via manager (`admin.process_scout`, default day 7) | Observe queues/runtime → review page; never auto-merge |
+| `wiki_ops_audit.py` | Via manager (`admin.wiki_ops_audit`, default day 8) | Broken links / orphans / migrate-names / stale admin_only suggestions |
+| `doc_hygiene.py` | Via manager (quarterly) | Stale plans + doc reminders → review page; never auto-edit |
+| `self_heal.py` | On verify rework / execute exception | Weave-queue proposal (optional draft PR if `head`); never auto-merge |
 | `knowledge_paste.py` | On demand | Quarantine → scan → review → promote misc external notes |
 
 **CLI:** `company-brain admin manager`, `admin expense-report`, `admin maintain`,
-`admin investor-newsletter`, `admin upstream-sync`, `admin knowledge paste|approve`
+`admin investor-newsletter`, `admin upstream-sync`, `admin process-scout`,
+`admin wiki-ops-audit`, `admin doc-hygiene`, `admin self-heal`,
+`admin knowledge paste|approve`
 
-**Notify:** `#wiki-admin` actionable on budget/duration/verify drift, investor draft
-ready, and knowledge-paste review; quiet months stay silent for LLM ops.
+**Notify:** `#wiki-admin` actionable on budget/duration/verify drift, scout/hygiene
+pages, investor draft ready, self-heal proposals, and knowledge-paste review;
+quiet months stay silent for LLM ops.
 
 **Knowledge paste:** default promote `admin/knowledge/{slug}.md` (`sync: admin_only`);
 `--dest` / `--sync-label` for broader company wiki; `--to-raw` for absorb intake.
 Admin console Wiki save blocks untrusted namespaces (`external/`, `admin/knowledge/`, `raw/`).
 
-**Program (in progress):** deeper process scout / self-heal — see
-[`docs/plans/tabled-revisit-2026-07.md`](../plans/tabled-revisit-2026-07.md).
+**Invariants:** process scout / wiki ops / doc hygiene / self-heal are proposal-only.
+Cloud builder maintenance loop stays tabled.
 
 ---
 

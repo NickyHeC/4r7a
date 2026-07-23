@@ -17,10 +17,21 @@
     <tr><th>Budget enabled</th><td>{{ budget.enabled }} · hard_stop={{ budget.hard_stop }}</td></tr>
   </table>
   <p style="margin-top:0.75rem">
-    <a class="btn" href="/costs?reconcile=1">Run Mercury reconcile</a>
+    <a class="btn" href="/costs?reconcile=1">Run vendor reconcile (Mercury + Ramp)</a>
   </p>
   {% if reconcile %}
-  <h2 style="margin-top:1rem">LLM vendor reconcile</h2>
+  <h2 style="margin-top:1rem">LLM vendor reconcile
+    {% if reconcile.warn %}<span class="pill stale">drift</span>{% endif %}
+    {% if reconcile_cached %}<span class="pill ok">cached</span>{% endif %}
+    <span class="pill stale">estimate</span>
+  </h2>
+  {% if reconcile.warn %}
+  <p class="flash err">
+    Drift {{ reconcile.drift_percent }}% (tracked ${{ "%.2f"|format(reconcile.tracked_usd) }}
+    vs vendor ${{ "%.2f"|format(reconcile.vendor_usd) }}). Sources:
+    {{ (reconcile.vendor_sources or [])|join(", ") or "—" }}.
+  </p>
+  {% endif %}
   <pre class="assist">{{ reconcile | tojson(indent=2) }}</pre>
   {% endif %}
 </div>

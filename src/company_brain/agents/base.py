@@ -75,6 +75,20 @@ class BaseAgent(ABC):
         """Optional teardown hook, called after run()."""
         pass
 
+    def _maybe_propose_self_heal(self, *, reason: str, detail: str) -> None:
+        """Best-effort self-heal proposal — never raises, never auto-merges."""
+        try:
+            from company_brain.agents.admin.self_heal import propose_self_heal
+
+            propose_self_heal(
+                self.config,
+                agent_name=self.name,
+                reason=reason,
+                detail=detail,
+            )
+        except Exception:
+            self.logger.debug("self-heal proposal skipped for '%s'", self.name, exc_info=True)
+
     def execute(self, **kwargs: Any) -> Any:
         """Full agent lifecycle: cost gate -> setup -> run/verify loop -> teardown."""
         self.logger.info("Starting agent '%s'", self.name)
@@ -126,12 +140,22 @@ class BaseAgent(ABC):
                         self.name,
                         final_status,
                     )
+                    if result is not None and not result.passed and result.status == "rework":
+                        gaps = "; ".join(result.gaps[:8])
+                        self._maybe_propose_self_heal(
+                            reason="verify_rework",
+                            detail=gaps or "verify failed after max iterations",
+                        )
                     return result.output if result is not None else None
         except RunLimitExceededError:
             self.logger.error("Agent '%s' stopped by per-run budget cap", self.name)
             raise
-        except Exception:
+        except Exception as exc:
             self.logger.exception("Agent '%s' failed", self.name)
+            self._maybe_propose_self_heal(
+                reason="execute_exception",
+                detail=f"{type(exc).__name__}: {exc}",
+            )
             raise
         finally:
             if final_status is not None:

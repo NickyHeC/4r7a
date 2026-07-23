@@ -16,6 +16,9 @@ _DEFAULTS: dict[str, Any] = {
     "linkedin": {"run_day": 1, "run_hour": 9, "run_minute": 0},
     "manager": {"poll_interval_minutes": 60},
     "slack": {"hr_channel": ""},
+    "social_profiles": [
+        {"platform": "linkedin", "puller": "linkedin.pull", "enabled": True},
+    ],
 }
 
 
@@ -102,6 +105,33 @@ def poll_interval_minutes() -> int:
 
 def hr_channel() -> str:
     return str((_raw().get("slack") or {}).get("hr_channel") or "").strip()
+
+
+def social_profiles() -> list[dict[str, Any]]:
+    """Configured social pullers. Only ``linkedin.pull`` is implemented today."""
+    raw = _raw().get("social_profiles")
+    if not isinstance(raw, list):
+        return list(_DEFAULTS["social_profiles"])  # type: ignore[arg-type]
+    out: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        platform = str(item.get("platform") or "").strip().lower()
+        if not platform:
+            continue
+        out.append(
+            {
+                "platform": platform,
+                "puller": item.get("puller"),
+                "enabled": bool(item.get("enabled", True)),
+            }
+        )
+    return out or list(_DEFAULTS["social_profiles"])  # type: ignore[arg-type]
+
+
+def implemented_social_pullers() -> frozenset[str]:
+    """Platforms with a real puller agent (v1: LinkedIn only)."""
+    return frozenset({"linkedin"})
 
 
 def load_hr_seed(config_dir: Path | None = None) -> HrSeedConfig:

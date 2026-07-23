@@ -916,6 +916,69 @@ def admin_upstream_sync_cmd(force: bool) -> None:
     click.echo(result)
 
 
+@admin.command("process-scout")
+@click.option("--month", default=None, help="Target month YYYY-MM (default: previous).")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_process_scout_cmd(month: str | None, no_sync: bool) -> None:
+    """Write monthly process scout review page (proposals only)."""
+    from company_brain.agents.admin.process_scout import ProcessScoutAgent
+
+    config = load_config()
+    result = ProcessScoutAgent(config).execute(month=month, sync=not no_sync)
+    click.echo(result)
+
+
+@admin.command("wiki-ops-audit")
+@click.option("--month", default=None, help="Target month YYYY-MM (default: previous).")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_wiki_ops_audit_cmd(month: str | None, no_sync: bool) -> None:
+    """Write monthly wiki ops audit review page (never auto-apply)."""
+    from company_brain.agents.admin.wiki_ops_audit import WikiOpsAuditAgent
+
+    config = load_config()
+    result = WikiOpsAuditAgent(config).execute(month=month, sync=not no_sync)
+    click.echo(result)
+
+
+@admin.command("doc-hygiene")
+@click.option("--period", default=None, help="Period label e.g. 2026-Q3 (default: current).")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_doc_hygiene_cmd(period: str | None, no_sync: bool) -> None:
+    """Write quarterly doc hygiene review page (never auto-edit docs)."""
+    from company_brain.agents.admin.doc_hygiene import DocHygieneAgent
+
+    config = load_config()
+    result = DocHygieneAgent(config).execute(period=period, sync=not no_sync)
+    click.echo(result)
+
+
+@admin.command("self-heal")
+@click.option("--agent-name", required=True, help="Agent that failed verify / raised.")
+@click.option("--reason", required=True, help="Short reason string.")
+@click.option("--detail", default="", help="Optional detail for the queue entry.")
+@click.option("--head", default=None, help="Optional git branch for a draft PR.")
+@click.option("--no-sync", is_flag=True, help="Skip Notion sync.")
+def admin_self_heal_cmd(
+    agent_name: str,
+    reason: str,
+    detail: str,
+    head: str | None,
+    no_sync: bool,
+) -> None:
+    """Queue a self-heal proposal (never auto-merges)."""
+    from company_brain.agents.admin.self_heal import SelfHealAgent
+
+    config = load_config()
+    result = SelfHealAgent(config).execute(
+        agent_name=agent_name,
+        reason=reason,
+        detail=detail,
+        head=head,
+        sync=not no_sync,
+    )
+    click.echo(result)
+
+
 @admin.group("fleet")
 def admin_fleet_group() -> None:
     """Fleet pause / resume / redeploy cue."""

@@ -1,5 +1,8 @@
 """Progress Compile — rough feature status from GitHub wiki + Linear projects.
 
+Discord community chatter is evidence only (fuzzy title match / dedupe), not a
+second source of truth.
+
 SDK: Neither (deterministic read/compile). Does not reimplement PR/issue sync.
 """
 
@@ -11,7 +14,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.product.posthog.feature_match import parse_feature_titles
+from company_brain.agents.product.posthog.feature_match import (
+    normalize_slug,
+    parse_feature_titles,
+    slug_tokens,
+)
 from company_brain.wiki.publish import UPDATE, read_wiki_page, write_wiki_page
 
 WIKI_PATH = "product/progress.md"
@@ -20,9 +27,11 @@ FEATURE_WIKI = "product/feature.md"
 OPEN_PR = "engineering/github/open-pr.md"
 BRANCH_STATUS = "engineering/github/branch-status.md"
 FEATURE_UPDATE = "engineering/github/feature-update.md"
+FEATURE_REQUEST_LOG = "product/feature-request-log.md"
 WRITE_MODE = UPDATE
 
 STATUSES = ("shipped", "shipping", "in_progress", "exploring", "unknown")
+FUZZY_TOKEN_OVERLAP = 0.5
 
 
 class ProgressCompileAgent(BaseAgent):
@@ -39,7 +48,13 @@ class ProgressCompileAgent(BaseAgent):
             "feature_update": read_wiki_page(FEATURE_UPDATE) or "",
         }
         linear_projects = _linear_project_stats()
-        rows = compile_progress_rows(features, github=github, linear_projects=linear_projects)
+        discord_titles = extract_discord_feature_titles(read_wiki_page(FEATURE_REQUEST_LOG) or "")
+        rows = compile_progress_rows(
+            features,
+            github=github,
+            linear_projects=linear_projects,
+            discord_titles=discord_titles,
+        )
         body = render_progress(rows, linear_projects=linear_projects)
         write_wiki_page(
             WIKI_PATH,
@@ -53,6 +68,7 @@ class ProgressCompileAgent(BaseAgent):
             "wiki_path": WIKI_PATH,
             "features": len(rows),
             "linear_projects": len(linear_projects),
+            "discord_evidence": sum(1 for r in rows if r.get("discord")),
         }
 
 
@@ -148,18 +164,74 @@ def _merge_status(gh: str, linear: str | None) -> str:
     return min(known, key=lambda s: rank.get(s, 99))
 
 
+def extract_discord_feature_titles(log_body: str) -> list[str]:
+    """Pull feature-ish titles from the feature-request log (Discord evidence)."""
+    titles: list[str] = []
+    seen: set[str] = set()
+    for line in (log_body or "").splitlines():
+        # Discord / community lines often look like: - **Title** — ... or ### Title
+        m = re.search(r"\*\*(.+?)\*\*", line)
+        if not m:
+            m = re.match(r"^#{2,3}\s+(.+)$", line.strip())
+        if not m:
+            continue
+        title = m.group(1).strip()
+        # Prefer lines that mention discord / community as evidence
+        lower = line.lower()
+        if "discord" not in lower and "community" not in lower and "feature request" not in lower:
+            # still allow bold titles in the feature-request log
+            if "feature-request" not in (log_body[:200].lower()):
+                pass
+        slug = normalize_slug(title)
+        if not slug or slug in seen:
+            continue
+        seen.add(slug)
+        titles.append(title)
+    return titles
+
+
+def titles_fuzzy_match(a: str, b: str) -> bool:
+    """Deterministic fuzzy title match (normalize + token overlap)."""
+    sa, sb = normalize_slug(a), normalize_slug(b)
+    if not sa or not sb:
+        return False
+    if sa == sb or sa in sb or sb in sa:
+        return True
+    ta, tb = slug_tokens(sa), slug_tokens(sb)
+    if not ta or not tb:
+        return False
+    overlap = len(ta & tb) / max(len(ta), len(tb))
+    return overlap >= FUZZY_TOKEN_OVERLAP
+
+
+def dedupe_feature_list(features: list[str]) -> list[str]:
+    """Collapse near-duplicate feature titles; keep first canonical name."""
+    kept: list[str] = []
+    for feat in features:
+        if any(titles_fuzzy_match(feat, k) for k in kept):
+            continue
+        kept.append(feat)
+    return kept
+
+
 def compile_progress_rows(
     features: list[str],
     *,
     github: dict[str, str],
     linear_projects: list[dict[str, Any]],
+    discord_titles: list[str] | None = None,
 ) -> list[dict[str, Any]]:
+    discord_titles = discord_titles or []
+    # Collapse near-duplicates among product features first
+    features = dedupe_feature_list(features)
     rows: list[dict[str, Any]] = []
     for feature in features:
         gh = _github_signal(feature, github)
         proj = _match_linear(feature, linear_projects)
         linear_status = str(proj["status"]) if proj else None
         status = _merge_status(gh, linear_status)
+        discord_hits = [t for t in discord_titles if titles_fuzzy_match(feature, t)]
+        # Discord is evidence only — never changes status SoT
         rows.append(
             {
                 "feature": feature,
@@ -167,6 +239,7 @@ def compile_progress_rows(
                 "github": gh,
                 "linear_project": proj["name"] if proj else "—",
                 "linear_done": f"{proj['done']}/{proj['total']}" if proj else "—",
+                "discord": ", ".join(discord_hits[:3]) if discord_hits else "—",
             }
         )
     return rows
@@ -182,8 +255,9 @@ def render_progress(
     lines = [
         f"_Updated {now:%Y-%m-%d %H:%M UTC}_",
         "",
-        "Rough status only — combines GitHub wiki signals (open PRs, branches, "
-        "feature updates) with Linear project completion. Not a precise %. ",
+        "Rough status only — GitHub wiki signals + Linear project completion. "
+        "Discord / community feature-request titles are evidence citations only "
+        "(fuzzy-matched; never a second SoT).",
         "",
         "## Features",
         "",
@@ -193,14 +267,15 @@ def render_progress(
     else:
         lines.extend(
             [
-                "| Feature | Status | GitHub signal | Linear project | Done/Total |",
-                "| --- | --- | --- | --- | --- |",
+                "| Feature | Status | GitHub | Linear | Done/Total | Discord evidence |",
+                "| --- | --- | --- | --- | --- | --- |",
             ]
         )
         for row in rows:
             lines.append(
                 f"| {row['feature']} | `{row['status']}` | `{row['github']}` | "
-                f"{row['linear_project']} | {row['linear_done']} |"
+                f"{row['linear_project']} | {row['linear_done']} | "
+                f"{row.get('discord') or '—'} |"
             )
         lines.append("")
 

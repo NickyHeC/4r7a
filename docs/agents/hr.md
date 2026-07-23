@@ -70,6 +70,11 @@ Managers (dispatch specialists based on gathered information):
 - `company-brain hr manager [--once]`
 
 **Stubs (v1):** Google Workspace + Notion deactivation *detection* only (no API removal).
+Offboard proposal checklist is richer (manual SaaS steps) but **never** deletes
+Workspace/Notion accounts from 4r7a.
+
+**Social profiles:** `config/hr.yaml` → `social_profiles[]`. Only `linkedin.pull`
+is implemented; other platforms may be listed as stubs.
 
 **Tabled:** Employment-type ingest scopes; real Workspace/Notion admin removal; CRM
-inbound → hiring log; social beyond LinkedIn WebSearch.
+inbound → hiring log; additional social pullers beyond LinkedIn.

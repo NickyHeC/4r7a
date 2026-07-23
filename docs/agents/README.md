@@ -23,7 +23,7 @@ flowchart LR
 | **Growth** | Discord + Google Ads; activity / content / competitor / lead workstreams | [growth.md](growth.md) |
 | **Product** | PostHog + workstreams (update, use cases, docs, progress, attribution) | [product.md](product.md) |
 | **Operations** | Gmail, Slack, Granola, Notion (wiki mirror + task/CRM/Weave) | [operations.md](operations.md) |
-| **Admin** | Guided install, admin console, Weave (`@weave`), LLM ops + investor draft, knowledge paste, daily `wiki_commit` | [admin.md](admin.md) |
+| **Admin** | Guided install, admin console, Weave (`@weave`), LLM ops + scouts/self-heal, investor draft, knowledge paste, daily `wiki_commit` | [admin.md](admin.md) |
 | **HR** | Status, LinkedIn bio/voice, offboard confirm + wiki archive | [hr.md](hr.md) |
 | **Employee Wiki** | Per-member work buildings — ledger materializers, zip import | [employee_wiki.md](employee_wiki.md) |
 | **External Wiki** | Admin one-shot external wiki mounts + content catalog | [external_wiki.md](external_wiki.md) |

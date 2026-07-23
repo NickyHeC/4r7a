@@ -173,6 +173,10 @@ Mercury IO card outflows, categorized by Mercury transaction categories.
 
 Ramp card transactions categorized by QuickBooks accounting category.
 
+**LLM vendor reconcile (admin Costs):** `company_brain.llm.reconcile` sums Mercury
++ Ramp card spend for known LLM vendors (read-only). Surfaces drift vs tracked
+token estimates; labeled as estimates until invoice reconcile.
+
 ---
 
 ## Onboarding

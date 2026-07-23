@@ -136,4 +136,16 @@ def costs_snapshot(*, reconcile: bool = False) -> dict[str, Any]:
             out["reconcile"] = reconciliation_report()
         except Exception as exc:
             out["reconcile"] = {"status": "error", "error": str(exc)[:300]}
+    else:
+        # Surface last stored reconcile (incl. Ramp) without re-hitting banks
+        try:
+            from company_brain.llm.budget import _month_key
+            from company_brain.llm.reconcile import RECONCILE_PREFIX
+
+            stored = StateStore().get(f"{RECONCILE_PREFIX}{_month_key()}")
+            if isinstance(stored, dict) and stored.get("month"):
+                out["reconcile"] = stored
+                out["reconcile_cached"] = True
+        except Exception:
+            pass
     return out

@@ -1,7 +1,8 @@
-"""Admin Manager — monthly LLM ops + investor newsletter dispatch.
+"""Admin Manager — monthly LLM ops + scout / hygiene / upstream dispatch.
 
 Dispatches ``llm_expense_report`` then ``admin_maintain`` on the llm_ops cadence,
-and ``investor_newsletter`` on its own run_day offset.
+``investor_newsletter``, ``upstream_sync``, ``process_scout``, ``wiki_ops_audit``,
+and quarterly ``doc_hygiene``.
 SDK: Neither (orchestration only).
 """
 
@@ -34,8 +35,45 @@ def _investor_cfg() -> dict[str, Any]:
     }
 
 
+def _next_day_of_month(now: datetime, *, day: int, time_str: str) -> datetime:
+    """Next occurrence of day-of-month at HH:MM (clamps short months)."""
+    target_t = parse_hhmm(time_str)
+    try:
+        candidate = now.replace(
+            day=day,
+            hour=target_t.hour,
+            minute=target_t.minute,
+            second=0,
+            microsecond=0,
+        )
+    except ValueError:
+        nxt_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
+        last = nxt_month - timedelta(days=1)
+        candidate = last.replace(
+            hour=target_t.hour,
+            minute=target_t.minute,
+            second=0,
+            microsecond=0,
+        )
+    if now >= candidate:
+        year = candidate.year + (1 if candidate.month == 12 else 0)
+        month = 1 if candidate.month == 12 else candidate.month + 1
+        try:
+            candidate = candidate.replace(year=year, month=month, day=day)
+        except ValueError:
+            nxt = datetime(year, month, 28) + timedelta(days=4)
+            last = nxt.replace(day=1) - timedelta(days=1)
+            candidate = last.replace(
+                hour=target_t.hour,
+                minute=target_t.minute,
+                second=0,
+                microsecond=0,
+            )
+    return candidate
+
+
 class AdminManager(BaseAgent):
-    """Persistent manager for monthly LLM ops + investor newsletter."""
+    """Persistent manager for monthly admin ops + scouts."""
 
     name = "admin_manager"
     track_duration = False
@@ -66,23 +104,18 @@ class AdminManager(BaseAgent):
             try_enter_paused()
             record_heartbeat(self.name, detail=manager_heartbeat_detail())
             now = datetime.now()
-            nxt = self._next_run_time(now)
-            inv_nxt = self._next_investor_time(now)
-            ups_nxt = self._next_upstream_time(now)
-            wait = max(
-                min(
-                    (nxt - now).total_seconds(),
-                    (inv_nxt - now).total_seconds(),
-                    (ups_nxt - now).total_seconds(),
-                ),
-                30,
-            )
+            times = [
+                self._next_run_time(now),
+                self._next_investor_time(now),
+                self._next_upstream_time(now),
+                self._next_process_scout_time(now),
+                self._next_wiki_ops_time(now),
+                self._next_doc_hygiene_time(now),
+            ]
+            wait = max(min((t - now).total_seconds() for t in times), 30)
             chunk = min(wait, 300)
             self.logger.info(
-                "Next admin LLM-ops %s / investor %s / upstream %s (sleep %.0fs)",
-                nxt.isoformat(),
-                inv_nxt.isoformat(),
-                ups_nxt.isoformat(),
+                "Next admin schedules soonest in %.0fs (llm/investor/upstream/scout/wiki/docs)",
                 wait,
             )
             await asyncio.sleep(chunk)
@@ -90,21 +123,36 @@ class AdminManager(BaseAgent):
             if not can_dispatch():
                 try_enter_paused()
                 continue
-            if now >= nxt:
+            if now >= times[0]:
                 try:
                     self.run_once(month=previous_month(), sync=True)
                 except Exception:
                     self.logger.exception("Admin monthly LLM-ops run failed")
-            if now >= inv_nxt:
+            if now >= times[1]:
                 try:
                     self._run_investor(month=previous_month(), sync=True)
                 except Exception:
                     self.logger.exception("Admin investor newsletter run failed")
-            if now >= ups_nxt:
+            if now >= times[2]:
                 try:
                     self._run_upstream_sync()
                 except Exception:
                     self.logger.exception("Admin upstream sync run failed")
+            if now >= times[3]:
+                try:
+                    self._run_process_scout()
+                except Exception:
+                    self.logger.exception("Admin process scout run failed")
+            if now >= times[4]:
+                try:
+                    self._run_wiki_ops_audit()
+                except Exception:
+                    self.logger.exception("Admin wiki ops audit run failed")
+            if now >= times[5]:
+                try:
+                    self._run_doc_hygiene()
+                except Exception:
+                    self.logger.exception("Admin doc hygiene run failed")
 
     def run_once(self, *, month: str | None = None, sync: bool = True) -> dict[str, Any]:
         from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
@@ -177,125 +225,148 @@ class AdminManager(BaseAgent):
                 result = runtime.run(UpstreamSyncAgent, self.config, force=force)
             return {"status": "ok", "upstream_sync": result}
 
+    def _run_process_scout(self, *, force: bool = False) -> dict[str, Any]:
+        from company_brain.agents.admin.process_scout import ProcessScoutAgent, process_scout_config
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        cfg = process_scout_config()
+        if not cfg.get("enabled", True):
+            return {"status": "skipped", "reason": "disabled"}
+        month = previous_month()
+        store = StateStore()
+        key = f"admin_manager:process_scout:{month}"
+        if not force and store.get(key):
+            return {"status": "skipped", "month": month, "reason": "already_ran"}
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                return {"status": "skipped", "reason": "fleet_paused"}
+            runtime = get_runtime()
+            with ambient_scope(
+                manager=self.name,
+                run_id=new_run_id(),
+                reason="process_scout",
+            ):
+                result = runtime.run(ProcessScoutAgent, self.config, month=month, sync=True)
+            store.set(key, {"at": datetime.now().isoformat()})
+            return {"status": "ok", "process_scout": result}
+
+    def _run_wiki_ops_audit(self, *, force: bool = False) -> dict[str, Any]:
+        from company_brain.agents.admin.wiki_ops_audit import (
+            WikiOpsAuditAgent,
+            wiki_ops_audit_config,
+        )
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        cfg = wiki_ops_audit_config()
+        if not cfg.get("enabled", True):
+            return {"status": "skipped", "reason": "disabled"}
+        month = previous_month()
+        store = StateStore()
+        key = f"admin_manager:wiki_ops_audit:{month}"
+        if not force and store.get(key):
+            return {"status": "skipped", "month": month, "reason": "already_ran"}
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                return {"status": "skipped", "reason": "fleet_paused"}
+            runtime = get_runtime()
+            with ambient_scope(
+                manager=self.name,
+                run_id=new_run_id(),
+                reason="wiki_ops_audit",
+            ):
+                result = runtime.run(WikiOpsAuditAgent, self.config, month=month, sync=True)
+            store.set(key, {"at": datetime.now().isoformat()})
+            return {"status": "ok", "wiki_ops_audit": result}
+
+    def _run_doc_hygiene(self, *, force: bool = False) -> dict[str, Any]:
+        from company_brain.agents.admin.doc_hygiene import (
+            DocHygieneAgent,
+            current_quarter_period,
+            doc_hygiene_config,
+        )
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        cfg = doc_hygiene_config()
+        if not cfg.get("enabled", True):
+            return {"status": "skipped", "reason": "disabled"}
+        now = datetime.now()
+        if not force and now.month not in set(cfg.get("months") or [1, 4, 7, 10]):
+            return {"status": "skipped", "reason": "not_quarter_month"}
+        period = current_quarter_period()
+        store = StateStore()
+        key = f"admin_manager:doc_hygiene:{period}"
+        if not force and store.get(key):
+            return {"status": "skipped", "period": period, "reason": "already_ran"}
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                return {"status": "skipped", "reason": "fleet_paused"}
+            runtime = get_runtime()
+            with ambient_scope(
+                manager=self.name,
+                run_id=new_run_id(),
+                reason="doc_hygiene",
+            ):
+                result = runtime.run(DocHygieneAgent, self.config, period=period, sync=True)
+            store.set(key, {"at": datetime.now().isoformat()})
+            return {"status": "ok", "doc_hygiene": result}
+
     def _next_upstream_time(self, now: datetime) -> datetime:
         from company_brain.agents.admin.upstream_sync import upstream_sync_config
 
         cfg = upstream_sync_config()
-        day = int(cfg.get("day") or 15)
-        target_t = parse_hhmm(str(cfg.get("time") or "10:00"))
-        try:
-            candidate = now.replace(
-                day=day,
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-        except ValueError:
-            nxt_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
-            last = nxt_month - timedelta(days=1)
-            candidate = last.replace(
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-        if now >= candidate:
-            year = candidate.year + (1 if candidate.month == 12 else 0)
-            month = 1 if candidate.month == 12 else candidate.month + 1
+        return _next_day_of_month(
+            now, day=int(cfg.get("day") or 15), time_str=str(cfg.get("time") or "10:00")
+        )
+
+    def _next_process_scout_time(self, now: datetime) -> datetime:
+        from company_brain.agents.admin.process_scout import process_scout_config
+
+        cfg = process_scout_config()
+        return _next_day_of_month(
+            now, day=int(cfg.get("day") or 7), time_str=str(cfg.get("time") or "09:30")
+        )
+
+    def _next_wiki_ops_time(self, now: datetime) -> datetime:
+        from company_brain.agents.admin.wiki_ops_audit import wiki_ops_audit_config
+
+        cfg = wiki_ops_audit_config()
+        return _next_day_of_month(
+            now, day=int(cfg.get("day") or 8), time_str=str(cfg.get("time") or "09:45")
+        )
+
+    def _next_doc_hygiene_time(self, now: datetime) -> datetime:
+        from company_brain.agents.admin.doc_hygiene import doc_hygiene_config
+
+        cfg = doc_hygiene_config()
+        months = sorted(set(int(m) for m in (cfg.get("months") or [1, 4, 7, 10])))
+        day = int(cfg.get("day") or 10)
+        time_str = str(cfg.get("time") or "10:00")
+        # Find next matching month
+        candidates: list[datetime] = []
+        for offset in range(0, 13):
+            year = now.year + ((now.month - 1 + offset) // 12)
+            month = (now.month - 1 + offset) % 12 + 1
+            if month not in months:
+                continue
             try:
-                candidate = candidate.replace(year=year, month=month, day=day)
+                cand = datetime(year, month, day)
             except ValueError:
-                nxt = datetime(year, month, 28) + timedelta(days=4)
-                last = nxt.replace(day=1) - timedelta(days=1)
-                candidate = last.replace(
-                    hour=target_t.hour,
-                    minute=target_t.minute,
-                    second=0,
-                    microsecond=0,
-                )
-        return candidate
+                continue
+            target_t = parse_hhmm(time_str)
+            cand = cand.replace(hour=target_t.hour, minute=target_t.minute, second=0, microsecond=0)
+            if cand > now:
+                candidates.append(cand)
+                break
+        return candidates[0] if candidates else _next_day_of_month(now, day=day, time_str=time_str)
 
     def _next_run_time(self, now: datetime) -> datetime:
         cfg = llm_ops_config()
-        day = int(cfg.get("day") or 1)
-        target_t = parse_hhmm(str(cfg.get("time") or "09:00"))
-        candidate = now.replace(
-            day=min(day, 28),
-            hour=target_t.hour,
-            minute=target_t.minute,
-            second=0,
-            microsecond=0,
+        return _next_day_of_month(
+            now, day=int(cfg.get("day") or 1), time_str=str(cfg.get("time") or "09:00")
         )
-        # Clamp to actual month length
-        try:
-            candidate = now.replace(
-                day=day,
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-        except ValueError:
-            # day out of range for this month — use last day
-            nxt_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
-            last = nxt_month - timedelta(days=1)
-            candidate = last.replace(
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-        if now >= candidate:
-            # jump to next month
-            year = candidate.year + (1 if candidate.month == 12 else 0)
-            month = 1 if candidate.month == 12 else candidate.month + 1
-            try:
-                candidate = candidate.replace(year=year, month=month, day=day)
-            except ValueError:
-                nxt = datetime(year, month, 28) + timedelta(days=4)
-                last = nxt.replace(day=1) - timedelta(days=1)
-                candidate = last.replace(
-                    hour=target_t.hour,
-                    minute=target_t.minute,
-                    second=0,
-                    microsecond=0,
-                )
-        return candidate
 
     def _next_investor_time(self, now: datetime) -> datetime:
         cfg = _investor_cfg()
-        day = int(cfg.get("run_day") or 3)
-        target_t = parse_hhmm(str(cfg.get("time") or "09:00"))
-        try:
-            candidate = now.replace(
-                day=day,
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-        except ValueError:
-            nxt_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
-            last = nxt_month - timedelta(days=1)
-            candidate = last.replace(
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-        if now >= candidate:
-            year = candidate.year + (1 if candidate.month == 12 else 0)
-            month = 1 if candidate.month == 12 else candidate.month + 1
-            try:
-                candidate = candidate.replace(year=year, month=month, day=day)
-            except ValueError:
-                nxt = datetime(year, month, 28) + timedelta(days=4)
-                last = nxt.replace(day=1) - timedelta(days=1)
-                candidate = last.replace(
-                    hour=target_t.hour,
-                    minute=target_t.minute,
-                    second=0,
-                    microsecond=0,
-                )
-        return candidate
+        return _next_day_of_month(
+            now, day=int(cfg.get("run_day") or 3), time_str=str(cfg.get("time") or "09:00")
+        )

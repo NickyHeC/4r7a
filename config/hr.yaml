@@ -17,3 +17,13 @@ manager:
 slack:
   # Admin asks for departure confirmation (falls back to weave admin notifier)
   hr_channel: ""
+
+# Social profile pullers (public WebSearch only). LinkedIn is the only
+# implemented puller today — others are stubs for future platforms.
+social_profiles:
+  - platform: linkedin
+    puller: linkedin.pull
+    enabled: true
+  # - platform: x
+  #   puller: null
+  #   enabled: false

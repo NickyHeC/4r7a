@@ -129,9 +129,10 @@ New public gaps → ACTIONABLE `#product`. Set `docs.base_url` in config.
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `compile.py` | Weekly via manager | Rough status from GitHub wiki pages + Linear project completion → `product/progress.md` |
+| `compile.py` | Weekly via manager | Rough status from GitHub wiki pages + Linear project completion → `product/progress.md`; Discord feature-request log is **evidence only** (fuzzy title match / dedupe column) |
 
 Statuses: `exploring` / `in_progress` / `shipping` / `shipped` / `unknown` — not precise %.
+Discord never changes status SoT.
 
 ---
 

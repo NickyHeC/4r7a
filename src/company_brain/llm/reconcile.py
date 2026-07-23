@@ -54,20 +54,101 @@ def _mercury_llm_spend(start: str, end: str) -> dict[str, float]:
     return dict(totals)
 
 
+def _ramp_llm_spend(start: str, end: str) -> dict[str, float]:
+    """Sum LLM vendor spend from Ramp card transactions (read-only REST).
+
+    Agents continue to use Ramp MCP; reconcile uses a cheap deterministic REST
+    list when ``RAMP_TOKEN`` is set. Soft-fails when unavailable.
+    """
+    import json
+    import os
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    token = os.getenv("RAMP_TOKEN", "").strip()
+    if not token:
+        return {}
+
+    totals: dict[str, float] = defaultdict(float)
+    # Ramp API uses ISO timestamps; inclusive window
+    params = {
+        "from_date": f"{start}T00:00:00+00:00",
+        "to_date": f"{end}T23:59:59+00:00",
+        "page_size": "100",
+    }
+    url = "https://api.ramp.com/developer/v1/transactions?" + urllib.parse.urlencode(params)
+    pages = 0
+    while url and pages < 20:
+        pages += 1
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+            method="GET",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                payload = json.loads(resp.read().decode("utf-8") or "{}")
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
+            logger.debug("Ramp LLM vendor reconcile page failed", exc_info=True)
+            break
+        for txn in payload.get("data") or []:
+            if not isinstance(txn, dict):
+                continue
+            merchant = str(txn.get("merchant_name") or txn.get("merchant_descriptor") or "")
+            if isinstance(txn.get("merchant"), dict):
+                merchant = str(
+                    txn["merchant"].get("name") or txn["merchant"].get("descriptor") or merchant
+                )
+            vendor = match_llm_vendor(merchant)
+            if not vendor:
+                continue
+            try:
+                amount = float(txn.get("amount") or 0)
+            except (TypeError, ValueError):
+                continue
+            # Ramp amounts are typically positive card spend in dollars
+            if amount == 0:
+                continue
+            totals[vendor] += abs(amount)
+        next_url = ""
+        page = payload.get("page") or {}
+        if isinstance(page, dict):
+            next_url = str(page.get("next") or "")
+        url = next_url if next_url.startswith("http") else ""
+    return dict(totals)
+
+
 def sum_vendor_llm_spend(*, month: str | None = None) -> dict[str, Any]:
     """Sum LLM vendor card spend for ``month`` (``YYYY-MM``, default current)."""
     month = month or _month_key()
     start, end = month_range(month)
     by_vendor: dict[str, float] = defaultdict(float)
     sources: list[str] = []
+    by_source: dict[str, dict[str, float]] = {}
 
     try:
-        for vendor, amount in _mercury_llm_spend(start, end).items():
+        mercury = _mercury_llm_spend(start, end)
+        for vendor, amount in mercury.items():
             by_vendor[vendor] += amount
-        if by_vendor:
+        if mercury:
             sources.append("mercury")
+            by_source["mercury"] = mercury
     except Exception:
         logger.debug("Mercury LLM vendor reconcile unavailable", exc_info=True)
+
+    try:
+        ramp = _ramp_llm_spend(start, end)
+        for vendor, amount in ramp.items():
+            by_vendor[vendor] += amount
+        if ramp:
+            sources.append("ramp")
+            by_source["ramp"] = ramp
+    except Exception:
+        logger.debug("Ramp LLM vendor reconcile unavailable", exc_info=True)
 
     total = sum(by_vendor.values())
     return {
@@ -75,6 +156,7 @@ def sum_vendor_llm_spend(*, month: str | None = None) -> dict[str, Any]:
         "by_vendor": dict(by_vendor),
         "total_usd": total,
         "sources": sources,
+        "by_source": by_source,
     }
 
 
@@ -120,8 +202,10 @@ def reconciliation_report(
         "drift_warn_percent": drift_warn_percent,
         "vendor_by_source": vendor["by_vendor"],
         "vendor_sources": vendor["sources"],
+        "vendor_by_card_source": vendor.get("by_source") or {},
         "tracked": tracked,
         "warn": vendor_total > 0 and drift_percent >= drift_warn_percent,
+        "is_estimate": True,
     }
     checked_at = datetime.now(timezone.utc).isoformat()
     store.set(f"{RECONCILE_PREFIX}{month}", {**report, "checked_at": checked_at})
