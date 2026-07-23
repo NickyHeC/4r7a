@@ -14,7 +14,9 @@ from company_brain.agents.gates import StateStore
 from company_brain.wiki.publish import APPEND, UPDATE, format_append_section, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
-WRITE_MODE = UPDATE
+WRITE_MODE = APPEND
+SEED_WRITE_MODE = UPDATE
+STATUS_WRITE_MODE = UPDATE
 CATALOG_PATH = "growth/content/published.md"
 CATALOG_TITLE = "Published Company Content"
 VOICE_PATH = "growth/content/voice/company.md"
@@ -27,6 +29,8 @@ class PublishedPullAgent(BaseAgent):
 
     name = "published_pull"
     WRITE_MODE = WRITE_MODE
+    SEED_WRITE_MODE = SEED_WRITE_MODE
+    STATUS_WRITE_MODE = STATUS_WRITE_MODE
 
     def __init__(self, config, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -65,7 +69,7 @@ class PublishedPullAgent(BaseAgent):
                     CATALOG_PATH,
                     CATALOG_TITLE,
                     section,
-                    mode=APPEND,
+                    mode=self.WRITE_MODE,
                     section="growth",
                     type_="catalog",
                 )
@@ -89,7 +93,7 @@ def _ensure_catalog() -> None:
         CATALOG_PATH,
         CATALOG_TITLE,
         f"# {CATALOG_TITLE}\n\nArchive of company-published public content.\n",
-        mode=UPDATE,
+        mode=SEED_WRITE_MODE,
         section="growth",
         type_="catalog",
     )
@@ -113,7 +117,7 @@ def _retire_matching_drafts(store: LocalWikiStore, *, channel: str) -> list[str]
             rel,
             title,
             doc.body,
-            mode=UPDATE,
+            mode=STATUS_WRITE_MODE,
             section="growth",
             type_="draft",
             extra_frontmatter={
@@ -146,7 +150,7 @@ def _refresh_voice(items: list[dict[str, str]]) -> None:
             VOICE_PATH,
             VOICE_TITLE,
             section,
-            mode=APPEND,
+            mode=WRITE_MODE,
             section="growth",
             type_="voice",
         )
@@ -155,7 +159,7 @@ def _refresh_voice(items: list[dict[str, str]]) -> None:
             VOICE_PATH,
             VOICE_TITLE,
             f"# {VOICE_TITLE}\n\nLiving notes on company public voice.\n\n{section}",
-            mode=UPDATE,
+            mode=SEED_WRITE_MODE,
             section="growth",
             type_="voice",
         )

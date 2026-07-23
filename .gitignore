@@ -219,6 +219,7 @@ __marimo__/
 
 # Personal scratch / notes
 notepad.md
+.DS_Store
 
 # Wiki content (source of truth lives in the cloud VM volume; may contain company data)
 /wiki/

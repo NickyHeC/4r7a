@@ -23,7 +23,7 @@ AGENT_KEY = "card_spend"
 class MercuryCardSpendAgent(BaseAgent):
     """Fetch and categorize Mercury IO card spend for a date range."""
 
-    name = "card_spend"
+    name = "mercury_card_spend"
 
     def run(self, *, start: str, end: str, **kwargs: Any) -> dict[str, Any]:
         """Return normalised card transactions and a category breakdown."""

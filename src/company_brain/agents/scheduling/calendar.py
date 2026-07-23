@@ -27,6 +27,33 @@ def next_daily_run(now: datetime, *, at: time) -> datetime:
     return candidate if candidate > now else candidate + timedelta(days=1)
 
 
+def calendar_run_for_month(
+    reference: datetime,
+    *,
+    day: int,
+    at: time,
+    year: int | None = None,
+    month: int | None = None,
+) -> datetime:
+    """Return one month's scheduled occurrence, preserving the reference timezone."""
+    target_year = year or reference.year
+    target_month = month or reference.month
+    if target_month < 1 or target_month > 12:
+        raise ValueError("month must be from 1 through 12")
+    if day < 1:
+        raise ValueError("day must be positive")
+    candidate_day = min(day, calendar.monthrange(target_year, target_month)[1])
+    return reference.replace(
+        year=target_year,
+        month=target_month,
+        day=candidate_day,
+        hour=at.hour,
+        minute=at.minute,
+        second=0,
+        microsecond=0,
+    )
+
+
 def next_calendar_run(
     now: datetime,
     *,

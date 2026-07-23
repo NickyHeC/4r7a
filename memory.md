@@ -11,6 +11,16 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Post-audit runtime follow-up (working tree)
+
+- Fixed LinkedIn fallback model initialization, Discord failed-dispatch markers,
+  quarter-scoped subscription input, duplicate Mercury/Ramp telemetry names, and
+  append-mode declarations.
+- Persistent admin, monthly expense, and quarterly calculation managers now detect
+  missed completed periods after restart and retry them after the configured deadline.
+- Expanded VM egress for documented public-search and OAuth/GitHub hosts and ignored
+  macOS `.DS_Store` files.
+
 ## 2026-07-22 — Maintenance hardening and documentation normalization (working tree)
 
 - **What:** Closed the deferred P2/P3 maintenance debt, then audited code, rules,

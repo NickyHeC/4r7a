@@ -22,7 +22,11 @@ from company_brain.agents.admin.llm_ops_config import (
 )
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import StateStore
-from company_brain.agents.scheduling.calendar import next_calendar_run, parse_hhmm
+from company_brain.agents.scheduling.calendar import (
+    calendar_run_for_month,
+    next_calendar_run,
+    parse_hhmm,
+)
 from company_brain.llm.run_context import ambient_scope, new_run_id
 from company_brain.runtime import get_runtime
 
@@ -38,6 +42,9 @@ def _investor_cfg() -> dict[str, Any]:
 def _next_day_of_month(now: datetime, *, day: int, time_str: str) -> datetime:
     """Next occurrence of day-of-month at HH:MM (clamps short months)."""
     return next_calendar_run(now, day=day, at=parse_hhmm(time_str))
+
+
+LLM_OPS_COMPLETED_KEY_PREFIX = "admin_manager:llm_ops:completed:"
 
 
 class AdminManager(BaseAgent):
@@ -72,6 +79,18 @@ class AdminManager(BaseAgent):
             try_enter_paused()
             record_heartbeat(self.name, detail=manager_heartbeat_detail())
             now = datetime.now()
+            month = previous_month()
+            llm_ops_key = f"{LLM_OPS_COMPLETED_KEY_PREFIX}{month}"
+            if self._llm_ops_catch_up_due(now) and not StateStore().get(llm_ops_key):
+                try:
+                    result = self.run_once(month=month, sync=True)
+                    if result.get("reason") == "fleet_paused":
+                        await asyncio.sleep(300)
+                        continue
+                except Exception:
+                    self.logger.exception("Admin monthly LLM-ops catch-up failed")
+                    await asyncio.sleep(300)
+                    continue
             times = [
                 self._next_run_time(now),
                 self._next_investor_time(now),
@@ -149,6 +168,10 @@ class AdminManager(BaseAgent):
                     month=month,
                     sync=sync,
                 )
+            StateStore().set(
+                f"{LLM_OPS_COMPLETED_KEY_PREFIX}{month}",
+                datetime.now().isoformat(),
+            )
             record_dispatch(self.name, result_status="ok")
             return {"month": month, "expense": expense, "maintain": maintain}
 
@@ -320,6 +343,16 @@ class AdminManager(BaseAgent):
         return _next_day_of_month(
             now, day=int(cfg.get("day") or 1), time_str=str(cfg.get("time") or "09:00")
         )
+
+    @staticmethod
+    def _llm_ops_catch_up_due(now: datetime) -> bool:
+        cfg = llm_ops_config()
+        deadline = calendar_run_for_month(
+            now,
+            day=int(cfg.get("day") or 1),
+            at=parse_hhmm(str(cfg.get("time") or "09:00")),
+        )
+        return now >= deadline
 
     def _next_investor_time(self, now: datetime) -> datetime:
         cfg = _investor_cfg()

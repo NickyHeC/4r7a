@@ -6,7 +6,12 @@ from company_brain.agents.finance.monthly_expense import MonthlyExpenseManager
 from company_brain.agents.finance.quarterly_calculation import QuarterlyCalculationManager
 from company_brain.agents.finance.request_manual_accounting import RequestManualAccountingAgent
 from company_brain.agents.operations.shared.scheduling import is_scheduled_moment
-from company_brain.agents.scheduling.calendar import next_calendar_run, next_daily_run, parse_hhmm
+from company_brain.agents.scheduling.calendar import (
+    calendar_run_for_month,
+    next_calendar_run,
+    next_daily_run,
+    parse_hhmm,
+)
 
 
 def test_scheduled_moment_match():
@@ -43,6 +48,15 @@ def test_next_calendar_run_allowed_months():
     ) == datetime(2026, 7, 5, 10, 0)
 
 
+def test_calendar_run_for_month_can_resolve_past_deadline():
+    assert calendar_run_for_month(
+        datetime(2026, 3, 20, 12, 0),
+        day=31,
+        at=time(9, 0),
+        month=2,
+    ) == datetime(2026, 2, 28, 9, 0)
+
+
 def test_parse_hhmm():
     assert parse_hhmm("07:45") == time(7, 45)
 
@@ -71,4 +85,8 @@ def test_finance_managers_use_configured_schedules(monkeypatch):
     now = datetime(2026, 4, 1, 8, 0)
     assert MonthlyExpenseManager._next_run_time(now) == datetime(2026, 4, 3, 7, 30)
     assert QuarterlyCalculationManager._next_run_time(now) == datetime(2026, 4, 7, 11, 15)
+    assert MonthlyExpenseManager._catch_up_due(now) is False
+    assert MonthlyExpenseManager._catch_up_due(datetime(2026, 4, 3, 7, 30)) is True
+    assert QuarterlyCalculationManager._catch_up_due(now) is False
+    assert QuarterlyCalculationManager._catch_up_due(datetime(2026, 5, 1, 0, 0)) is True
     assert RequestManualAccountingAgent._seconds_until_check(datetime(2026, 4, 1, 12, 20)) == 3600

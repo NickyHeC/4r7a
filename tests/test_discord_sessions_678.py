@@ -154,6 +154,14 @@ def test_discord_manager_monthly_gate(monkeypatch):
     assert manager._should_run_member_scoring() is True
 
 
+def test_discord_manager_does_not_complete_failed_dispatch():
+    manager = DiscordManager(MagicMock())
+    runtime = MagicMock()
+    runtime.run.side_effect = RuntimeError("unavailable")
+
+    assert manager._run_agent(runtime, MemberScoringAgent) is False
+
+
 def test_onboarding_estimate_not_configured(monkeypatch):
     monkeypatch.setattr(
         "company_brain.agents.growth.discord.discord_onboarding.discord_client.discord_is_configured",

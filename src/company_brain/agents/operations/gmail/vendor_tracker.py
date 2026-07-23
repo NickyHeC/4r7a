@@ -19,7 +19,7 @@ from company_brain.agents.operations.shared.gmail_config import mailbox_id
 from company_brain.agents.operations.shared.routing import RoutingStore
 from company_brain.agents.operations.shared.wiki_crm import append_crm_entry, format_mail_section
 from company_brain.config import AppConfig
-from company_brain.wiki.publish import UPDATE, write_wiki_page
+from company_brain.wiki.publish import APPEND, UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
 SPECIALIST_KEY = "vendor_tracker"
@@ -29,7 +29,8 @@ class VendorTrackerAgent(BaseAgent):
     """Maintain per-vendor wiki pages from Vendor-tagged mail."""
 
     name = "vendor_tracker"
-    WRITE_MODE = "append"
+    WRITE_MODE = APPEND
+    SEED_WRITE_MODE = UPDATE
 
     def __init__(self, config: AppConfig, mailbox: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -71,8 +72,8 @@ class VendorTrackerAgent(BaseAgent):
                 self.logger.exception("Vendor tracker failed for %s", record.message_id)
         return {"updated": updated}
 
-    @staticmethod
-    def _ensure_vendor_page(rel_path: str, title: str, from_hdr: str) -> None:
+    @classmethod
+    def _ensure_vendor_page(cls, rel_path: str, title: str, from_hdr: str) -> None:
         store = LocalWikiStore()
         if store.exists(rel_path):
             return
@@ -87,7 +88,7 @@ class VendorTrackerAgent(BaseAgent):
             rel_path,
             title,
             body,
-            mode=UPDATE,
+            mode=cls.SEED_WRITE_MODE,
             section="finance",
             sync=False,
         )

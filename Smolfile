@@ -21,6 +21,7 @@ allow_hosts = [
   "api.ramp.com",
   "slack.com",
   "api.github.com",
+  "github.com",
   # LLM providers (see config/models.yaml + COMPANY_BRAIN_LLM_PROVIDER)
   "api.anthropic.com",
   "api.openai.com",
@@ -33,6 +34,7 @@ allow_hosts = [
   "gmail.googleapis.com",
   "oauth2.googleapis.com",
   "accounts.google.com",
+  "openidconnect.googleapis.com",
   # Gmail (operations) — optional Composio-hosted Gmail MCP
   "backend.composio.dev",
   # Linear (engineering) — GraphQL API + official MCP
@@ -54,6 +56,15 @@ allow_hosts = [
   # Google Calendar (operations) — REST + official MCP
   "calendarmcp.googleapis.com",
   "calendar.googleapis.com",
+  # Local-search public discovery (lsearch); Claude WebSearch uses provider egress.
+  "google.com",
+  "www.google.com",
+  "duckduckgo.com",
+  "html.duckduckgo.com",
+  "bing.com",
+  "www.bing.com",
+  "linkedin.com",
+  "www.linkedin.com",
 ]
 
 [dev]

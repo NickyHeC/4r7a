@@ -63,6 +63,7 @@ def test_subscription_gate_marks_after_report_write(tmp_path, monkeypatch):
     assert agent.should_run(quarter="2026-Q2") is True
     out = agent.run(quarter="2026-Q2")
     assert out["wiki_path"] == "finance/subscription.md"
+    agent._detect_recurring.assert_called_once_with(["2026-04", "2026-05", "2026-06"])
     assert LocalWikiStore(root=tmp_path / "wiki").exists("finance/subscription.md")
     assert agent.should_run(quarter="2026-Q2") is False
 

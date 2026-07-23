@@ -22,7 +22,12 @@ from datetime import datetime
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.scheduling.calendar import next_calendar_run, parse_hhmm
+from company_brain.agents.gates import StateStore
+from company_brain.agents.scheduling.calendar import (
+    calendar_run_for_month,
+    next_calendar_run,
+    parse_hhmm,
+)
 from company_brain.config import AppConfig
 
 from .shared import categories as cat
@@ -31,6 +36,7 @@ from .shared.config import load_finance_config
 
 PARENT_KEY = "monthly_expense_reports"
 PARENT_TERMS = ["Monthly Expense Reports", "Monthly Expense Report"]
+COMPLETED_KEY_PREFIX = "finance_monthly_expense:completed:"
 
 
 class MonthlyExpenseManager(BaseAgent):
@@ -49,6 +55,7 @@ class MonthlyExpenseManager(BaseAgent):
         super().__init__(config, **kwargs)
         self.finance_config = load_finance_config()
         self.keyword_maps = cat.load_company_keywords(self.finance_config)
+        self._state = StateStore()
 
     # -- lifecycle ---------------------------------------------------------
 
@@ -69,6 +76,17 @@ class MonthlyExpenseManager(BaseAgent):
         self.logger.info("Monthly expense manager starting persistent loop")
         while True:
             now = datetime.now()
+            month = transactions.previous_month()
+            if self._catch_up_due(now) and not self._state.get(f"{COMPLETED_KEY_PREFIX}{month}"):
+                try:
+                    result = self.run_once(month)
+                    if result.get("reason") == "fleet_paused":
+                        await asyncio.sleep(300)
+                        continue
+                except Exception:
+                    self.logger.exception("Monthly expense catch-up failed")
+                    await asyncio.sleep(300)
+                    continue
             nxt = self._next_run_time(now)
             wait = (nxt - now).total_seconds()
             self.logger.info("Next monthly run at %s (sleep %.0fs)", nxt.isoformat(), wait)
@@ -92,7 +110,9 @@ class MonthlyExpenseManager(BaseAgent):
         with dispatch_slot(self.name) as allowed:
             if not allowed:
                 return {"status": "skipped", "reason": "fleet_paused", "month": month}
-            return self._run_report(month, escalate=escalate)
+            result = self._run_report(month, escalate=escalate)
+            self._state.set(f"{COMPLETED_KEY_PREFIX}{month}", datetime.now().isoformat())
+            return result
 
     def _run_report(self, month: str, *, escalate: bool = True) -> dict[str, Any]:
         """Compile and publish the expense report for ``month`` (YYYY-MM).
@@ -272,3 +292,13 @@ class MonthlyExpenseManager(BaseAgent):
             day=int(schedule.get("day_of_month") or 1),
             at=parse_hhmm(str(schedule.get("time") or "08:00")),
         )
+
+    @staticmethod
+    def _catch_up_due(now: datetime) -> bool:
+        schedule = (load_finance_config().get("schedules") or {}).get("monthly_expense") or {}
+        deadline = calendar_run_for_month(
+            now,
+            day=int(schedule.get("day_of_month") or 1),
+            at=parse_hhmm(str(schedule.get("time") or "08:00")),
+        )
+        return now >= deadline

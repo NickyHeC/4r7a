@@ -12,7 +12,7 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
-from company_brain.agents.base import BaseAgent
+from company_brain.agents.base import SKIPPED, BaseAgent
 from company_brain.agents.gates import StateStore
 from company_brain.agents.growth.discord import discord_client
 from company_brain.agents.growth.discord import discord_config as cfg
@@ -67,14 +67,11 @@ class DiscordManager(BaseAgent):
         self._run_agent(runtime, PollWatcherAgent)
         self._run_agent(runtime, CommunityIntakeAgent)
         self._run_agent(runtime, OpenConversationAgent)
-        if self._should_run_activity_snapshot():
-            self._run_agent(runtime, ActivitySnapshotAgent)
+        if self._should_run_activity_snapshot() and self._run_agent(runtime, ActivitySnapshotAgent):
             self._state.set(ACTIVITY_DAY_KEY, datetime.now(timezone.utc).date().isoformat())
-        if self._should_run_technical_absorb():
-            self._run_agent(runtime, TechnicalAbsorbAgent)
+        if self._should_run_technical_absorb() and self._run_agent(runtime, TechnicalAbsorbAgent):
             self._state.set(ABSORB_DAY_KEY, datetime.now(timezone.utc).date().isoformat())
-        if self._should_run_member_scoring():
-            self._run_agent(runtime, MemberScoringAgent)
+        if self._should_run_member_scoring() and self._run_agent(runtime, MemberScoringAgent):
             self._state.set(MEMBER_SCORING_MONTH_KEY, datetime.now(timezone.utc).strftime("%Y-%m"))
         record_dispatch(self.name, result_status="ok")
 
@@ -93,8 +90,10 @@ class DiscordManager(BaseAgent):
         month = datetime.now(timezone.utc).strftime("%Y-%m")
         return self._state.get(MEMBER_SCORING_MONTH_KEY) != month
 
-    def _run_agent(self, runtime: Any, agent_cls: type, **kwargs: Any) -> None:
+    def _run_agent(self, runtime: Any, agent_cls: type, **kwargs: Any) -> bool:
         try:
-            runtime.run(agent_cls, self.config, **kwargs)
+            result = runtime.run(agent_cls, self.config, **kwargs)
+            return result is not SKIPPED
         except Exception:
             self.logger.exception("%s dispatch failed", agent_cls.__name__)
+            return False

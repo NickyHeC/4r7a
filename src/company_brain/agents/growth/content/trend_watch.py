@@ -22,7 +22,8 @@ from company_brain.wiki.store import LocalWikiStore
 
 WIKI_PATH = "growth/content/trend-watch.md"
 TITLE = "Trend Watch"
-WRITE_MODE = UPDATE
+WRITE_MODE = APPEND
+SEED_WRITE_MODE = UPDATE
 DAY_KEY = "trend_watch:day"
 
 
@@ -31,6 +32,7 @@ class TrendWatchAgent(BaseAgent):
 
     name = "trend_watch"
     WRITE_MODE = WRITE_MODE
+    SEED_WRITE_MODE = SEED_WRITE_MODE
 
     def __init__(self, config, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -64,7 +66,7 @@ class TrendWatchAgent(BaseAgent):
                 WIKI_PATH,
                 TITLE,
                 f"# {TITLE}\n\nHot online discussions relevant to the company.\n",
-                mode=WRITE_MODE,
+                mode=self.SEED_WRITE_MODE,
                 section="growth",
                 type_="log",
             )
@@ -90,7 +92,7 @@ class TrendWatchAgent(BaseAgent):
             WIKI_PATH,
             TITLE,
             section,
-            mode=APPEND,
+            mode=self.WRITE_MODE,
             section="growth",
             type_="log",
         )

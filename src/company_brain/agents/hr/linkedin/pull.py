@@ -45,8 +45,9 @@ class PullAgent(BaseAgent):
     WRITE_MODE = WRITE_MODE
     VOICE_WRITE_MODE = VOICE_WRITE_MODE
 
-    def __init__(self, config: AppConfig, **kwargs: Any):
+    def __init__(self, config: AppConfig, model: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
+        self.model = model
         self._state = StateStore()
 
     def should_run(self, *, member_key: str = "", force: bool = False, **kwargs: Any) -> bool:

@@ -12,11 +12,11 @@ from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import StateStore
 from company_brain.agents.growth.shared.growth_slack import growth_notifier
 from company_brain.notify import ACTIONABLE, Signal
-from company_brain.wiki.publish import APPEND, UPDATE, format_append_section, write_wiki_page
+from company_brain.wiki.publish import APPEND, format_append_section, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
 MONTH_KEY = "competitor_watch:month"
-WRITE_MODE = UPDATE
+WRITE_MODE = APPEND
 
 
 class CompetitorWatchAgent(BaseAgent):
@@ -67,7 +67,7 @@ class CompetitorWatchAgent(BaseAgent):
                 rel,
                 title,
                 section,
-                mode=APPEND,
+                mode=self.WRITE_MODE,
                 section="growth",
                 type_="competitor",
             )

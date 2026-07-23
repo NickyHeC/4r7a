@@ -23,7 +23,12 @@ from datetime import datetime
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.scheduling.calendar import next_calendar_run, parse_hhmm
+from company_brain.agents.gates import StateStore
+from company_brain.agents.scheduling.calendar import (
+    calendar_run_for_month,
+    next_calendar_run,
+    parse_hhmm,
+)
 from company_brain.config import AppConfig
 
 from .shared import categories as cat
@@ -34,6 +39,7 @@ QUARTER_START_MONTHS = {1, 4, 7, 10}
 
 QUARTERLY_KEY = "quarterly_metric"
 QUARTERLY_TERMS = ["Quarterly Metric", "Quarterly Metrics"]
+COMPLETED_KEY_PREFIX = "finance_quarterly_calculation:completed:"
 
 
 class QuarterlyCalculationManager(BaseAgent):
@@ -51,6 +57,7 @@ class QuarterlyCalculationManager(BaseAgent):
         super().__init__(config, **kwargs)
         self.finance_config = load_finance_config()
         self.keyword_maps = cat.load_company_keywords(self.finance_config)
+        self._state = StateStore()
 
     # -- lifecycle ---------------------------------------------------------
 
@@ -70,6 +77,17 @@ class QuarterlyCalculationManager(BaseAgent):
         self.logger.info("Quarterly calculation manager starting persistent loop")
         while True:
             now = datetime.now()
+            quarter = transactions.previous_quarter()
+            if self._catch_up_due(now) and not self._state.get(f"{COMPLETED_KEY_PREFIX}{quarter}"):
+                try:
+                    result = self.run_once(quarter)
+                    if result.get("reason") == "fleet_paused":
+                        await asyncio.sleep(300)
+                        continue
+                except Exception:
+                    self.logger.exception("Quarterly calculation catch-up failed")
+                    await asyncio.sleep(300)
+                    continue
             nxt = self._next_run_time(now)
             wait = (nxt - now).total_seconds()
             self.logger.info("Next quarterly run at %s (sleep %.0fs)", nxt.isoformat(), wait)
@@ -93,7 +111,9 @@ class QuarterlyCalculationManager(BaseAgent):
         with dispatch_slot(self.name) as allowed:
             if not allowed:
                 return {"status": "skipped", "reason": "fleet_paused", "quarter": quarter}
-            return self._run_calculation(quarter, escalate=escalate)
+            result = self._run_calculation(quarter, escalate=escalate)
+            self._state.set(f"{COMPLETED_KEY_PREFIX}{quarter}", datetime.now().isoformat())
+            return result
 
     def _run_calculation(self, quarter: str, *, escalate: bool = True) -> dict[str, Any]:
         """Compute and publish metrics for ``quarter`` (e.g. 2026-Q1).
@@ -287,3 +307,15 @@ class QuarterlyCalculationManager(BaseAgent):
             at=parse_hhmm(str(schedule.get("time") or "09:00")),
             months=QUARTER_START_MONTHS,
         )
+
+    @staticmethod
+    def _catch_up_due(now: datetime) -> bool:
+        schedule = (load_finance_config().get("schedules") or {}).get("quarterly_calculation") or {}
+        quarter_start_month = ((now.month - 1) // 3) * 3 + 1
+        deadline = calendar_run_for_month(
+            now,
+            month=quarter_start_month,
+            day=int(schedule.get("day_of_quarter") or 5),
+            at=parse_hhmm(str(schedule.get("time") or "09:00")),
+        )
+        return now >= deadline

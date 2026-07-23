@@ -82,7 +82,10 @@ class SubscriptionAuditAgent(BaseAgent):
         self, *, quarter: str | None = None, months_back: int = 3, **kwargs: Any
     ) -> dict[str, Any]:
         self.logger.info("Auditing subscriptions over the past %d months", months_back)
-        recurring = self._detect_recurring(self._recent_months(months_back))
+        months = (
+            transactions.quarter_months(quarter) if quarter else self._recent_months(months_back)
+        )
+        recurring = self._detect_recurring(months)
         self.logger.info("Detected %d recurring vendors", len(recurring))
 
         report = self._build_report(recurring)
