@@ -73,3 +73,10 @@ def dispatch_job(job_id: str) -> dict[str, Any] | None:
         if job["id"] == job_id:
             return job
     return None
+
+
+def admin_emails() -> list[str]:
+    raw = load_admin_console_config().get("admins") or []
+    if not isinstance(raw, list):
+        return []
+    return [str(x).strip().lower() for x in raw if str(x).strip()]

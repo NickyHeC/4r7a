@@ -2,12 +2,17 @@
 {% block title %}Costs{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>LLM operating cost</h1>
-  <p class="muted">Month {{ budget.month }} · limit ${{ "%.2f"|format(budget.limit_usd) }} · tracked via StateStore / models.yaml</p>
+  <h1>4r7a running cost</h1>
+  <p class="muted">
+    Month {{ budget.month }} ·
+    total ${{ "%.2f"|format(total_month_usd) }}
+    {% if total_is_estimate %}<span class="pill stale">estimate</span>{% endif %}
+    · LLM tracked via StateStore / models.yaml
+  </p>
   <table>
-    <tr><th>Spent (est.)</th><td>${{ "%.2f"|format(budget.spent_usd) }} ({{ budget.percent_used }}%)</td></tr>
-    <tr><th>Runtime</th><td>${{ "%.2f"|format(budget.runtime_usd) }}</td></tr>
-    <tr><th>Builder</th><td>${{ "%.2f"|format(budget.builder_usd) }}</td></tr>
+    <tr><th>LLM spent (est.)</th><td>${{ "%.2f"|format(budget.spent_usd) }} ({{ budget.percent_used }}% of ${{ "%.2f"|format(budget.limit_usd) }})</td></tr>
+    <tr><th>LLM runtime</th><td>${{ "%.2f"|format(budget.runtime_usd) }}</td></tr>
+    <tr><th>LLM builder</th><td>${{ "%.2f"|format(budget.builder_usd) }}</td></tr>
     <tr><th>Tokens in/out</th><td>{{ budget.input_tokens }} / {{ budget.output_tokens }}</td></tr>
     <tr><th>Budget enabled</th><td>{{ budget.enabled }} · hard_stop={{ budget.hard_stop }}</td></tr>
   </table>
@@ -15,10 +20,25 @@
     <a class="btn" href="/costs?reconcile=1">Run Mercury reconcile</a>
   </p>
   {% if reconcile %}
-  <h2 style="margin-top:1rem">Reconcile</h2>
+  <h2 style="margin-top:1rem">LLM vendor reconcile</h2>
   <pre class="assist">{{ reconcile | tojson(indent=2) }}</pre>
   {% endif %}
 </div>
+
+<div class="card">
+  <h2>Cloud VM (estimate)</h2>
+  {% if vm.enabled %}
+  <p class="muted">{{ vm.label }} — active manager heartbeats × ${{ "%.4f"|format(vm.vm_hourly_usd) }}/hr × month-to-date hours.</p>
+  <table>
+    <tr><th>Active managers</th><td>{{ vm.active_managers }} / {{ vm.catalog_managers }} (fresh ≤ {{ vm.stale_minutes }}m)</td></tr>
+    <tr><th>Hours elapsed (month)</th><td>{{ vm.hours_elapsed_month }}</td></tr>
+    <tr><th>VM estimate</th><td>${{ "%.2f"|format(vm.estimate_month_usd) }} <span class="pill stale">estimate</span></td></tr>
+  </table>
+  {% else %}
+  <p class="muted">Set <code>costs.vm_hourly_usd</code> in <code>config/admin_console.yaml</code> to show a VM estimate.</p>
+  {% endif %}
+</div>
+
 {% if expense_rel %}
 <div class="card">
   <h2>Latest expense page · {{ expense_rel }}</h2>

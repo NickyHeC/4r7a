@@ -11,6 +11,15 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Sessions C+D shipped (Review + SSO)
+
+- **C:** `/review` aggregates admin action items (import/mount/knowledge,
+  sync_conflict, weave/stale/offboard pages, redeploy + install state cues);
+  Costs adds VM estimate from active heartbeats × `costs.vm_hourly_usd`.
+- **D:** Google Workspace OIDC (`/auth/google`, `/auth/callback`), `admins`
+  allow-list, `password_login` local-dev fallback; `auth_ready()` for serve.
+- Config/env/docs: `admin_console.yaml`, `.env.example`, install + admin handbook.
+
 ## 2026-07-22 — Sessions A+B shipped (fleet + upstream)
 
 - **A — Fleet:** `runtime/fleet_gate.py` (pause/resume, busy slots, redeploy cue);

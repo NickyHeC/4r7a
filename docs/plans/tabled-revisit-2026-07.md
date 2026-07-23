@@ -144,8 +144,8 @@ Onboarding / one-shot install paths are out of this diagram (foundation `company
 |---------|-----------|-----------------|
 | **A** | Redeploy cue + fleet pause/resume (+ console controls) | **Shipped 2026-07-22** |
 | **B** | `company-wiki` create + monthly upstream sync PR | **Shipped 2026-07-22** |
-| **C** | Console Review (all admin action items) + Costs (LLM+VM) | Triage + cost visibility |
-| **D** | Google Workspace SSO + multi-admin allow-list | Auth |
+| **C** | Console Review (all admin action items) + Costs (LLM+VM) | **Shipped 2026-07-22** |
+| **D** | Google Workspace SSO + multi-admin allow-list | **Shipped 2026-07-22** |
 | **E** | Encyclopedia absorb lanes + soft length + burst distill | Wiki quality |
 | **F** | `@wiki` planner fan-out + project registry + `@wiki sync now` | Q&A |
 | **G** | Personal wiki mount kind + weekly Notion orphan discovery | Ingest |

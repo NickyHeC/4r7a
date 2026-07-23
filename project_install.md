@@ -120,17 +120,23 @@ healthy volume from GitHub. Automated rollback agents are tabled.
 
 ### Admin console — logged-in ops cockpit (wiki host)
 
-Private-mesh web UI for agent status, LLM costs, wiki search/edit, allow-listed
-dispatch, and Assist. **Not** the member bridge; do not share console credentials
-with member coding agents.
+Private-mesh web UI for Status, **Review** (admin action items), Costs (LLM +
+optional VM estimate), wiki search/edit, allow-listed dispatch, and Assist.
+**Not** the member bridge; do not share console credentials with member coding agents.
 
 1. `pip install 'company-brain[admin-console]'`
-2. Set in `.env`:
-   - `ADMIN_CONSOLE_PASSWORD` (required)
-   - `ADMIN_CONSOLE_SESSION_SECRET` (recommended; otherwise derived from password)
-3. Adjust `config/admin_console.yaml` (bind host/port, manager catalog, dispatch allow-list)
+2. Auth (at least one):
+   - **Local-dev password:** `ADMIN_CONSOLE_PASSWORD` +
+     `password_login: true` in `config/admin_console.yaml`
+   - **Google Workspace SSO:** create an OAuth client (redirect
+     `{PUBLIC_BASE}/auth/callback`), set
+     `ADMIN_CONSOLE_GOOGLE_CLIENT_ID` / `ADMIN_CONSOLE_GOOGLE_CLIENT_SECRET`,
+     `ADMIN_CONSOLE_PUBLIC_BASE_URL`, and in yaml:
+     `sso.enabled: true`, optional `sso.hosted_domain`, `admins: [you@company.com]`
+   - `ADMIN_CONSOLE_SESSION_SECRET` recommended either way
+3. Optional: `costs.vm_hourly_usd` in `admin_console.yaml` for VM estimate on Costs
 4. Start: `company-brain admin console` (default `127.0.0.1:8780`)
-5. Reach via Tailscale/SSH tunnel — do not bind publicly without a reverse proxy + TLS
+5. Reach via Tailscale/SSH tunnel — do not bind publicly (SPA/public expose stays tabled)
 
 **CLI:** `admin console [--host] [--port]`
 

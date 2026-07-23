@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Review{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Admin review</h1>
+  <p class="muted">
+    All action items requesting admin attention. Triage here; approve/reject still happens
+    via wiki/CLI/agents — this pane is not a second write source of truth.
+  </p>
+  <p>{{ snap.count }} item{% if snap.count != 1 %}s{% endif %}
+    {% if snap.by_kind %}
+      ·
+      {% for kind, n in snap.by_kind.items() %}
+        <span class="pill stale">{{ kind }} {{ n }}</span>
+      {% endfor %}
+    {% endif %}
+  </p>
+</div>
+<div class="card">
+  {% if snap.items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Kind</th>
+        <th>Title</th>
+        <th>Source</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in snap.items %}
+      <tr>
+        <td><span class="pill stale">{{ item.kind }}</span></td>
+        <td><a href="{{ item.href }}">{{ item.title }}</a></td>
+        <td class="muted">{{ item.source }}</td>
+        <td class="muted">{{ item.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No open admin action items right now.</p>
+  {% endif %}
+</div>
+{% endblock %}

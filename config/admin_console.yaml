@@ -1,8 +1,28 @@
-# Admin console (non-secret). Secrets: ADMIN_CONSOLE_PASSWORD, ADMIN_CONSOLE_SESSION_SECRET.
+# Admin console (non-secret).
+# Secrets (env): ADMIN_CONSOLE_PASSWORD, ADMIN_CONSOLE_SESSION_SECRET,
+# ADMIN_CONSOLE_GOOGLE_CLIENT_ID, ADMIN_CONSOLE_GOOGLE_CLIENT_SECRET,
+# ADMIN_CONSOLE_PUBLIC_BASE_URL (OIDC redirect base, default http://127.0.0.1:8780).
 
 bind_host: "127.0.0.1"
 bind_port: 8780
 stale_minutes: 10
+
+# Multi-admin allow-list (Google SSO emails, lowercase). Empty = any verified SSO user
+# (still gated by sso.hosted_domain when set). Password login uses a local identity.
+admins: []
+
+# Local-dev password login (ADMIN_CONSOLE_PASSWORD). Prefer SSO in shared installs.
+password_login: true
+
+sso:
+  enabled: false
+  provider: google
+  hosted_domain: "" # e.g. yourcompany.com — optional Google Workspace hd=
+
+# VM cost estimate (heartbeats × hourly rate). 0 disables the VM line.
+costs:
+  vm_hourly_usd: 0.0
+  vm_estimate_label: "estimate (not invoice)"
 
 # Persistent managers shown on the Status pane (heartbeats written to state.json).
 managers:

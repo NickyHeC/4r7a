@@ -4,10 +4,22 @@
 <div class="login-wrap card">
   <h1>Admin console</h1>
   <p class="muted">Private mesh ops cockpit. Separate from member bridge.</p>
+  {% if sso_enabled %}
+  <p style="margin:1rem 0">
+    <a class="btn" href="/auth/google">Sign in with Google Workspace</a>
+  </p>
+  {% if password_login %}
+  <p class="muted">Or use local password (dev fallback):</p>
+  {% endif %}
+  {% endif %}
+  {% if password_login %}
   <form method="post" action="/login">
     <label for="password">Password</label>
-    <input id="password" name="password" type="password" required autofocus />
+    <input id="password" name="password" type="password" required {% if not sso_enabled %}autofocus{% endif %} />
     <p style="margin-top:1rem"><button type="submit">Sign in</button></p>
   </form>
+  {% elif not sso_enabled %}
+  <p class="muted">No login method configured. See project_install.md.</p>
+  {% endif %}
 </div>
 {% endblock %}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -11,7 +12,10 @@ from company_brain.admin_console.config import dispatch_jobs, stale_minutes
 from company_brain.admin_console.costs import costs_snapshot
 from company_brain.admin_console.dispatch import DispatchError, run_dispatch
 from company_brain.admin_console.heartbeats import status_rows
+from company_brain.admin_console.review import review_snapshot
 from company_brain.admin_console.wiki_ops import get_page, save_page, search_wiki
+
+_OAUTH_STATE_COOKIE = "cb_admin_oauth_state"
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -71,14 +75,20 @@ def create_app():
         return _render(
             request,
             "login.html",
-            {"show_nav": False, "flash": _flash(request), "nav": ""},
+            {
+                "show_nav": False,
+                "flash": _flash(request),
+                "nav": "",
+                "sso_enabled": auth.sso_enabled(),
+                "password_login": auth.password_login_enabled() and auth.password_configured(),
+            },
         )
 
     @app.post("/login")
     async def login_post(request: Request, password: str = Form(...)):
-        if not auth.password_configured():
+        if not auth.password_login_enabled() or not auth.password_configured():
             return RedirectResponse(
-                "/login?flash=err&msg=" + quote("ADMIN_CONSOLE_PASSWORD not set"),
+                "/login?flash=err&msg=" + quote("Password login disabled"),
                 status_code=303,
             )
         if not auth.verify_password(password):
@@ -87,10 +97,72 @@ def create_app():
                 "/login?flash=err&msg=" + quote("Invalid password"),
                 status_code=303,
             )
-        token = auth.mint_session()
-        audit.append_event("login_ok")
+        token = auth.mint_session(email=auth.PASSWORD_LOCAL_EMAIL)
+        audit.append_event("login_ok", who="password")
         resp = RedirectResponse("/status", status_code=303)
         resp.set_cookie(value=token, **auth.session_cookie_kwargs())
+        return resp
+
+    @app.get("/auth/google")
+    async def auth_google():
+        if not auth.sso_enabled():
+            return RedirectResponse(
+                "/login?flash=err&msg=" + quote("Google SSO not configured"),
+                status_code=303,
+            )
+        state = secrets.token_urlsafe(24)
+        resp = RedirectResponse(auth.google_authorize_url(state=state), status_code=303)
+        resp.set_cookie(
+            key=_OAUTH_STATE_COOKIE,
+            value=state,
+            httponly=True,
+            samesite="lax",
+            max_age=600,
+            path="/",
+        )
+        return resp
+
+    @app.get("/auth/callback")
+    async def auth_callback(request: Request):
+        if not auth.sso_enabled():
+            return RedirectResponse(
+                "/login?flash=err&msg=" + quote("Google SSO not configured"),
+                status_code=303,
+            )
+        err = request.query_params.get("error")
+        if err:
+            audit.append_event("login_failed", who="google", detail=err)
+            return RedirectResponse(
+                "/login?flash=err&msg=" + quote(f"Google auth error: {err}"),
+                status_code=303,
+            )
+        state = request.query_params.get("state") or ""
+        cookie_state = request.cookies.get(_OAUTH_STATE_COOKIE) or ""
+        if not state or not cookie_state or state != cookie_state:
+            audit.append_event("login_failed", who="google", detail="state_mismatch")
+            return RedirectResponse(
+                "/login?flash=err&msg=" + quote("OAuth state mismatch"),
+                status_code=303,
+            )
+        code = request.query_params.get("code") or ""
+        if not code:
+            return RedirectResponse(
+                "/login?flash=err&msg=" + quote("Missing OAuth code"),
+                status_code=303,
+            )
+        try:
+            info = auth.exchange_google_code(code)
+        except auth.AuthError as exc:
+            audit.append_event("login_failed", who="google", detail=str(exc)[:200])
+            return RedirectResponse(
+                "/login?flash=err&msg=" + quote(str(exc)[:200]),
+                status_code=303,
+            )
+        token = auth.mint_session(email=str(info["email"]))
+        audit.append_event("login_ok", who=str(info["email"]))
+        resp = RedirectResponse("/status", status_code=303)
+        resp.set_cookie(value=token, **auth.session_cookie_kwargs())
+        resp.delete_cookie(_OAUTH_STATE_COOKIE, path="/")
         return resp
 
     @app.get("/logout")
@@ -99,6 +171,23 @@ def create_app():
         resp.delete_cookie(auth.COOKIE_NAME, path="/")
         audit.append_event("logout")
         return resp
+
+    @app.get("/review", response_class=HTMLResponse)
+    async def review_page(request: Request):
+        denied = _require(request)
+        if denied:
+            return denied
+        return _render(
+            request,
+            "review.html",
+            _ctx(request, "review", snap=review_snapshot()),
+        )
+
+    @app.get("/api/review")
+    async def api_review(request: Request):
+        if not _authed(request):
+            return {"error": "unauthorized"}
+        return review_snapshot()
 
     @app.get("/status", response_class=HTMLResponse)
     async def status_page(request: Request):
@@ -204,6 +293,9 @@ def create_app():
                 expense_rel=snap["expense_rel"],
                 expense_body=snap["expense_body"],
                 reconcile=snap["reconcile"],
+                vm=snap["vm"],
+                total_month_usd=snap["total_month_usd"],
+                total_is_estimate=snap["total_is_estimate"],
             ),
         )
 
