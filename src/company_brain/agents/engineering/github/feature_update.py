@@ -1,11 +1,9 @@
 """Feature Update Agent.
 
-SDK: Anthropic Claude Agent SDK — needs large context window to digest a week's
-worth of commits and distill them into major implementations. Single competent
-assistant that reads GitHub and writes to Notion.
+SDK: Neither (deterministic GitHub commit filtering and Markdown rendering).
 
 Reads recent commits from GitHub, filters for major implementations and updates,
-and compiles a weekly feature update on the Notion "Feature Updates" page.
+and appends a weekly feature update to wiki Markdown before the Notion mirror.
 Triggered by the engineering manager every Monday.
 """
 

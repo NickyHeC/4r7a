@@ -1,12 +1,11 @@
 """Budget Report Agent (ephemeral).
 
 Started on command by quarterly_calculation. Matches the quarter's expenses to
-major company events recorded in the Notion "Company Timeline" page (using the
-"Quarterly Metric" data) and updates the Notion "Budget Summary" page, giving
-each quarter its own heading.
+major company events in the wiki Company Timeline (using Quarterly Metric data)
+and appends to the wiki Budget Summary before the Notion mirror.
 
 SDK: Anthropic Claude Agent SDK. Matching spend to qualitative company events is
-a reasoning task over two Notion documents — well suited to a single competent
+a reasoning task over two wiki documents — well suited to a single competent
 assistant with a large context window. Falls back to a deterministic summary if
 the SDK is unavailable.
 """
@@ -17,6 +16,7 @@ import asyncio
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.gates import StateStore, changed_since
 from company_brain.config import AppConfig
 
 from .shared import notion_pages
@@ -40,34 +40,46 @@ class BudgetReportAgent(BaseAgent):
     def __init__(self, config: AppConfig, model: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
         self.model = model
+        self._state = StateStore()
 
     def should_run(self, *, quarter: str, **kwargs: Any) -> bool:
         """Cost gate: rebuild only when this quarter's metric content changed."""
-        import hashlib
-
-        from company_brain.agents.gates import changed_since
-
-        metric = notion_pages.read_page("finance/quarterly-metric.md")
-        sig = hashlib.sha256(f"{quarter}:{metric}".encode()).hexdigest()[:16]
-        return changed_since(f"budget_report:{quarter}", sig)
+        return changed_since(
+            f"budget_report:{quarter}",
+            self._source_signature(quarter),
+            store=self._state,
+            update=False,
+        )
 
     def run(self, *, quarter: str, **kwargs: Any) -> dict[str, Any]:
         heading = f"{quarter[-2:]} {quarter[:4]}"
         self.logger.info("Building budget report for %s", heading)
 
-        metric_id = notion_pages.get_bound_id(QUARTERLY_KEY)
-        metric_text = notion_pages.read_page(metric_id) if metric_id else ""
+        metric_path = notion_pages.get_page_handle(QUARTERLY_KEY)
+        metric_text = notion_pages.read_page(metric_path) if metric_path else ""
 
-        timeline_id = notion_pages.ensure_page(TIMELINE_KEY, TIMELINE_TERMS, "Company Timeline")
-        timeline_text = notion_pages.read_page(timeline_id) if timeline_id else ""
+        timeline_path = notion_pages.ensure_page(
+            TIMELINE_KEY,
+            TIMELINE_TERMS,
+            "Company Timeline",
+        )
+        timeline_text = notion_pages.read_page(timeline_path)
 
         section = self._compose_section(heading, metric_text, timeline_text)
 
-        budget_id = notion_pages.ensure_page(BUDGET_KEY, BUDGET_TERMS, "Budget Summary")
-        if budget_id:
-            notion_pages.prepend_page_body(budget_id, section)
+        budget_path = notion_pages.ensure_page(BUDGET_KEY, BUDGET_TERMS, "Budget Summary")
+        notion_pages.prepend_page_body(budget_path, section)
+        self._state.set(f"budget_report:{quarter}", self._source_signature(quarter))
 
-        return {"quarter": quarter, "budget_page_id": budget_id, "section": section}
+        return {"quarter": quarter, "wiki_path": budget_path, "section": section}
+
+    @staticmethod
+    def _source_signature(quarter: str) -> str:
+        import hashlib
+
+        metric = notion_pages.read_page(notion_pages.wiki_path(QUARTERLY_KEY))
+        timeline = notion_pages.read_page(notion_pages.wiki_path(TIMELINE_KEY))
+        return hashlib.sha256(f"{quarter}:{metric}:{timeline}".encode()).hexdigest()[:16]
 
     def _compose_section(self, heading: str, metric_text: str, timeline_text: str) -> str:
         from company_brain.llm.tiers import resolve_agent_model

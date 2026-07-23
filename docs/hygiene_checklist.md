@@ -1,4 +1,4 @@
-# Hygiene checklist (phase 2 of 2)
+# Hygiene Checklist (Phase 2 of 2)
 
 How to build, test, and clean a change to company-brain so it meets the project's bar.
 This is the second half of the extend-the-system loop:
@@ -56,8 +56,9 @@ Project hook [`.cursor/hooks.json`](../.cursor/hooks.json) →
 [`.cursor/hooks/pre_ship_gate.py`](../.cursor/hooks/pre_ship_gate.py) runs on the
 agent **`stop`** event when the working tree has relevant code changes
 (`src/`, `tests/`, `config/`, `Smolfile`, `pyproject.toml`, `.cursor/rules/`,
-`.cursor/hooks/`). It executes the same four commands (with
-`doctor code --min-score 85`). On failure it returns a `followup_message` so the
+`.cursor/hooks/`). It executes the same gate with
+`company-brain doctor code --min-score 85`. On failure it returns a
+`followup_message` so the
 agent fixes and re-runs (capped at `loop_limit: 2`). On success / no relevant
 diff / aborted turns it prints `{}` and does not loop.
 

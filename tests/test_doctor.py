@@ -58,6 +58,14 @@ def test_agents_doctor_no_hyphen_filenames() -> None:
     assert hyphens.status == "pass"
 
 
+def test_agents_doctor_enforces_lifecycle_write_mode_and_cost_gates() -> None:
+    report = run_agents_doctor()
+    expected = {"agent_runtime_dispatch", "agent_write_mode", "agent_cost_gate"}
+    checks = {check.check: check.status for check in report.checks}
+    assert expected <= checks.keys()
+    assert all(checks[name] == "pass" for name in expected)
+
+
 def test_naming_doctor_passes() -> None:
     report = run_naming_doctor()
     assert report.score >= 85

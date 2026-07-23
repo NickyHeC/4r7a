@@ -49,10 +49,10 @@ class DraftReplyAgent(BaseAgent):
         candidates = self._llm_candidates()
         if not candidates:
             return False
-        from company_brain.agents.gates import changed_since
+        from company_brain.agents.gates import is_handled
 
-        sig = tuple(sorted(r.message_id for r in candidates))
-        return changed_since(f"draft_reply:{self.mailbox}", sig, update=False)
+        sig = _candidate_signature(candidates)
+        return not is_handled(f"draft_reply:{self.mailbox}", sig)
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
         candidates = self._llm_candidates()
@@ -64,7 +64,10 @@ class DraftReplyAgent(BaseAgent):
                 if not is_simple_reply(thread, mailbox=self.mailbox):
                     skipped += 1
                     continue
-                asyncio.run(self._create_draft(record.thread_id, record.message_id))
+                created = asyncio.run(self._create_draft(record.thread_id, record.message_id))
+                if not created:
+                    skipped += 1
+                    continue
                 self._store.mark_handled(record, SPECIALIST_KEY)
                 drafted += 1
             except Exception:
@@ -73,7 +76,7 @@ class DraftReplyAgent(BaseAgent):
         if drafted:
             from company_brain.agents.gates import mark_handled
 
-            sig = tuple(sorted(r.message_id for r in candidates))
+            sig = _candidate_signature(candidates)
             mark_handled(f"draft_reply:{self.mailbox}", sig)
         return {"drafted": drafted, "skipped_complex": skipped}
 
@@ -92,7 +95,7 @@ class DraftReplyAgent(BaseAgent):
                 self.logger.debug("Skipping draft candidate %s", record.message_id)
         return out
 
-    async def _create_draft(self, thread_id: str, message_id: str) -> None:
+    async def _create_draft(self, thread_id: str, message_id: str) -> bool:
         from claude_agent_sdk import ClaudeAgentOptions
 
         from company_brain.llm import claude as llm_claude
@@ -131,3 +134,11 @@ When the draft is created, output exactly: {_RESULT_MARKER}"""
                 "Draft agent did not confirm draft creation for thread %s",
                 thread_id,
             )
+        return _RESULT_MARKER in output
+
+
+def _candidate_signature(candidates: list[Any]) -> str:
+    import hashlib
+
+    message_ids = "\n".join(sorted(str(record.message_id) for record in candidates))
+    return hashlib.sha256(message_ids.encode()).hexdigest()

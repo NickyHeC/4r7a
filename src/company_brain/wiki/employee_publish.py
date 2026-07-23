@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from company_brain.wiki.employee_store import employee_wiki_store
 from company_brain.wiki.store import MarkdownDoc, WikiStore
@@ -32,6 +32,7 @@ def write_employee_wiki_page(
     sources: Sequence[str] | None = None,
     submit_to_company: str = "none",
     duplicate_of: str | None = None,
+    extra_frontmatter: Mapping[str, Any] | None = None,
     store: WikiStore | None = None,
     mirror_notion: bool = True,
 ) -> str | None:
@@ -54,6 +55,8 @@ def write_employee_wiki_page(
         body = _prepend_section(store, rel_path, title, body)
 
     now = datetime.now(timezone.utc).isoformat()
+    if extra_frontmatter:
+        fm.update(extra_frontmatter)
     fm.setdefault("id", p.stem)
     fm["title"] = title
     fm["member"] = member

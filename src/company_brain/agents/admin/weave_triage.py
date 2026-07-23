@@ -36,6 +36,7 @@ class WeaveTriageAgent(BaseAgent):
     """Triage @weave system-change requests."""
 
     name = "weave_triage"
+    WRITE_MODE = UPDATE
 
     def run(
         self,
@@ -88,7 +89,7 @@ class WeaveTriageAgent(BaseAgent):
             req.wiki_path,
             f"Change Request — {member_key}",
             change_request_body(req),
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="admin",
             type_="change_request",
             extra_frontmatter=change_request_frontmatter(req),

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import yaml
@@ -41,14 +41,6 @@ def llm_ops_config() -> dict[str, Any]:
     mins.update(dict(block.get("estimated_minutes") or {}))
     block["estimated_minutes"] = mins
     return block
-
-
-def parse_hhmm(value: str) -> time:
-    try:
-        hour, minute = str(value).strip().split(":", 1)
-        return time(int(hour), int(minute))
-    except (ValueError, TypeError):
-        return time(9, 0)
 
 
 def previous_month(*, now: datetime | None = None) -> str:

@@ -36,6 +36,13 @@ class InvestorNewsletterAgent(BaseAgent):
     name = "investor_newsletter"
     WRITE_MODE = WRITE_MODE
 
+    def should_run(self, *, month: str | None = None, force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate: do not invoke the writer when this month's draft exists."""
+        if force:
+            return True
+        month_key = month or datetime.now(timezone.utc).strftime("%Y-%m")
+        return not LocalWikiStore().exists(f"{NEWSLETTER_DIR}/{month_key}.md")
+
     def run(
         self,
         *,

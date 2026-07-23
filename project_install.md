@@ -1,4 +1,4 @@
-# project_install.md — Onboarding runbook for the assisting AI coding agent
+# Company-Brain Installation Runbook
 
 You are an AI coding agent helping a human set up **company-brain**: a company
 wiki "brain" (Markdown source of truth, mirrored to Notion) operated by a fleet
@@ -51,9 +51,15 @@ of specialist agents across their platforms. Follow this runbook step by step.
 company-brain install profile          # decisions → config/install_profile.yaml
 company-brain install credentials      # keys/OAuth for enabled platforms only
 company-brain install foundation       # repos + Notion + wiki_git checks
-company-brain install onboard          # eng → ops → product → growth → finance → hr
+company-brain install onboard [--strict] [--no-managers] [--confirm-cleanup]
 company-brain install status
+company-brain install cleanup --confirm
 ```
+
+`install onboard` runs engineering → operations → product → growth → finance → HR.
+Within those departments it runs GitHub → Linear; Slack → Gmail → Granola;
+PostHog → product workstreams; Google Ads → Discord → growth workstreams; finance;
+then LinkedIn.
 
 Ask the user: local or cloud?
 
@@ -69,7 +75,7 @@ Runtime is co-located: one host runs the **private agent checkout** and mounts t
 **MD volume** (`COMPANY_BRAIN_WIKI_DIR`, employee wiki, `raw/`). GitHub separation
 does not require two machines.
 
-**Repos repos:** create a private company **4r7a** clone (brain) and record its
+**Repositories:** create a private company **4r7a** clone (brain) and record its
 URL in `company-brain install profile`. For **company-wiki**, either paste an
 existing empty private repo URL, or let `company-brain install foundation`
 auto-create `{org}/company-wiki` via `gh` when missing (name overridable as
@@ -159,7 +165,7 @@ smolvm --help
 
 Local sandbox: set `COMPANY_BRAIN_SANDBOX=smolvm`. Cloud fleet (default provider):
 set `COMPANY_BRAIN_MODE=cloud`, `COMPANY_BRAIN_RUNTIME=cloud`, and configure smol
-cloud credentials when the `smol machine` integration ships. To use a different
+cloud credentials for the `smol machine` deployer. To use a different
 cloud VM provider, set `COMPANY_BRAIN_VM_PROVIDER` to your provider key.
 
 `doctor` prints the mode, wiki dir, runtime, and which platforms are connected.
@@ -218,8 +224,9 @@ Handbook: [docs/agents/operations.md](docs/agents/operations.md) → Notion.
 
 ### Slack (finance notifications)
 
-Finance agents post to Slack via `config/operations.yaml` → `gmail.slack` channel
-names (e.g. `#customer-support`). They reuse the wiki bot token below.
+Finance agents notify through the severity-gated finance notifier. Configure
+`config/finance.yaml` → `slack.channel` / `slack.channel_id` (default `#finance`);
+the transport uses the wiki bot token configured below.
 
 ### Slack (operations platform) — **required wiki bot**; Weave optional
 
@@ -417,8 +424,8 @@ deploy. Per-mailbox overrides: `gmail.mailbox_profiles` (see commented examples 
 specialists follow the profile.
 
 ### Linear (engineering department)
-Linear powers issue tracking for engineering agents (forthcoming) and cross-department
-Gmail workflows (`inbox_task`, `team_on_it`). Pick one auth path:
+Linear powers engineering issue tracking and cross-department Gmail workflows
+(`inbox_task`, `team_on_it`). Pick one auth path:
 
 - **Personal API key (recommended).** In Linear → Settings → Account → Security & Access,
   create an API key. Set `LINEAR_API_KEY`. Configure `linear.team_key` (e.g. `ENG`) or
@@ -434,10 +441,10 @@ Gmail workflows (`inbox_task`, `team_on_it`). Pick one auth path:
 Connection layer: `engineering/linear/linear_client.py`. Verify with `doctor` ("Linear …").
 See https://linear.app/llms.txt for the full doc index.
 
-**Onboarding (once):** after `LINEAR_API_KEY` and `config/engineering.yaml` are set, run
-`linear_onboarding` — it backfills Gmail task bindings, writes a **Structure Proposal**
-proposal to the wiki (Notion mirror), runs slot_check, and starts the persistent
-`linear_manager`. It does not wait for structure approval.
+**Onboarding (once):** after `LINEAR_API_KEY` and `config/engineering.yaml` are set,
+run `company-brain linear onboarding run`. It backfills Gmail task bindings, writes
+a **Structure Proposal** to the wiki (Notion mirror), runs `slot_check`, and starts
+the persistent `linear_manager`. It does not wait for structure approval.
 
 ### Granola (operations department) — read-only meeting notes
 Granola supplies AI meeting notes and transcripts. The persistent
@@ -474,6 +481,25 @@ Docs: https://developers.google.com/workspace/calendar/api/guides/configure-mcp-
 · Connection: `operations/gcal/gcal_rest.py` (REST client). Verify with
 `doctor` ("Google Calendar …").
 
+### Member bridge (optional — coding-agent access)
+
+Run the bridge on the same host as the wiki and expose it only over a private mesh
+(for example, Tailscale). Member AI agents use bridge tokens; they never receive the
+wiki volume path or an admin token.
+
+1. Configure allowed read prefixes and limits in `config/bridge.yaml`.
+2. Add each member's `bridge.departments` in `config/members.yaml`.
+3. Issue a token: `company-brain bridge issue-token <member>` (plaintext shown once).
+4. Start the server and manager: `company-brain bridge serve` and
+   `company-brain bridge manager`.
+5. Build the read index and verify:
+   `company-brain bridge rebuild-index && company-brain doctor bridge`.
+6. Install `.cursor/skills/4r7a-bridge/SKILL.md` in the member's coding workspace
+   and set `COMPANY_BRAIN_MEMBER_TOKEN` there.
+
+See [`docs/agents/bridge.md`](docs/agents/bridge.md) for tools, scopes, seed pages,
+rate limits, and revocation.
+
 ### LLM provider and model tiers
 
 During wiki onboarding, configure how agents use LLMs:
@@ -505,14 +531,26 @@ limits outside the model.
 company-brain models budget              # status + per-agent run caps
 company-brain models budget --reconcile  # compare tracked usage vs Mercury vendor bills
 company-brain models spot-check          # vibe eval samples → #wiki
-company-brain admin manager              # monthly LLM expense + maintain (one pass)
+company-brain admin manager --loop       # persistent admin schedules
 company-brain admin wiki-commit --loop   # daily MD volume → company-wiki backup
 ```
 
-**Monthly LLM ops:** `admin_manager` writes `admin/llm-expense/{YYYY-MM}.md` and
-`admin/maintain/{YYYY-MM}.md`, refreshes `admin/agent-runtime.md`, and requests an
-admin coding session on `#wiki-admin` when budget/duration/verify drift. Schedule in
-`config/operations.yaml` → `admin.llm_ops`. Handbook: `docs/agents/admin.md`.
+**Admin maintenance:** `admin_manager --loop` schedules monthly LLM expense and
+maintenance pages, the investor update, upstream/process/wiki audits, and quarterly
+documentation hygiene. Without `--loop`, `admin manager` runs only the LLM expense
+and maintenance pair for one month. Self-heal proposals are triggered by verify
+rework or execution failures; they never auto-merge.
+
+```bash
+company-brain admin investor-newsletter
+company-brain admin process-scout
+company-brain admin wiki-ops-audit
+company-brain admin doc-hygiene
+company-brain admin self-heal --help
+```
+
+Schedules and toggles live under `admin.*` in `config/operations.yaml`. Handbook:
+[`docs/agents/admin.md`](docs/agents/admin.md).
 
 **Wiki commit:** persistent `wiki_commit` (independent of `admin_manager`). Config
 `admin.wiki_commit`; token `COMPANY_BRAIN_WIKI_GIT_TOKEN`. See Step 0 above.
@@ -559,13 +597,22 @@ active provider, model, and endpoint).
 
 ## Step 3 — Onboard each connected platform
 
-Run the one-time onboarding agents to backfill history for platforms the user
-connected (these seed the wiki + Notion):
-- GitHub: the `github_onboarding` agent.
-- Finance: the `finance_onboarding` agent (backfills monthly + quarterly reports).
-- Granola: **`granola_onboarding`** (default 30-day backfill, starts `meeting_watch`).
+Prefer `company-brain install onboard`, which follows the Step 0 order and skips
+unconfigured platforms. The equivalent one-time commands for manual recovery or
+individual additions are:
+- GitHub: `company-brain github onboarding run`.
+- Linear: `company-brain linear onboarding run`.
+- Gmail: `company-brain gmail onboarding run`.
+- Finance: `company-brain finance onboarding run` (backfills monthly + quarterly reports).
+- Granola: `company-brain granola onboarding run` (default 30-day backfill, starts `meeting_watch`).
 - Slack: **`slack_onboarding`** (`company-brain slack onboarding run` — estimate,
   backfill, starts `slack_manager`; run `company-brain slack events` for the hot lane).
+- PostHog: `company-brain posthog onboarding run`; product workstreams:
+  `company-brain product onboarding`.
+- Google Ads: `company-brain google-ads onboarding run`; Discord:
+  `company-brain discord onboarding run`; growth workstreams:
+  `company-brain growth onboarding`.
+- HR / LinkedIn: `company-brain hr onboard --seed`.
 - Employee wiki (optional): for each person in `config/members.yaml`, run the
   `employee_wiki_onboarding` agent — it creates the company `people/` stub and the
   member's `employee_wiki/{member}/_index.md`, then discovers/creates their Notion

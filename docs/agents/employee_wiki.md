@@ -40,7 +40,7 @@ flowchart TB
 Promoted pages land under `employee_wiki/{member}/` with default `sync: private`
 and migrate-names applied on promote.
 
-**Managers** (dispatch specialists based on gathered information):
+## Managers
 
 **`employee_wiki_manager.py`** — Persistent manager (polls the work-event ledger every
 `employee_wiki.poll_interval_minutes`, idles otherwise). Dispatches the materializer for
@@ -56,7 +56,6 @@ managers.
 | `work_event_materializer.py` | On demand (via manager) | Materializes ledger events (Linear, Granola, Gmail, Slack) into `work-log/YYYY-QN.md` + refreshes `_index.md`; honors per-member `ingest` scope and contributor attribution |
 | `employee_wiki_import.py` | On demand | Extracts a zip of `.md` files into `imports/_quarantine/`, runs security scan + duplicate detection, gates first import behind admin review |
 | `import_review.py` | On demand (via import) | Writes the admin import-review page and pings the admin Slack channel |
-| `employee_wiki_onboarding.py` | Once per member | Bootstraps `people/` stub + employee `_index.md`, discovers/creates the member's Notion teamspace, syncs the index |
 
 **Helpers:** `employee_wiki_config.py` (reads the `employee_wiki.import` config block),
 `employee_wiki_slack.py` (admin-channel `Notifier`). Wiki-layer helpers live under
@@ -98,3 +97,13 @@ branch when the live tree is gone.
 - **Does not:** evaluate or score employees, dual-write from platform agents, auto-promote
   to the company wiki without an explicit submit + admin approval, or pull Notion → MD
   (deferred).
+
+## Onboarding
+
+**`employee_wiki_onboarding.py`** runs once per member. It bootstraps the `people/`
+stub and employee `_index.md`, discovers or creates the member's Notion teamspace,
+and syncs the index.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for employee-wiki and Notion sync work.

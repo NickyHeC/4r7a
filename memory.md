@@ -11,6 +11,29 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Maintenance hardening and documentation normalization (working tree)
+
+- **What:** Closed the deferred P2/P3 maintenance debt, then audited code, rules,
+  tests, configuration, and all steady-state documentation for maintenance-phase use.
+- **Lifecycle and cost:** added explicit wiki write modes and cheap gates for expensive
+  specialists; fixed post-success gate advancement, cached Ramp reads, isolated
+  `StateStore` via `COMPANY_BRAIN_STATE_PATH`, and routed inter-agent work through
+  `get_runtime()`.
+- **Structure:** centralized calendar scheduling in `agents/scheduling/calendar.py`;
+  split the Click command tree into `cli_commands/` with full command-tree regression
+  coverage; expanded `doctor agents` to enforce runtime dispatch, write modes, and
+  expensive-agent gates.
+- **Data flow and correctness:** made finance report handles explicitly wiki paths;
+  kept manual-accounting reruns inside the runtime lifecycle; made employee-wiki
+  frontmatter additions atomic; prevented Gmail `SKIP` results from being counted as
+  successful drafts.
+- **Docs:** normalized all department handbooks to `docs/doc_style.md`, corrected
+  schedules/ownership/onboarding placement, documented the shipped member bridge and
+  modular CLI, synchronized `README.md`, `project_install.md`, `agent_list.md`,
+  `docs/tabled.md`, and the access-control rule.
+- **Proof:** `ruff check .`, `ruff format --check .`, **482 tests**, and
+  `company-brain doctor code` all pass; no-sus score **100/100**.
+
 ## 2026-07-22 — Maintenance-phase audit fixes (post A–L)
 
 Deep audit as build→maintenance transition. Gates were already green; fixed

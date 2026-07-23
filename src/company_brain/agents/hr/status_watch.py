@@ -28,6 +28,7 @@ class StatusWatchAgent(BaseAgent):
     """Detect deactivation signals and ask admin if the person departed."""
 
     name = "status_watch"
+    WRITE_MODE = UPDATE
 
     def __init__(self, config, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -95,8 +96,11 @@ class StatusWatchAgent(BaseAgent):
         # Members: proposal agent already emits an actionable ask.
         if spec is not None:
             from company_brain.agents.hr.employee_offboarding import EmployeeOffboardingAgent
+            from company_brain.runtime import get_runtime
 
-            proposal = EmployeeOffboardingAgent(self.config).run(
+            proposal = get_runtime().run(
+                EmployeeOffboardingAgent,
+                self.config,
                 member_key=member_key,
                 reason=reason,
             )
@@ -125,7 +129,7 @@ class StatusWatchAgent(BaseAgent):
             rel_path,
             f"Offboard Proposal — {member_key}",
             body,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="hr",
             type_="proposal",
             extra_frontmatter={

@@ -130,6 +130,8 @@ def test_hr_onboarding_seed(tmp_path, monkeypatch) -> None:
                 return {"status": "ok", "member": kwargs["member_key"]}
             if cls.__name__ == "PullAgent":
                 return {"status": "skipped", "reason": "mocked"}
+            if cls.__name__ == "HiringLogAgent":
+                return cls(config).run(**kwargs)
             return {"status": "ok"}
 
         runtime.run.side_effect = _run

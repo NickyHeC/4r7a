@@ -3,10 +3,9 @@
 A persistent department manager. On the 5th day of each quarter at 09:00 it
 computes the previous quarter's financials from Mercury + Ramp transactions:
 Revenue, Expenses, Net Income, EBITDA, Net Burn, plus a per-month breakdown.
-Results are written to the Notion "Quarterly Metric" page under a "<Quarter>
-<Year>" heading as a markdown table (not a Notion database), with monthly detail
-below the metrics. The expense section is cross-verified against the
-"Monthly Expense Reports" pages.
+Results are appended to the wiki "Quarterly Metric" page under a "<Quarter>
+<Year>" heading, then mirrored to Notion. The expense section is cross-verified
+against the monthly expense report pages.
 
 If there are uncategorized transactions it invokes request_manual_accounting.
 Otherwise it starts budget_report and subscription_audit before returning to idle.
@@ -20,18 +19,17 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, time
+from datetime import datetime
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.scheduling.calendar import next_calendar_run, parse_hhmm
 from company_brain.config import AppConfig
 
 from .shared import categories as cat
 from .shared import notion_pages, transactions
 from .shared.config import load_finance_config
 
-RUN_DAY = 5
-RUN_TIME = time(9, 0)
 QUARTER_START_MONTHS = {1, 4, 7, 10}
 
 QUARTERLY_KEY = "quarterly_metric"
@@ -47,6 +45,7 @@ class QuarterlyCalculationManager(BaseAgent):
     name = "finance_quarterly_calculation"
     track_duration = False
     WRITE_MODE = "append"
+    fleet_exempt = True
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -55,9 +54,16 @@ class QuarterlyCalculationManager(BaseAgent):
 
     # -- lifecycle ---------------------------------------------------------
 
-    def run(self, *, once: bool = False, quarter: str | None = None, **kwargs: Any) -> Any:
+    def run(
+        self,
+        *,
+        once: bool = False,
+        quarter: str | None = None,
+        escalate: bool = True,
+        **kwargs: Any,
+    ) -> Any:
         if once:
-            return self.run_once(quarter or transactions.previous_quarter())
+            return self.run_once(quarter or transactions.previous_quarter(), escalate=escalate)
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
@@ -68,14 +74,28 @@ class QuarterlyCalculationManager(BaseAgent):
             wait = (nxt - now).total_seconds()
             self.logger.info("Next quarterly run at %s (sleep %.0fs)", nxt.isoformat(), wait)
             await asyncio.sleep(wait)
-            try:
-                self.run_once(transactions.previous_quarter())
-            except Exception:
-                self.logger.exception("Quarterly calculation run failed")
+            while True:
+                try:
+                    result = self.run_once(transactions.previous_quarter())
+                    if result.get("reason") != "fleet_paused":
+                        break
+                except Exception:
+                    self.logger.exception("Quarterly calculation run failed")
+                    break
+                await asyncio.sleep(300)
 
     # -- core --------------------------------------------------------------
 
     def run_once(self, quarter: str, *, escalate: bool = True) -> dict[str, Any]:
+        """Run one calculation inside a fleet dispatch slot."""
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                return {"status": "skipped", "reason": "fleet_paused", "quarter": quarter}
+            return self._run_calculation(quarter, escalate=escalate)
+
+    def _run_calculation(self, quarter: str, *, escalate: bool = True) -> dict[str, Any]:
         """Compute and publish metrics for ``quarter`` (e.g. 2026-Q1).
 
         ``escalate`` controls whether uncategorized transactions trigger
@@ -109,7 +129,7 @@ class QuarterlyCalculationManager(BaseAgent):
             why=f"scheduled run for {quarter}; cash basis Mercury + Ramp",
         )
 
-        page_id = self._publish_notion(quarter, report)
+        wiki_path = self._publish_report(report)
 
         uncategorized = transactions.find_uncategorized(all_txns, self.keyword_maps)
         if uncategorized and escalate:
@@ -128,7 +148,7 @@ class QuarterlyCalculationManager(BaseAgent):
             "quarter": quarter,
             "monthly_data": monthly_data,
             "uncategorized_count": len(uncategorized),
-            "notion_page_id": page_id,
+            "wiki_path": wiki_path,
             "report": report,
         }
 
@@ -151,7 +171,13 @@ class QuarterlyCalculationManager(BaseAgent):
         txns.extend(card.get("transactions", []))
 
         try:
-            ramp = runtime.run(RampCardSpendAgent, self.config, start=start, end=end)
+            ramp = runtime.run(
+                RampCardSpendAgent,
+                self.config,
+                start=start,
+                end=end,
+                force=True,
+            )
             txns.extend(ramp.get("transactions", []))
         except Exception:
             self.logger.exception("Ramp unavailable for %s; continuing with Mercury only", month)
@@ -208,18 +234,19 @@ class QuarterlyCalculationManager(BaseAgent):
         for m in months:
             label = transactions.month_label(m)
             computed = monthly_data[m]["total_expenses"]
-            bound = notion_pages.get_bound_id(f"monthly_expense_{m}")
-            present = "monthly report present" if bound else "no monthly report yet"
+            handle = notion_pages.get_page_handle(f"monthly_expense_{m}")
+            present = "monthly report present" if handle else "no monthly report yet"
             notes.append(f"- {label}: computed {transactions.fmt_money(computed)} ({present})")
         return "\n".join(notes)
 
-    def _publish_notion(self, quarter: str, report: str) -> str | None:
-        page_id = notion_pages.ensure_page(QUARTERLY_KEY, QUARTERLY_TERMS, "Quarterly Metric")
-        if not page_id:
-            self.logger.warning("Could not bind 'Quarterly Metric' page")
-            return None
-        notion_pages.prepend_page_body(page_id, report)
-        return page_id
+    def _publish_report(self, report: str) -> str:
+        wiki_path = notion_pages.ensure_page(
+            QUARTERLY_KEY,
+            QUARTERLY_TERMS,
+            "Quarterly Metric",
+        )
+        notion_pages.prepend_page_body(wiki_path, report)
+        return wiki_path
 
     def _dispatch_manual_accounting(self, quarter: str, uncategorized: list[dict]) -> None:
         from company_brain.runtime import get_runtime
@@ -252,19 +279,11 @@ class QuarterlyCalculationManager(BaseAgent):
 
     @staticmethod
     def _next_run_time(now: datetime) -> datetime:
-        """Next occurrence of the 5th of a quarter-start month at RUN_TIME."""
-        candidates: list[datetime] = []
-        for year in (now.year, now.year + 1):
-            for month in sorted(QUARTER_START_MONTHS):
-                candidates.append(
-                    now.replace(
-                        year=year,
-                        month=month,
-                        day=RUN_DAY,
-                        hour=RUN_TIME.hour,
-                        minute=RUN_TIME.minute,
-                        second=0,
-                        microsecond=0,
-                    )
-                )
-        return min(c for c in candidates if c > now)
+        """Next configured quarterly calculation run."""
+        schedule = (load_finance_config().get("schedules") or {}).get("quarterly_calculation") or {}
+        return next_calendar_run(
+            now,
+            day=int(schedule.get("day_of_quarter") or 5),
+            at=parse_hhmm(str(schedule.get("time") or "09:00")),
+            months=QUARTER_START_MONTHS,
+        )

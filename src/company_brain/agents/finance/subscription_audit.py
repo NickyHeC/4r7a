@@ -3,8 +3,8 @@
 Started on command by quarterly_calculation. Pulls recurring expense
 transactions over the past 3 months (via the Mercury bank, Mercury card, and
 Ramp card specialists), cross-verifies pricing via online search, flags
-overlapping services, updates the Notion "Company Subscriptions" database, and
-posts a service-overlap report to Slack #finance with a link.
+overlapping services, updates the wiki Subscriptions page before its Notion
+mirror, and posts a service-overlap report to Slack #finance with a link.
 
 SDK: Anthropic Claude Agent SDK. Recurring-charge detection is deterministic;
 pricing verification uses ``company_brain.web_search`` (default ``lsearch``,
@@ -20,6 +20,7 @@ from datetime import date
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.gates import StateStore, changed_since
 from company_brain.config import AppConfig
 
 from .shared import notion_pages, transactions
@@ -52,6 +53,7 @@ class SubscriptionAuditAgent(BaseAgent):
         super().__init__(config, **kwargs)
         self.model = model
         self.finance_config = load_finance_config()
+        self._state = StateStore()
 
     def should_run(self, *, quarter: str | None = None, force: bool = False, **kwargs: Any) -> bool:
         """Cost gate: audit a given quarter at most once (dedup re-fires).
@@ -61,10 +63,13 @@ class SubscriptionAuditAgent(BaseAgent):
         """
         if force:
             return True
-        from company_brain.agents.gates import changed_since
-
         effective = quarter or _current_quarter()
-        return changed_since(f"subscription_audit:{effective}", effective)
+        return changed_since(
+            f"subscription_audit:{effective}",
+            effective,
+            store=self._state,
+            update=False,
+        )
 
     def verify(self, output: Any, **kwargs: Any):
         """Triage: no recurring vendors is 'noise' (suppress the ping)."""
@@ -82,14 +87,19 @@ class SubscriptionAuditAgent(BaseAgent):
 
         report = self._build_report(recurring)
 
-        page_id = notion_pages.ensure_page(SUBSCRIPTIONS_KEY, SUBSCRIPTIONS_TERMS, "Subscriptions")
-        if page_id:
-            notion_pages.update_page_body(page_id, report)
+        wiki_path = notion_pages.ensure_page(
+            SUBSCRIPTIONS_KEY,
+            SUBSCRIPTIONS_TERMS,
+            "Subscriptions",
+        )
+        notion_pages.update_page_body(wiki_path, report)
+        effective = quarter or _current_quarter()
+        self._state.set(f"subscription_audit:{effective}", effective)
 
-        self._post_slack(recurring, page_id)
+        self._post_slack(recurring, wiki_path)
         return {
             "recurring_count": len(recurring),
-            "subscriptions_page_id": page_id,
+            "wiki_path": wiki_path,
             "report": report,
         }
 
@@ -282,7 +292,7 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
         lines.append("")
         return "\n".join(lines)
 
-    def _post_slack(self, recurring: list[dict], page_id: str | None) -> None:
+    def _post_slack(self, recurring: list[dict], wiki_path: str) -> None:
         from company_brain.notify import ACTIONABLE, INFO, Signal, from_finance_config
 
         total = sum(v["total"] for v in recurring)
@@ -297,7 +307,7 @@ Wrap the entire markdown report between {_RESULT_START} and {_RESULT_END}."""
                     ),
                     severity=severity,
                     link_label="Subscriptions",
-                    link_url=notion_pages.page_url(page_id) if page_id else None,
+                    link_url=notion_pages.page_url(wiki_path),
                 )
             )
         except Exception:

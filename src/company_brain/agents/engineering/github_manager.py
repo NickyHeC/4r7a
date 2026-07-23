@@ -22,6 +22,7 @@ from datetime import datetime, time, timedelta
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.scheduling.calendar import next_daily_run
 from company_brain.config import AppConfig
 
 logger = logging.getLogger(__name__)
@@ -116,24 +117,33 @@ class GitHubManager(BaseAgent):
             if is_monday and self._has_commit_activity_this_week():
                 self._dispatch("feature_update")
 
-            if self._has_commit_activity_since_last_run():
-                self._dispatch("product_features")
+            latest_commit = self._latest_commit_since_last_run()
+            if latest_commit and self._dispatch("product_features"):
+                from company_brain.agents.gates import changed_since
+
+                changed_since(
+                    f"github:{self.repo}:last_commit",
+                    latest_commit,
+                    update=True,
+                )
 
             if self.repo:
                 self._dispatch("issue_sync")
 
-    def _dispatch(self, specialist_key: str) -> None:
+    def _dispatch(self, specialist_key: str) -> bool:
         agent_cls = self._specialist_class(specialist_key)
         if not agent_cls:
             self.logger.warning("Specialist '%s' not registered", specialist_key)
-            return
+            return False
         self.logger.info("Dispatching specialist: %s", specialist_key)
         try:
             from company_brain.runtime import get_runtime
 
             get_runtime().run(agent_cls, self.config, repo=self.repo)
+            return True
         except Exception:
             self.logger.exception("Specialist '%s' failed", specialist_key)
+            return False
 
     def _has_open_pr_changes(self) -> bool:
         from company_brain.agents.engineering.github.gh import list_open_prs
@@ -156,8 +166,8 @@ class GitHubManager(BaseAgent):
             self.logger.exception("Failed to check weekly commits")
             return False
 
-    def _has_commit_activity_since_last_run(self) -> bool:
-        """Cost gate: only true when the latest commit advanced since last dispatch."""
+    def _latest_commit_since_last_run(self) -> str | None:
+        """Return an unhandled latest commit without advancing the gate."""
         from company_brain.agents.engineering.github.gh import list_recent_commits
         from company_brain.agents.gates import changed_since
 
@@ -165,22 +175,24 @@ class GitHubManager(BaseAgent):
         try:
             commits = list_recent_commits(self.repo, since=since)
             if not commits:
-                return False
+                return None
             latest = commits[0].get("sha", "") if commits else ""
-            return changed_since(f"github:{self.repo}:last_commit", latest)
+            if not latest:
+                return None
+            return (
+                latest
+                if changed_since(
+                    f"github:{self.repo}:last_commit",
+                    latest,
+                    update=False,
+                )
+                else None
+            )
         except Exception:
             self.logger.exception("Failed to check recent commits")
-            return False
+            return None
 
     @staticmethod
     def _next_run_time(now: datetime) -> datetime:
         """Calculate the next 8am occurrence from now."""
-        today_target = now.replace(
-            hour=MORNING_CHECK_TIME.hour,
-            minute=MORNING_CHECK_TIME.minute,
-            second=0,
-            microsecond=0,
-        )
-        if now >= today_target:
-            return today_target + timedelta(days=1)
-        return today_target
+        return next_daily_run(now, at=MORNING_CHECK_TIME)

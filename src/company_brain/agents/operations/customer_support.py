@@ -34,6 +34,8 @@ FEATURE_REQUEST_LOG_TITLE = "Feature Request Log"
 FEATURE_REQUEST_RANKED_TITLE = "Feature Requests"
 ISSUE_DIR = "engineering/issue"
 GENERAL_PRODUCT = "general"
+WRITE_MODE = UPDATE
+LOG_WRITE_MODE = APPEND
 
 BUG_SIGNALS = (
     "bug",
@@ -172,6 +174,7 @@ class CustomerSupportOrchestrator:
                 title=intake.requester_name or None,
             )
         except Exception:
+            self.logger.exception("Failed to record customer interaction in CRM")
             return None
 
     def _route_bug(self, intake: CustomerIntake, *, community: bool) -> dict[str, Any]:
@@ -187,6 +190,7 @@ class CustomerSupportOrchestrator:
                     priority=default_priority(),
                 )
             except Exception:
+                self.logger.exception("Failed to create Linear issue for customer bug")
                 linear_issue = {}
 
         gh_number = None
@@ -204,7 +208,7 @@ class CustomerSupportOrchestrator:
             rel_path,
             intake.title[:120] or ("Community Issue" if community else "Customer Issue"),
             body,
-            mode=UPDATE,
+            mode=WRITE_MODE,
             section="engineering",
             type_="issue",
             extra_frontmatter={
@@ -239,7 +243,7 @@ class CustomerSupportOrchestrator:
             FEATURE_REQUEST_LOG,
             FEATURE_REQUEST_LOG_TITLE,
             section,
-            mode=APPEND,
+            mode=LOG_WRITE_MODE,
             section="product",
             type_="log",
         )
@@ -248,7 +252,7 @@ class CustomerSupportOrchestrator:
             FEATURE_REQUEST_RANKED,
             FEATURE_REQUEST_RANKED_TITLE,
             ranked_body,
-            mode=UPDATE,
+            mode=WRITE_MODE,
             section="product",
             type_="report",
         )
@@ -438,7 +442,7 @@ def rebuild_issue_index() -> None:
         f"{ISSUE_DIR}/_index.md",
         "Issue Index",
         body,
-        mode=UPDATE,
+        mode=WRITE_MODE,
         section="engineering",
         type_="index",
     )
@@ -571,6 +575,8 @@ class CustomerSupportAgent(BaseAgent):
     """Cross-platform customer support orchestrator."""
 
     name = "customer_support"
+    WRITE_MODE = WRITE_MODE
+    LOG_WRITE_MODE = LOG_WRITE_MODE
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)

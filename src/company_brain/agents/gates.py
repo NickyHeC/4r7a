@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +31,9 @@ class StateStore:
     """Tiny JSON key/value store for gate markers."""
 
     def __init__(self, path: Path | None = None):
-        self._path = path or (CONFIG_DIR / STATE_FILE)
+        configured = os.getenv("COMPANY_BRAIN_STATE_PATH", "").strip()
+        default_path = Path(configured).expanduser() if configured else CONFIG_DIR / STATE_FILE
+        self._path = path or default_path
 
     def _load(self) -> dict[str, Any]:
         if not self._path.exists():

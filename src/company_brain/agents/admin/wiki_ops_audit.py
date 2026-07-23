@@ -158,7 +158,7 @@ class WikiOpsAuditAgent(BaseAgent):
             for rename in plan.renames[:max_items]:
                 migrate_suggestions.append(f"`{rename.old_path}` → `{rename.new_path}`")
         except Exception:
-            pass
+            self.logger.debug("Could not build naming migration suggestions", exc_info=True)
 
         catalog_note = "Run `company-brain catalog` to regenerate `admin/content-catalog.md`."
         try:

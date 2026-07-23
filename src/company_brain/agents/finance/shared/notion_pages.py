@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 
 from company_brain.config import resolve_wiki_dir
-from company_brain.wiki.publish import read_wiki_page, write_wiki_page
+from company_brain.wiki.publish import UPDATE, read_wiki_page, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
 logger = logging.getLogger(__name__)
@@ -36,14 +36,12 @@ def wiki_path(key: str) -> str:
     return _KEY_PATHS.get(key, f"finance/{key.replace('_', '-')}.md")
 
 
-def ensure_page(
-    key: str, search_terms: list[str], create_title: str, parent_key: str | None = None
-) -> str:
+def ensure_page(key: str, search_terms: list[str], create_title: str) -> str:
     """Return the wiki rel_path for a finance page (handle for read/write)."""
     return wiki_path(key)
 
 
-def get_bound_id(key: str) -> str | None:
+def get_page_handle(key: str) -> str | None:
     """Return the page handle (rel_path) if that wiki page exists, else None."""
     path = wiki_path(key)
     return path if LocalWikiStore().exists(path) else None
@@ -51,7 +49,14 @@ def get_bound_id(key: str) -> str | None:
 
 def update_page_body(rel_path: str, body: str) -> bool:
     """Overwrite a wiki page body (MD source of truth), then sync to Notion."""
-    write_wiki_page(rel_path, _title_for(rel_path, body), body, section="finance", type_="report")
+    write_wiki_page(
+        rel_path,
+        _title_for(rel_path, body),
+        body,
+        mode=UPDATE,
+        section="finance",
+        type_="report",
+    )
     return True
 
 

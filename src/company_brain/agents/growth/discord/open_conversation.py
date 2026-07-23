@@ -24,6 +24,7 @@ class OpenConversationAgent(BaseAgent):
     """Rebuild the company Discord open-conversation tracker page."""
 
     name = "discord_open_conversation"
+    WRITE_MODE = UPDATE
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -39,7 +40,7 @@ class OpenConversationAgent(BaseAgent):
             WIKI_PATH,
             TITLE,
             body,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="growth",
             type_="report",
         )

@@ -51,8 +51,9 @@ class IngestAgent(BaseAgent):
         from company_brain.agents.operations.granola.meeting_watch import (
             MeetingWatchAgent,
         )
+        from company_brain.runtime import get_runtime
 
-        return MeetingWatchAgent(self.config).run(**kwargs)
+        return get_runtime().run(MeetingWatchAgent, self.config, **kwargs)
 
     def run_once(
         self,
@@ -70,15 +71,24 @@ class IngestAgent(BaseAgent):
             self.logger.warning("Granola not configured — skipping ingest")
             return {"status": "not_configured", "date": day_key}
 
+        self._collection_complete = True
         summaries = self._collect_day_summaries(day)
         if event_title:
             summaries = _filter_by_event_title(summaries, event_title)
         if not summaries:
+            if not self._collection_complete:
+                return {"status": "retry", "date": day_key, "notes": 0}
             mark_handled("ingest", day_key)
             return {"status": "empty", "date": day_key, "notes": 0}
 
         ingested = 0
-        sections: list[str] = []
+        sections = [
+            format_digest_section(
+                summary.get("detail") or {},
+                member_label=summary.get("member_label"),
+            )
+            for summary in summaries
+        ]
         ingested_notes: list[dict[str, Any]] = []
         for summary in summaries:
             note_id = summary["note_id"]
@@ -104,7 +114,6 @@ class IngestAgent(BaseAgent):
             mark_handled(f"granola_note:{day_key}", note_id)
             ingested += 1
             ingested_notes.append(summary)
-            sections.append(format_digest_section(detail, member_label=summary.get("member_label")))
             self._record_employee_work_event(
                 note_id=note_id,
                 meeting_date=day_key,
@@ -115,21 +124,22 @@ class IngestAgent(BaseAgent):
 
         digest_body = "\n\n".join(sections)
         wiki_path = cfg.daily_wiki_path(day_key)
-        write_wiki_page(
-            wiki_path,
-            f"Meetings {day_key}",
-            digest_body,
-            mode=self.WRITE_MODE,
-        )
-        mark_handled("ingest", day_key)
+        if self._collection_complete:
+            write_wiki_page(
+                wiki_path,
+                f"Meetings {day_key}",
+                digest_body,
+                mode=self.WRITE_MODE,
+            )
+            mark_handled("ingest", day_key)
         task_result = None
         if dispatch_task and ingested_notes:
             task_result = self._dispatch_tasks(ingested_notes, day_key)
         return {
-            "status": "ok",
+            "status": "ok" if self._collection_complete else "partial",
             "date": day_key,
             "notes": ingested,
-            "wiki_path": wiki_path,
+            "wiki_path": wiki_path if self._collection_complete else None,
             "task": task_result,
         }
 
@@ -201,6 +211,7 @@ class IngestAgent(BaseAgent):
         except client.GranolaAPIError as exc:
             label = member_label or "enterprise"
             self.logger.warning("Granola list failed for %s: %s", label, exc)
+            self._collection_complete = False
             return []
 
         for stub in listed:
@@ -211,6 +222,7 @@ class IngestAgent(BaseAgent):
                 detail = client.get_note(api_key, note_id, include_transcript=True)
             except client.GranolaAPIError as exc:
                 self.logger.warning("Granola get_note failed for %s: %s", note_id, exc)
+                self._collection_complete = False
                 continue
             summaries.append(
                 {

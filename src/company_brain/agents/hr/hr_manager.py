@@ -8,12 +8,13 @@ SDK: Neither (orchestration only).
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, time
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import StateStore
 from company_brain.agents.hr import hr_config as cfg
+from company_brain.agents.scheduling.calendar import next_calendar_run
 from company_brain.config import AppConfig
 
 MONTH_KEY = "hr_manager:linkedin_month"
@@ -25,6 +26,7 @@ class HrManager(BaseAgent):
 
     name = "hr_manager"
     track_duration = False
+    fleet_exempt = True
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -56,6 +58,14 @@ class HrManager(BaseAgent):
             await asyncio.sleep(interval * 60)
 
     def run_once(self, *, force: bool = False, **kwargs: Any) -> dict[str, Any]:
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                return {"status": "skipped", "reason": "fleet_paused"}
+            return self._run_pass(force=force)
+
+    def _run_pass(self, *, force: bool = False) -> dict[str, Any]:
         from company_brain.admin_console.heartbeats import record_dispatch, record_heartbeat
         from company_brain.agents.hr.linkedin.pull import PullAgent
         from company_brain.agents.hr.wiki_archive import WikiArchiveAgent
@@ -73,12 +83,14 @@ class HrManager(BaseAgent):
             and self._state.get(MONTH_KEY) != month
         )
         if linkedin_due:
-            results["linkedin_pull"] = runtime.run(
+            linkedin_result = runtime.run(
                 PullAgent,
                 self.config,
                 force=force,
             )
-            self._state.set(MONTH_KEY, month)
+            results["linkedin_pull"] = linkedin_result
+            if isinstance(linkedin_result, dict) and linkedin_result.get("status") == "ok":
+                self._state.set(MONTH_KEY, month)
         else:
             results["linkedin_pull"] = {"status": "skipped", "reason": "not_due"}
 
@@ -106,17 +118,8 @@ def next_linkedin_run_at(now: datetime | None = None) -> datetime:
     else:
         now = now.astimezone(cfg.tz())
 
-    candidate = now.replace(
+    return next_calendar_run(
+        now,
         day=cfg.linkedin_run_day(),
-        hour=cfg.linkedin_run_hour(),
-        minute=cfg.linkedin_run_minute(),
-        second=0,
-        microsecond=0,
+        at=time(cfg.linkedin_run_hour(), cfg.linkedin_run_minute()),
     )
-    if now >= candidate:
-        # next month
-        if now.month == 12:
-            candidate = candidate.replace(year=now.year + 1, month=1)
-        else:
-            candidate = candidate.replace(month=now.month + 1)
-    return candidate

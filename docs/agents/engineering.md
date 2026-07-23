@@ -16,9 +16,10 @@ Notion teamspace). Member AI agents read them via bridge MCP only when
 
 ## Linear — how it runs
 
-**`linear_manager`** is the only persistent Linear agent. It polls for terminal issue
-states every 30 minutes and dispatches **`linear_completed`** handlers; weekly **`stale_audit`**
-feeds **`request_manual_management`**. PR/issue status sync is Linear-native — agents do
+**`linear_manager`** is the persistent Linear manager. It polls for terminal issue
+states every 30 minutes and dispatches **`linear_completed`** handlers; weekly
+**`stale_audit`** runs early enough to be ready Monday at 09:00 and feeds
+**`request_manual_management`**. PR/issue status sync is Linear-native; agents do
 not mirror GitHub state.
 
 ```mermaid
@@ -59,21 +60,21 @@ Linear issues.
 | | |
 |---|---|
 | **State** | persistent |
-| **Schedule** | Poll Linear every **30 min**; stale audit **Monday 09:00** |
+| **Schedule** | Poll Linear every **30 min**; stale audit ready by **Monday 09:00** (work-ahead buffer) |
 | **Action** | Dispatch `linear_completed` on Done/Canceled; weekly `stale_audit` |
 
 ### Specialists
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `slot_check.py` | Via manager / on demand | Propose-only team/project validation report |
+| `slot_check.py` | Onboarding / on demand | Propose-only team/project validation report |
 | `stale_audit.py` | Weekly (via manager) | Stale issues report; dispatches manual management |
 | `request_manual_management.py` | On demand | Wiki checklist → Slack → apply approved status changes |
 | `structure_organization.py` | Onboarding / on demand | Propose Linear workspace (`structure-proposal.md`) |
 | `linear_completed/dispatcher.py` | On terminal Linear state | Routes to platform completion handlers |
 | `linear_completed/archive_gmail.py` | Via dispatcher | Archive bound Gmail; system propagation ledger |
 | `linear_completed/slack_thread_respond.py` | Via dispatcher | Thread reply on Linear Done (Slack-sourced tasks) |
-| `linear_completed/` → `task_sync` | Via dispatcher | Update Notion task row on Linear Done (meeting tasks) |
+| `operations/notion/task_sync.py` | Via `linear_completed` dispatcher | Update Notion task row on Linear Done (meeting tasks) |
 
 ### Onboarding — `linear_onboarding.py`
 
@@ -91,7 +92,7 @@ Linear issues.
 
 ## GitHub — how it runs
 
-The manager is the only persistent agent. It checks GitHub each workday morning,
+The manager is the only persistent agent. It checks GitHub each morning,
 refreshes branch status unconditionally, and dispatches specialists only when their
 cost gate passes (open PRs exist, weekly activity, new commits).
 
@@ -128,6 +129,14 @@ Idles between checks. Specialists are started via `get_runtime().run()`.
 ---
 
 ## GitHub specialists (`engineering/github/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `open_pr.py` | Daily when open PRs exist | Current open-PR snapshot |
+| `branch_monitor.py` | Daily via manager | Branch and environment status |
+| `feature_update.py` | Monday when weekly commits exist | Append weekly implementation digest |
+| `product_features.py` | When commits advance | Append newly detected user-facing features |
+| `issue_sync.py` | Daily when manager has a configured repo | Mirror open GitHub issues into the issue wiki |
 
 ### `open_pr.py`
 
@@ -197,11 +206,7 @@ list for end users.
 
 Mirrors GitHub issues into the unified issue wiki home.
 
----
-
-## Onboarding
-
-### `github_onboarding.py`
+### Onboarding — `github_onboarding.py`
 
 | | |
 |---|---|
@@ -213,3 +218,8 @@ Scans repos, then runs `open_pr`, `branch_monitor`, `feature_update`, and
 `product_features` once to seed their wiki pages with real data (same output as
 steady-state). Starts **`github_manager`** via `get_runtime().start()` (non-blocking;
 manager idles until next 08:00) and exits. Does not run again.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for cross-cutting bridge/search work that may
+later affect engineering agents.

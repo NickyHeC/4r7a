@@ -123,7 +123,7 @@ def test_linear_completed_routes_slack():
             "company_brain.agents.engineering.linear.linear_completed.slack_thread_respond.SlackThreadRespondAgent"
         ) as mock_cls,
     ):
-        mock_cls.return_value.run.return_value = {"status": "replied"}
+        mock_cls.return_value.execute.return_value = {"status": "replied"}
         result = agent.run(task_id="t1", linear_issue={"state": {"name": "Done"}})
 
     assert result["platforms"]["slack"]["status"] == "replied"

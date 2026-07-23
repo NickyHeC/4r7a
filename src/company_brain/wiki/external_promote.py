@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import shutil
 from dataclasses import dataclass
@@ -26,6 +27,8 @@ from company_brain.wiki.external_paths import (
 from company_brain.wiki.name_migrate import migrate_rel_path, migrate_title
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore, WikiStore
+
+logger = logging.getLogger(__name__)
 
 WIKILINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
 
@@ -449,6 +452,8 @@ def _rebuild_catalog() -> None:
     from company_brain.config import load_config
 
     try:
-        ContentCatalogAgent(load_config()).run()
+        from company_brain.runtime import get_runtime
+
+        get_runtime().run(ContentCatalogAgent, load_config())
     except Exception:
-        pass
+        logger.exception("Content catalog refresh failed after external promotion")

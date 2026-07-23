@@ -20,14 +20,12 @@ def test_onboarding_backfills_and_starts_watch(
     _configured,
     mock_get_runtime,
 ):
-    ingest = MagicMock()
-    ingest.run_once.side_effect = [
+    runtime = MagicMock()
+    runtime.run.side_effect = [
         {"status": "ok", "notes": 2},
         {"status": "empty", "notes": 0},
         {"status": "already_handled", "notes": 0},
     ]
-    mock_ingest_cls.return_value = ingest
-    runtime = MagicMock()
     mock_get_runtime.return_value = runtime
 
     agent = GranolaOnboardingAgent(MagicMock())
@@ -35,8 +33,8 @@ def test_onboarding_backfills_and_starts_watch(
 
     assert result["status"] == "ok"
     assert result["total_notes"] == 2
-    assert ingest.run_once.call_count == 3
-    called_days = [call.kwargs["target_date"] for call in ingest.run_once.call_args_list]
+    assert runtime.run.call_count == 3
+    called_days = [call.kwargs["target_date"] for call in runtime.run.call_args_list]
     today = date.today()
     assert called_days[0] == today.fromordinal(today.toordinal() - 2)
     assert called_days[-1] == today
@@ -59,11 +57,12 @@ def test_onboarding_skips_when_not_configured(_configured):
 @patch(f"{_ONBOARD}.granola_is_configured", return_value=True)
 @patch(f"{_ONBOARD}.IngestAgent")
 def test_onboarding_can_skip_manager_start(mock_ingest_cls, _configured, mock_get_runtime):
-    ingest = MagicMock()
-    ingest.run_once.return_value = {"status": "empty", "notes": 0}
-    mock_ingest_cls.return_value = ingest
+    runtime = MagicMock()
+    runtime.run.return_value = {"status": "empty", "notes": 0}
+    mock_get_runtime.return_value = runtime
 
     agent = GranolaOnboardingAgent(MagicMock())
     agent.run(start_manager=False, backfill_days_override=1)
 
-    mock_get_runtime.assert_not_called()
+    runtime.run.assert_called_once()
+    runtime.start.assert_not_called()

@@ -14,6 +14,7 @@ per department with architecture, schedules, labeling schemas, and per-agent run
 | HR | [docs/agents/hr.md](docs/agents/hr.md) |
 | Employee Wiki | [docs/agents/employee_wiki.md](docs/agents/employee_wiki.md) |
 | External Wiki | [docs/agents/external_wiki.md](docs/agents/external_wiki.md) |
+| Member Bridge | [docs/agents/bridge.md](docs/agents/bridge.md) |
 
 For the high-level platform map, see [`README.md`](README.md). For connect/onboard steps,
 see [`project_install.md`](project_install.md).

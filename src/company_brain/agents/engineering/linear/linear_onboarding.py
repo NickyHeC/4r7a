@@ -98,13 +98,20 @@ class LinearOnboardingAgent(BaseAgent):
         from company_brain.agents.engineering.linear.structure_organization import (
             StructureOrganizationAgent,
         )
+        from company_brain.runtime import get_runtime
 
-        return StructureOrganizationAgent(self.config).run(notify=True, sync=True)
+        return get_runtime().run(
+            StructureOrganizationAgent,
+            self.config,
+            notify=True,
+            sync=True,
+        )
 
     def _run_slot_check(self) -> dict[str, Any]:
         from company_brain.agents.engineering.linear.slot_check import SlotCheckAgent
+        from company_brain.runtime import get_runtime
 
-        return SlotCheckAgent(self.config).run(sync=True)
+        return get_runtime().run(SlotCheckAgent, self.config, sync=True)
 
     def _start_manager(self) -> None:
         from company_brain.agents.engineering.linear_manager import LinearManagerAgent

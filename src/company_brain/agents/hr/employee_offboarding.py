@@ -25,6 +25,7 @@ class EmployeeOffboardingAgent(BaseAgent):
     """Compile an offboarding proposal for admin review."""
 
     name = "employee_offboarding"
+    WRITE_MODE = UPDATE
 
     def run(
         self,
@@ -45,7 +46,7 @@ class EmployeeOffboardingAgent(BaseAgent):
             rel_path,
             f"Offboard Proposal — {member_key}",
             body,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="hr",
             type_="proposal",
             extra_frontmatter={

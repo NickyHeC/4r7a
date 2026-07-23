@@ -15,16 +15,19 @@ docs audit never publishes proprietary features. Absorb (Slack + Discord
 
 **Config:** [`config/product.yaml`](../../config/product.yaml) — `posthog:`,
 workstream sections (`update`, `use_case`, `docs`, `progress`, `attribution`),
-`slack.product_channel`. Deferred stubs: `admin_api` / `billing` (not wired).
+`slack.product_channel`.
 **Env:** `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, optional `POSTHOG_HOST`.
 
-**CLI:** `company-brain posthog manager|onboarding`;
+**CLI:** `company-brain posthog manager`, `posthog onboarding run`;
 `company-brain product onboarding`, `product *-manager [--once]`,
 `product newsletter|docs-audit|progress|signup-match|use-cases`.
 
 ---
 
-## Product workstreams — how it runs
+## Product — how it runs
+
+The PostHog manager takes weekly read-only snapshots while five workstream managers
+run independently on their configured monthly, weekly, or signature-driven schedules.
 
 ```mermaid
 flowchart TD
@@ -76,7 +79,6 @@ starts workstream managers; `posthog_onboarding` stays separate.
 | `feature_usage.py` | Weekly via manager | L7D/L30D counts; flags drops ≥`usage_drop.drop_ratio` vs prior week when prior ≥`min_prior_l7d` |
 | `experiment_watch.py` | Weekly via manager | Experiment table; conclusive = significant or p≥95% and ≥`min_exposures` |
 | `signup_funnel.py` | Weekly via manager | Landing → create account (saved insight by name, else config steps) |
-| `posthog_onboarding.py` | Once (admin) | Verify API; run all four (30d lookback if data); start manager |
 
 ### Destinations
 
@@ -86,6 +88,12 @@ starts workstream managers; `posthog_onboarding` stays separate.
 | `feature_usage` | `product/posthog/feature-usage.md` | Feature Usage | update |
 | `experiment_watch` | `product/posthog/experiment-watch.md` | Experiment Watch | update |
 | `signup_funnel` | `product/posthog/signup-funnel.md` | Signup Funnel | update |
+
+### PostHog onboarding
+
+**`posthog_onboarding.py`** runs once after the admin connects PostHog. It verifies
+the API, runs all four specialists with a 30-day lookback when data exists, starts
+`posthog_manager`, and exits.
 
 ---
 
@@ -147,6 +155,16 @@ Signup source (`attribution.signup_source.type`): `wiki_crm` (default), `csv_pat
 
 ---
 
+## Related writers (outside `product/`)
+
+| Page / agent | Owner |
+|--------------|-------|
+| `product/feature.md` | `engineering/github/product_features.py` |
+| `product/feature-request*.md` | operations / growth customer support |
+| Investor newsletter | Admin (`investor_newsletter.py`; not this department) |
+
+---
+
 ## Onboarding (`product_onboarding.py`)
 
 | | |
@@ -156,12 +174,7 @@ Signup source (`attribution.signup_source.type`): `wiki_crm` (default), `csv_pat
 | **Seeds** | use-case / progress / docs audit / signup-match pages |
 | **Handoff** | `get_runtime().start` for five workstream managers |
 
----
+## Deferred work
 
-### Related (outside product/)
-
-| Page / agent | Owner |
-|--------------|-------|
-| `product/feature.md` | `engineering/github/product_features.py` |
-| `product/feature-request*.md` | operations / growth customer support |
-| Investor newsletter | Admin (tabled; not this department) |
+See [`docs/tabled.md`](../tabled.md) for deferred PostHog, billing, admin API,
+experiment cadence, and newsletter-delivery work.

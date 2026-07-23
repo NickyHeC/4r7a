@@ -15,11 +15,14 @@ from company_brain.crm.seeds import ensure_crm_seeds
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
+WRITE_MODE = UPDATE
+
 
 class GrowthOnboardingAgent(BaseAgent):
     """One-time growth workstream setup + manager handoff."""
 
     name = "growth_onboarding"
+    WRITE_MODE = WRITE_MODE
 
     def run(self, *, start_managers: bool = True, **kwargs: Any) -> dict[str, Any]:
         ensure_crm_seeds()
@@ -95,6 +98,6 @@ def _seed_pages() -> list[str]:
     for rel, title, body in seeds:
         if store.exists(rel):
             continue
-        write_wiki_page(rel, title, body, mode=UPDATE, section="growth", sync=False)
+        write_wiki_page(rel, title, body, mode=WRITE_MODE, section="growth", sync=False)
         created.append(rel)
     return created

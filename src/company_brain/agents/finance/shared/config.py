@@ -1,7 +1,7 @@
 """Loader for finance-specific configuration (``config/finance.yaml``).
 
 Kept separate from the wiki/notion app config so finance settings (schedules,
-Slack channel, Notion page titles, learned categories) live in one place.
+Slack channel, wiki paths, learned categories) live in one place.
 Contains no secrets — tokens come from the environment.
 """
 

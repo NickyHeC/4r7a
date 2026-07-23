@@ -10,10 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.gates import StateStore
 from company_brain.agents.product.shared.workstream_config import use_case_poll_minutes
-
-MONTH_KEY = "use_case_manager:month"
 
 
 class UseCaseManager(BaseAgent):
@@ -21,10 +18,6 @@ class UseCaseManager(BaseAgent):
 
     name = "use_case_manager"
     track_duration = False
-
-    def __init__(self, config, **kwargs: Any):
-        super().__init__(config, **kwargs)
-        self._state = StateStore()
 
     def run(self, *, once: bool = False, **kwargs: Any) -> Any:
         if once:
@@ -52,12 +45,7 @@ class UseCaseManager(BaseAgent):
 
         record_heartbeat(self.name, detail="run_once")
         month = datetime.now(timezone.utc).strftime("%Y-%m")
-        if not force and self._state.get(MONTH_KEY) == month:
-            record_dispatch(self.name, result_status="skipped")
-            return {"status": "skipped", "month": month}
-
         seed_workstream_pages()
         result = get_runtime().run(UseCaseTrackAgent, self.config, force=force)
-        self._state.set(MONTH_KEY, month)
         record_dispatch(self.name, result_status="ok")
         return {"status": "ok", "month": month, "use_case_track": result}

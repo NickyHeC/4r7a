@@ -6,6 +6,7 @@ Reads wiki Product Features + company voice; checks prior month draft / wiki-git
 
 from __future__ import annotations
 
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Any
@@ -15,6 +16,8 @@ from company_brain.agents.product.shared.product_slack import product_notifier
 from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.publish import UPDATE, read_wiki_page, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
+
+logger = logging.getLogger(__name__)
 
 NEWSLETTER_DIR = "product/update/newsletter"
 FEATURE_WIKI = "product/feature.md"
@@ -27,6 +30,13 @@ class ProductUpdateAgent(BaseAgent):
 
     name = "product_update"
     WRITE_MODE = WRITE_MODE
+
+    def should_run(self, *, month: str | None = None, force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate: do not invoke the writer when this month's draft exists."""
+        if force:
+            return True
+        month_key = month or datetime.now(timezone.utc).strftime("%Y-%m")
+        return not LocalWikiStore().exists(f"{NEWSLETTER_DIR}/{month_key}.md")
 
     def run(
         self, *, month: str | None = None, force: bool = False, **kwargs: Any
@@ -92,7 +102,7 @@ def _prior_month_body(month_key: str) -> str:
                     return parts[2].strip()
             return text.strip()
     except Exception:
-        pass
+        logger.debug("Could not read product features from wiki-git checkout", exc_info=True)
     return ""
 
 

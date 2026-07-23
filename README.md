@@ -52,6 +52,9 @@ flowchart TD
     FIN[Finance\nMercury · Ramp]
     OPS[Operations\nGmail · GCal · Granola]
     GRO[Growth\nplatforms + workstreams]
+    PRO[Product\nPostHog + workstreams]
+    ADM[Admin\nfleet + maintenance]
+    HR[HR\nlifecycle + LinkedIn]
     EW[Employee Wiki\nper-member work logs]
   end
 
@@ -63,16 +66,15 @@ flowchart TD
   FIN -->|write_wiki_page| WIKI
   OPS -->|write_wiki_page| WIKI
   GRO -->|write_wiki_page| WIKI
+  PRO -->|write_wiki_page| WIKI
+  ADM -->|write_wiki_page| WIKI
+  HR -->|write_wiki_page| WIKI
   ABS --> WIKI
   ENG -. work events .-> EW
   OPS -. work events .-> EW
   EW -->|materializers| EWIKI
   WIKI --> NotionSync --> NOTION
   EWIKI --> NotionSync
-```
-
-```
-intake -> raw/entries/*.md -> absorb (LLM writer) -> wiki/**/*.md (source of truth) -> NotionSync -> Notion (mirror)
 ```
 
 - **Knowledge path**: `ingest` mechanically writes raw Markdown entries; `absorb` is an LLM writer that synthesizes them into wiki articles (theme-organized, `[[wikilinks]]`, cited sources).
@@ -166,8 +168,10 @@ progress, attribution). See [product handbook](docs/agents/product.md).
   PRs) and admin-only **company-wiki** (MD backup). Live SoT is the host MD volume;
   daily `wiki_commit` pushes volume → wiki repo (`main` only). Separate bots: wiki git
   token vs Weave/`gh`. See `project_install.md`.
-- **LLM ops + investor draft** — monthly `admin_manager` runs expense report, maintain,
-  and a short `admin/investor-newsletter/` draft (never sends). CLI: `company-brain admin …`.
+- **LLM ops + investor draft** — persistent `admin_manager` schedules monthly expense,
+  maintenance, scout, upstream, and investor-draft work plus quarterly doc hygiene.
+  The investor update lives under `admin/investor-newsletter/` and is never sent.
+  CLI: `company-brain admin manager --loop`.
 - **Knowledge paste** — safe admin CLI/console path for misc external notes (quarantine →
   scan → review → promote).
 - **Weave** — separate Slack app for system-change requests (`@weave`). Triage writes
@@ -212,7 +216,9 @@ A scoped **MCP server** (co-located with the wiki, reached over a private mesh) 
 
 ## Self-maintaining foundation
 
-Agents run a closed, eval-gated loop in `BaseAgent.execute()`: `should_run` (cheap cost gate) -> `run` -> `verify` (triage: ok / rework / noise), up to `max_iterations`.
+Agents run a closed, eval-gated lifecycle in `BaseAgent.execute()`:
+`should_run` (cheap cost gate) → `setup` → [`run` → `verify`
+(`ok` / `rework` / `noise`)] up to `max_iterations` → `teardown`.
 
 - **Eval gate**: state-changing agents implement `verify()`; consequential changes can be verified in an ephemeral [smolvm](https://github.com/smol-machines/smolvm) sandbox (`COMPANY_BRAIN_SANDBOX=smolvm`) before committing — reproduce, then commit only if it passes.
 - **Cost gates**: expensive agents implement `should_run()` using cheap change-detection (`agents/gates.py`) so no LLM is invoked when nothing changed; re-fires dedup via stored "handled" state.
@@ -227,7 +233,7 @@ FourSeven can run on **any cloud VM service** that meets these requirements: a C
 | Mode | Default backend | Tooling |
 |------|-----------------|---------|
 | Local VM / sandbox | [smolvm](https://github.com/smol-machines/smolvm) (Smol Machines) | `smolvm machine run` with the repo `Smolfile` |
-| Cloud fleet | [smol cloud](https://smolmachines.com/) (Smol Machines hosted) | `smol machine` CLI (integration pending) |
+| Cloud fleet | [smol cloud](https://smolmachines.com/) (Smol Machines hosted) | `smol machine` CLI via `SmolCloudDeployer` |
 
 The same `Smolfile` spec describes image, egress allow-list, and shared wiki volume mounts for local smolvm runs and cloud deployment. Agents dispatch through `AgentRuntime` (`COMPANY_BRAIN_RUNTIME=local|cloud`) so the same code runs in-process today and on a VM later.
 
@@ -277,19 +283,23 @@ switches the model:
 
 ## Commands
 
-| Command                          | Description                                                          |
-| -------------------------------- | -------------------------------------------------------------------- |
-| `company-brain doctor`           | Show mode, wiki location, runtime, and platform connection status    |
-| `company-brain init`             | Discover existing workspace content, set up Notion wiki structure    |
-| `company-brain notion onboarding run` | Ingest existing Notion → MD; `--confirm-mirror` for alongside tree |
-| `company-brain notion manager`   | Persistent Notion platform loop (sync, @wiki, conflicts, archive, CRM, Weave) |
-| `company-brain notion sync-pull` | One-shot Notion → MD pull for bound pages                            |
-| `company-brain ingest <source>`  | Run an ingestion agent; writes raw Markdown entries to `raw/entries/`|
-| `company-brain absorb`           | LLM writer compiles raw entries into wiki Markdown articles, then syncs to Notion |
-| `company-brain query <question>` | Citation-only wiki query (snippets + Notion cites; grant-aware, admin bypass) |
-| `company-brain sync`             | Push changed wiki Markdown pages to Notion (MD is the source of truth)|
-| `company-brain status`           | Show wiki statistics                                                 |
-| `company-brain cleanup`          | Audit and enrich articles                                            |
+| Command | Description |
+|---------|-------------|
+| `company-brain init` | Discover workspace content and initialize the Notion mirror |
+| `company-brain ingest <source>` / `absorb` | Ingest raw entries, then synthesize wiki articles |
+| `company-brain query <question>` | Citation-only wiki query (grant-aware; admin bypass) |
+| `company-brain sync` / `notion …` | Push MD to Notion or run Notion manager/onboarding/pull operations |
+| `company-brain doctor [code\|connect\|…]` | Validate code conventions, configuration, and connections |
+| `company-brain install …` | Guided profile, credentials, foundation, onboarding, status, and cleanup |
+| `company-brain admin …` | Console, fleet controls, LLM ops, investor draft, scouts, doc hygiene, self-heal, and knowledge intake |
+| `company-brain product …` / `growth …` | Run product and growth managers or one-shot workstream commands |
+| `company-brain slack …` / `discord …` / `weave …` | Operate collaboration event surfaces and onboarding |
+| `company-brain github …` / `linear …` / `gmail …` / `granola …` | Run platform onboarding |
+| `company-brain finance …` / `hr …` / `bridge …` | Run finance onboarding, HR lifecycle, and member bridge operations |
+| `company-brain models …` / `crm …` | Inspect LLM budgets/configuration and maintain CRM data |
+
+Run `company-brain --help` or `company-brain <group> --help` for the complete,
+authoritative command list and options.
 
 
 ## Project Structure
@@ -300,11 +310,14 @@ company-brain/
   Smolfile                # VM spec (Smol Machines Smolfile): image, allow_hosts, volumes
   config/                 # wiki, notion, finance, engineering, operations, models, members, bridge
   src/company_brain/
-    cli.py · config.py · runtime/ · wiki/ · notion/ · doctor/ · llm/
+    cli.py · cli_commands/ · config.py · runtime/ · wiki/ · notion/ · doctor/ · llm/
     agents/               # department → platform → agent
       engineering/        # github_manager, github/, linear/
       finance/            # monthly_expense, quarterly_calculation, mercury/, ramp/
-      operations/         # gmail_manager, gmail/, gcal/, granola/
+      operations/         # managers + gmail/, slack/, notion/, gcal/, granola/
+      growth/              # Discord/Ads managers + activity/content/competitor/leads
+      product/             # PostHog manager + product workstream managers
+      admin/ · hr/         # Maintenance/install/Weave and people lifecycle
       employee_wiki/      # employee_wiki_manager, materializer, import, onboarding
       bridge/             # bridge_manager, materializer, blocker_rollup
     bridge/               # MCP server, auth, read gate, index, tools

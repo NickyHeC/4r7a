@@ -14,15 +14,13 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.gates import StateStore
 from company_brain.config import AppConfig
 
 from . import ramp_client
-
-logger = logging.getLogger(__name__)
 
 AGENT_KEY = "card_spend"
 
@@ -38,8 +36,17 @@ class RampCardSpendAgent(BaseAgent):
     def __init__(self, config: AppConfig, model: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
         self.model = model
+        self._state = StateStore()
 
-    def run(self, *, start: str, end: str, **kwargs: Any) -> dict[str, Any]:
+    def should_run(self, *, start: str, end: str, force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate immutable date-range reads; ``force`` refreshes late settlements."""
+        return force or self._state.get(_cache_key(start, end)) is None
+
+    def cost_gate_skip_output(self, *, start: str, end: str, **kwargs: Any) -> Any:
+        """Return the cached normalized result required by finance managers."""
+        return self._state.get(_cache_key(start, end)) or {}
+
+    def run(self, *, start: str, end: str, force: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Return normalised Ramp transactions and a QuickBooks-category breakdown."""
         self.logger.info("Reading Ramp spend %s -> %s via MCP", start, end)
         try:
@@ -53,13 +60,15 @@ class RampCardSpendAgent(BaseAgent):
         data = self._parse_result(raw)
         txns = data.get("transactions", [])
         self.logger.info("Ramp returned %d transactions", len(txns))
-        return {
+        output = {
             "start": start,
             "end": end,
             "transactions": txns,
             "by_qb_category": data.get("by_qb_category", {}),
             "total_spend": data.get("total_spend", 0.0),
         }
+        self._state.set(_cache_key(start, end), output)
+        return output
 
     async def _query_ramp(self, start: str, end: str) -> str:
         from claude_agent_sdk import ClaudeAgentOptions
@@ -119,15 +128,20 @@ Do not include any commentary outside the markers."""
     @staticmethod
     def _parse_result(raw: str) -> dict[str, Any]:
         if not raw:
-            return {}
+            raise ValueError("Ramp agent returned no output")
         start_idx = raw.rfind(_RESULT_START)
         end_idx = raw.rfind(_RESULT_END)
         if start_idx == -1 or end_idx == -1 or end_idx <= start_idx:
-            logger.warning("Ramp agent output missing JSON markers")
-            return {}
+            raise ValueError("Ramp agent output missing JSON markers")
         blob = raw[start_idx + len(_RESULT_START) : end_idx].strip()
         try:
-            return json.loads(blob)
-        except json.JSONDecodeError:
-            logger.warning("Could not parse Ramp agent JSON output")
-            return {}
+            data = json.loads(blob)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Could not parse Ramp agent JSON output") from exc
+        if not isinstance(data, dict) or not isinstance(data.get("transactions"), list):
+            raise ValueError("Ramp agent JSON must contain a transactions list")
+        return data
+
+
+def _cache_key(start: str, end: str) -> str:
+    return f"ramp_card_spend:result:{start}:{end}"

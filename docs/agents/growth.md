@@ -26,6 +26,9 @@ and workstream sections (`activity`, `content`, `competitor.keywords`, `leads`).
 
 ## Growth workstreams — how it runs
 
+Four persistent workstream managers poll their own queues or calendars and dispatch
+single-purpose specialists; event registration remains human-triggered.
+
 ```mermaid
 flowchart TD
   AM[activity_manager] -->|registered events| Plan[event_plan]
@@ -79,7 +82,8 @@ flowchart TD
 | Agent | Schedule | Description |
 |-------|----------|-------------|
 | `lead_research.py` | Via lead manager | Attendee CSV / GitHub stargazers / uploaded lists → CRM |
-| `queue.py` | — | Wiki JSON queue under `growth/leads/queue/` (helper) |
+
+Queue helper: `growth/leads/queue.py` stores JSON jobs under `growth/leads/queue/`.
 
 **CRM:** segment `lead` (`crm/lead/_index.md` + `crm/contact/{slug}.md`). Research
 queries CRM first — if `connection` / `customer` / `investor`, update that contact
@@ -157,10 +161,9 @@ Gateway is **not** embedded — start via `company-brain discord gateway` or aft
 | `activity_snapshot.py` | Daily via manager | Channel/member activity aggregates |
 | `member_scoring.py` | Monthly via manager | LLM batch scores active members; `#growth` alert when score ≥ threshold |
 | `technical_absorb.py` | Daily via manager | Enqueue discussion/technical threads → `raw/entries` for absorb |
-| `gateway.py` | CLI `discord gateway` | WebSocket listener (not dispatched by manager) |
-| `events_router.py` | Via gateway | Routes Gateway events to triage |
-| `discord_client.py` | — | REST + Gateway helpers (not an agent) |
-| `discord_onboarding.py` | Once (`discord onboarding run`) | $0 estimate + backfill; starts `discord_manager` |
+
+Runtime surfaces (not agents): `gateway.py` (CLI WebSocket listener),
+`events_router.py`, and `discord_client.py`.
 
 **Onboarding** (`discord_onboarding.py`) — always last in this table:
 
@@ -245,12 +248,12 @@ Helpers: `growth/shared/growth_slack.py` → `growth_notifier()`, `discord_revie
 | `growth/activity/_index.md` | Company Activity | update | `event_register` |
 | `growth/activity/event/{slug}.md` | (event) | update | activity specialists |
 | `growth/content/draft/{slug}.md` | Draft — … | update | `draft_writer` / wrap |
-| `growth/content/published.md` | Published Company Content | append | `published_pull` |
-| `growth/content/voice/company.md` | Company Voice | append | `published_pull` |
-| `growth/content/trend-watch.md` | Trend Watch | append | `trend_watch` |
+| `growth/content/published.md` | Published Company Content | update | `published_pull` |
+| `growth/content/voice/company.md` | Company Voice | update | `published_pull` |
+| `growth/content/trend-watch.md` | Trend Watch | update | `trend_watch` |
 | `growth/content/posting-schedule.md` | Posting Schedule | update | `posting_schedule` |
 | `growth/competitor/_index.md` | Competitors | update | `competitor_discover` |
-| `growth/competitor/{slug}.md` | (competitor) | append/update | discover / watch |
+| `growth/competitor/{slug}.md` | (competitor) | update | discover / watch |
 | `growth/discord/open-conversation.md` | Open Conversations | update | `open_conversation` |
 | `growth/discord/activity.md` | Discord Activity | update | `activity_snapshot` |
 | `growth/discord/member/{handle}.md` | `{Handle}` | update | `member_scoring` |
@@ -303,8 +306,8 @@ according to its specified action schedule, idles otherwise).
 | `campaign_status.py` | Weekly via manager | Non-removed campaigns: type, status, dates, budget |
 | `budget_pacing.py` | Weekly via manager | MTD spend vs period budget (% used / remaining) |
 | `acquisition_cost.py` | Weekly via manager | Ads-reported CPA (MTD + last 30 days) |
-| `google_ads_client.py` | — | GAQL helpers (not an agent); read-only |
-| `google_ads_onboarding.py` | Once (`google-ads onboarding run`) | Snapshot once; starts `google_ads_manager` |
+
+Connection helper: `google_ads_client.py` provides read-only GAQL access.
 
 **Onboarding** (`google_ads_onboarding.py`) — always last in this table:
 
@@ -347,6 +350,9 @@ Connect steps: [`project_install.md`](../../project_install.md) → Google Ads s
 | Wiki snapshots, weekly pacing alert | Budgets, bids, conversion setup, serving |
 | Ads-reported CPA display | Optimization / Smart Bidding / keyword tooling |
 
-Deferred: Ads mutates, product-true CPA, keyword research, daily pacing, X/LinkedIn
-write APIs, Luma/Partiful integrations, Bookface — see [`docs/tabled.md`](../tabled.md).
 Product progress + activity↔signup match live under the product handbook.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for Ads actuation/measurement expansion,
+additional publishing integrations, and other growth work outside the current scope.

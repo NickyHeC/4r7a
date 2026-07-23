@@ -63,8 +63,11 @@ class DiscordOnboardingAgent(BaseAgent):
         else:
             backfill_result = self._backfill_days(days)
 
-        intake_result = CommunityIntakeAgent(self.config).run()
-        open_result = OpenConversationAgent(self.config).run()
+        from company_brain.runtime import get_runtime
+
+        runtime = get_runtime()
+        intake_result = runtime.run(CommunityIntakeAgent, self.config)
+        open_result = runtime.run(OpenConversationAgent, self.config)
 
         absorb_result: dict[str, Any] | None = None
         if absorb:
@@ -94,7 +97,9 @@ class DiscordOnboardingAgent(BaseAgent):
         return self._backfill_since(None)
 
     def _backfill_since(self, oldest: datetime | None) -> dict[str, Any]:
-        triage = IngestTriageAgent(self.config)
+        from company_brain.runtime import get_runtime
+
+        runtime = get_runtime()
         messages = 0
         routed = 0
         after = discord_client.datetime_to_snowflake_after(oldest) if oldest else None
@@ -105,18 +110,27 @@ class DiscordOnboardingAgent(BaseAgent):
             try:
                 batch = discord_client.fetch_channel_messages(channel_id, after=after, limit=100)
             except discord_client.DiscordClientError:
+                self.logger.exception("Discord backfill fetch failed for channel %s", channel_id)
                 continue
             ch_type = int(channel.get("type", 0))
             for msg in batch:
                 messages += 1
-                result = triage.process_message(channel_id, msg, channel_type=ch_type)
-                if result.get("status") == "routed":
+                result = runtime.run(
+                    IngestTriageAgent,
+                    self.config,
+                    channel_id=channel_id,
+                    message=msg,
+                    channel_type=ch_type,
+                )
+                if isinstance(result, dict) and result.get("status") == "routed":
                     routed += 1
         return {"messages": messages, "routed": routed}
 
     def _run_absorb_batch(self) -> dict[str, Any]:
         try:
-            queue = TechnicalAbsorbAgent(self.config).run()
+            from company_brain.runtime import get_runtime
+
+            queue = get_runtime().run(TechnicalAbsorbAgent, self.config)
             from company_brain.wiki.absorb import AbsorbWriter
 
             writer = AbsorbWriter()

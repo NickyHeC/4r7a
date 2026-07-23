@@ -1,4 +1,4 @@
-# External Wiki Mount — Agent Handbook
+# External Wiki — Agent Handbook
 
 Admin-only one-shot import of Markdown wikis. Default **`kind: external`** promotes
 into the **company building** at `wiki/external/{source}/`. **`kind: personal`**
@@ -80,3 +80,7 @@ provenance stamping, admin audit trail, fleet TOC.
 
 **Does not (v1):** live sync, bidirectional Notion pull, member-initiated self-mount,
 cryptographic provenance.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for external-wiki v2 work.

@@ -97,7 +97,7 @@ in `config/members.yaml` may invoke; `config/roster.yaml` entries **cannot**.
 require admin approval in the Notion change-request database. Weave never widens
 wiki or bridge read scope.
 
-## Member bridge MCP (planned)
+## Member bridge MCP
 
 Bridge process runs **co-located with the wiki** on the same host (cloud VM or
 local always-on NAS/home server). Setup recommends **all-local or all-cloud**;
@@ -110,9 +110,9 @@ mixed wiki-on-NAS + agents-in-cloud is unsupported without explicit migration.
 | Member (coding agent / LLM) | Bridge MCP only — never raw MD |
 
 **Tokens:** per-member bearer tokens; **hashes only** in gitignored
-``config/bridge-tokens.json`` (plaintext shown once at issuance). Issued at
-employee onboarding; revoked when a Slack offboarding agent detects member
-removal. No admin god-token via MCP.
+``config/bridge-tokens.json`` (plaintext shown once at issuance). The admin issues
+tokens with `company-brain bridge issue-token`; confirmed offboarding revokes the
+member token. No admin god-token via MCP.
 
 **Writes:** append-only ledger (``config/bridge_events.jsonl``) →
 ``bridge_manager`` → ``bridge_event_materializer`` →
@@ -178,9 +178,3 @@ artifact when connecting a member's coding agent).
   section to Notion.
 - Finance platforms (Mercury, Ramp) stay **read-only at the source** regardless
   of role (see `agent-construction`).
-
-## Pending (not yet built)
-
-- **Member bridge MCP** — see `docs/tabled.md` / `docs/agents/bridge.md` (not
-  in-wiki versioning: GitHub via daily `wiki_commit` is the history SoT; volume
-  restore stays manual admin).

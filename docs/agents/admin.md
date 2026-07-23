@@ -1,15 +1,19 @@
-# Admin department — agents
+# Admin — Agent Handbook
 
 System-change intake via **Weave** (`@weave` Slack app), guided **install**
 operators (`install_profile` + orchestrator), monthly **LLM ops** and
-**investor newsletter**, safe **knowledge paste**, daily **wiki commit**
+**investor-update draft**, safe **knowledge paste**, daily **wiki commit**
 (MD volume → admin-only company-wiki GitHub backup), and the **admin console**
 (logged-in web ops cockpit on the wiki host). Wiki MD volume is source of
 truth; Notion mirrors when configured; GitHub wiki repo is backup only.
 
 Coding-agent companion: [`.cursor/skills/4r7a-install/SKILL.md`](../../.cursor/skills/4r7a-install/SKILL.md).
 
----
+**Config:** [`config/operations.yaml`](../../config/operations.yaml) → `admin` and
+`slack_platform.weave`; [`config/admin_console.yaml`](../../config/admin_console.yaml);
+[`config/install_profile.yaml`](../../config/install_profile.yaml).
+**Env:** `COMPANY_BRAIN_WIKI_GIT_TOKEN`, admin-console auth variables, and the
+provider/builder credentials described in [`project_install.md`](../../project_install.md).
 
 ## Install — how it runs
 
@@ -142,6 +146,7 @@ upstream sync, process scout, wiki ops audit, and quarterly doc hygiene.
 flowchart TD
   AM[admin_manager] -->|1 expense| EXP[llm_expense_report]
   AM -->|2 maintain| MNT[admin_maintain]
+  AM -->|monthly day 3| INV[investor_newsletter]
   AM -->|monthly| UP[upstream_sync]
   AM -->|monthly| PS[process_scout]
   AM -->|monthly| WO[wiki_ops_audit]
@@ -153,6 +158,7 @@ flowchart TD
   EXP -->|write_wiki_page| W1[admin/llm-expense/YYYY-MM.md]
   MNT -->|write_wiki_page| W2[admin/maintain/YYYY-MM.md]
   MNT -->|refresh| W3[admin/agent-runtime.md]
+  INV --> W4[admin/investor-newsletter/YYYY-MM.md]
   PS --> R1[admin/process-scout/YYYY-MM.md]
   WO --> R2[admin/wiki-ops/YYYY-MM.md]
   DH --> R3[admin/doc-hygiene/YYYY-Qn.md]
@@ -162,7 +168,7 @@ flowchart TD
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `admin_manager.py` | Monthly / quarterly schedules in `admin.*` | Dispatch expense, maintain, investor, upstream, scouts |
+| `admin_manager.py` | Persistent (`admin.*` schedules) | Dispatch expense, maintain, investor draft, upstream, scouts, and doc hygiene |
 | `llm_expense_report.py` | Via manager | Month spend by agent/category; verify + duration summary |
 | `admin_maintain.py` | Via manager | Drift list + agent-runtime page; request admin coding session |
 | `investor_newsletter.py` | Via manager (`admin.investor_newsletter`, default day 3) | Concise admin_only investor draft; never sends |
@@ -173,7 +179,8 @@ flowchart TD
 | `self_heal.py` | On verify rework / execute exception | Weave-queue proposal (optional draft PR if `head`); never auto-merge |
 | `knowledge_paste.py` | On demand | Quarantine → scan → review → promote misc external notes |
 
-**CLI:** `company-brain admin manager`, `admin expense-report`, `admin maintain`,
+**CLI:** `company-brain admin manager --loop` (persistent schedules);
+`admin manager` (one LLM-ops pass), `admin expense-report`, `admin maintain`,
 `admin investor-newsletter`, `admin upstream-sync`, `admin process-scout`,
 `admin wiki-ops-audit`, `admin doc-hygiene`, `admin self-heal`,
 `admin knowledge paste|approve`
@@ -192,6 +199,9 @@ Cloud builder maintenance loop stays tabled.
 ---
 
 ## Weave — how it runs
+
+The optional Weave Slack app turns eligible W2 member requests into audited
+change-request pages, then either opens a proven draft PR or queues admin review.
 
 ```mermaid
 flowchart LR
@@ -241,4 +251,7 @@ on the ephemeral worktree before opening a draft PR. No merge automation.
 Config: `config/notion.yaml` → `change_request_database`; `config/operations.yaml` →
 `slack_platform.weave` (builder, allow-list, `builder_allow_hosts`, `queue_path`).
 
-**Tabled:** Weave hot-reload / agent pause-resume (option B) — see `docs/tabled.md`.
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for Weave expansion, the cloud builder
+maintenance loop, and admin-console expansion.

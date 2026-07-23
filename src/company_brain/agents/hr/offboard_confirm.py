@@ -26,6 +26,7 @@ class OffboardConfirmAgent(BaseAgent):
     """Actuate offboarding after admin confirmation."""
 
     name = "offboard_confirm"
+    WRITE_MODE = UPDATE
 
     def run(
         self,
@@ -135,7 +136,7 @@ class OffboardConfirmAgent(BaseAgent):
             rel_path,
             f"Offboard Proposal — {key}",
             body,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="hr",
             type_="proposal",
             extra_frontmatter={

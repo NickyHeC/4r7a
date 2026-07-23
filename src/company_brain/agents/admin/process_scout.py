@@ -113,7 +113,7 @@ class ProcessScoutAgent(BaseAgent):
                     }
                 )
         except Exception:
-            pass
+            self.logger.debug("Could not read duration telemetry", exc_info=True)
         # Open admin queues
         from company_brain.wiki.store import LocalWikiStore
 

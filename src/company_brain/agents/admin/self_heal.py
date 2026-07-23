@@ -8,6 +8,7 @@ SDK: Neither (deterministic proposal + optional gh draft PR when ``head`` is set
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -18,6 +19,8 @@ from company_brain.config import AppConfig
 from company_brain.llm.admin_notify import wiki_admin_notifier
 from company_brain.notify import ACTIONABLE, Signal
 from company_brain.wiki.publish import APPEND, write_wiki_page
+
+logger = logging.getLogger(__name__)
 
 WEAVE_QUEUE = "admin/weave-queue.md"
 STATE_PREFIX = "admin:self_heal:"
@@ -144,6 +147,7 @@ class SelfHealAgent(BaseAgent):
         try:
             from company_brain.agents.engineering.github.gh import create_pull_request, gh_available
         except Exception:
+            self.logger.debug("GitHub PR helper unavailable", exc_info=True)
             return None
         if not gh_available() or not head.strip():
             return None
@@ -181,7 +185,11 @@ def propose_self_heal(
     if agent_name in {"self_heal", "admin_manager"}:
         return None
     try:
-        return SelfHealAgent(config).execute(
+        from company_brain.runtime import get_runtime
+
+        return get_runtime().run(
+            SelfHealAgent,
+            config,
             agent_name=agent_name,
             reason=reason,
             detail=detail,
@@ -189,4 +197,5 @@ def propose_self_heal(
             sync=True,
         )
     except Exception:
+        logger.debug("Self-heal proposal failed", exc_info=True)
         return None

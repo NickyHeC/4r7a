@@ -64,22 +64,24 @@ class GitHubOnboardingAgent(BaseAgent):
 
     def _backfill(self) -> None:
         """Run each GitHub specialist once to populate its wiki page with real data."""
+        from company_brain.runtime import get_runtime
+
         from .branch_monitor import BranchMonitorAgent
         from .feature_update import FeatureUpdateAgent
         from .open_pr import OpenPRAgent
         from .product_features import ProductFeaturesAgent
 
         specialists = [
-            OpenPRAgent(self.config, repo=self.repo),
-            BranchMonitorAgent(self.config, repo=self.repo, org=self.org),
-            FeatureUpdateAgent(self.config, repo=self.repo),
-            ProductFeaturesAgent(self.config, repo=self.repo),
+            (OpenPRAgent, {"repo": self.repo}),
+            (BranchMonitorAgent, {"repo": self.repo, "org": self.org}),
+            (FeatureUpdateAgent, {"repo": self.repo}),
+            (ProductFeaturesAgent, {"repo": self.repo}),
         ]
-        for agent in specialists:
+        for agent_cls, kwargs in specialists:
             try:
-                agent.execute()
+                get_runtime().run(agent_cls, self.config, **kwargs)
             except Exception:
-                self.logger.exception("Onboarding backfill failed for %s", agent.name)
+                self.logger.exception("Onboarding backfill failed for %s", agent_cls.name)
 
     def _start_manager(self) -> None:
         """Hand off to the persistent GitHub manager (runs at its next schedule)."""

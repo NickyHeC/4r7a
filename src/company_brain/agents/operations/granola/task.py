@@ -110,8 +110,11 @@ class TaskAgent(BaseAgent):
         )
         if "notion" in task_class_fan_out("meeting_action"):
             from company_brain.agents.operations.notion.task_sync import TaskSyncAgent
+            from company_brain.runtime import get_runtime
 
-            TaskSyncAgent(self.config).run(
+            get_runtime().run(
+                TaskSyncAgent,
+                self.config,
                 binding=binding,
                 title=title,
                 create_if_missing=True,

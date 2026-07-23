@@ -10,14 +10,13 @@ from typing import Any
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.result import AgentResult
 from company_brain.bridge.events import BridgeEvent, BridgeEventStore
-from company_brain.wiki.employee_publish import write_employee_wiki_page
-from company_brain.wiki.employee_store import employee_wiki_store
-from company_brain.wiki.store import MarkdownDoc
+from company_brain.wiki.employee_publish import UPDATE, write_employee_wiki_page
 
 
 class BridgeEventMaterializerAgent(BaseAgent):
     name = "bridge_event_materializer"
     max_iterations = 1
+    WRITE_MODE = UPDATE
 
     def run(self, *, event: BridgeEvent | dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         if isinstance(event, dict):
@@ -47,20 +46,15 @@ class BridgeEventMaterializerAgent(BaseAgent):
             title,
             body,
             member=event.member,
+            mode=self.WRITE_MODE,
             sync="private",
-        )
-        store_fs = employee_wiki_store()
-        doc = store_fs.read(rel)
-        fm = dict(doc.frontmatter or {})
-        fm.update(
-            {
+            extra_frontmatter={
                 "status": "active",
                 "event_id": event.event_id,
                 "area": payload.get("area"),
                 "severity": payload.get("severity"),
-            }
+            },
         )
-        store_fs.write(rel, MarkdownDoc(frontmatter=fm, body=doc.body))
         store.mark_materialized(event.event_id)
         return {"status": "ok", "event_id": event.event_id, "path": rel}
 

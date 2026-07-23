@@ -3,7 +3,8 @@
 The member bridge is a scoped **MCP server** that lets a member's AI coding agent
 (Cursor, Claude Desktop, other MCP clients) converse with company-brain **without
 direct access to the Markdown wiki**. Humans read the wiki through Notion; member
-AI agents read/write through the bridge only.
+AI agents use only its fixed, schema-validated tools. The sole v1 write tool is
+`report_blocker`.
 
 Code lives under `src/company_brain/bridge/` (server, auth, read gate, index,
 tools) with agents under `src/company_brain/agents/bridge/`.
@@ -89,6 +90,9 @@ rollup time.
 5. Build the search index: `company-brain bridge rebuild-index`.
 6. Start the manager: `company-brain bridge manager`.
 7. Verify: `company-brain doctor bridge`.
+8. Run an immediate rollup with `company-brain bridge rollup` when needed. Revoke
+   a token manually with `company-brain bridge revoke-token <member>`; confirmed
+   HR offboarding performs the same revocation automatically.
 
 Member client setup: install `.cursor/skills/4r7a-bridge/SKILL.md`, set
 `COMPANY_BRAIN_MEMBER_TOKEN`, point the MCP client at the bridge URL.
@@ -102,3 +106,7 @@ Member client setup: install `.cursor/skills/4r7a-bridge/SKILL.md`, set
   (60 reads/min, 20 reports/day), audit log.
 - **Does not:** expose raw wiki paths, touch Linear, run any LLM over untrusted
   blocker text, or serve admin/other-department content.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for bridge migration and future write-tool work.

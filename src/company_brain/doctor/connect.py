@@ -53,7 +53,14 @@ def run_connect_doctor(profile: InstallProfile | None = None) -> DoctorReport:
     ) -> None:
         if optional and not ok:
             status = "pass"
-            msg = message.replace(" configured", " not configured (optional)")
+            if " configured" in message:
+                msg = message.replace(" configured", " not configured (optional)")
+            elif " set" in message:
+                msg = message.replace(" set", " not set (optional)")
+            elif " installed" in message:
+                msg = message.replace(" installed", " not installed (optional)")
+            else:
+                msg = f"{message} unavailable (optional)"
         else:
             status = "pass" if ok else "warn"
             msg = message
@@ -191,7 +198,7 @@ def run_connect_doctor(profile: InstallProfile | None = None) -> DoctorReport:
             add(
                 "granola_connection",
                 False,
-                "Granola not configured (optional)",
+                "Granola configured",
                 optional=True,
             )
     except Exception:
@@ -218,7 +225,7 @@ def run_connect_doctor(profile: InstallProfile | None = None) -> DoctorReport:
             add(
                 "gcal_connection",
                 False,
-                "Google Calendar not configured (optional)",
+                "Google Calendar configured",
                 optional=True,
             )
     except Exception:

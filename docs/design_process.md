@@ -1,4 +1,4 @@
-# Design process (phase 1 of 2)
+# Design Process (Phase 1 of 2)
 
 How to iron out a new feature or platform in company-brain **before** any code is
 written. This is the first half of the extend-the-system loop:

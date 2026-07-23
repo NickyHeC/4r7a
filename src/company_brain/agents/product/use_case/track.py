@@ -7,11 +7,13 @@ Customer use cases land via absorb into ``product/use-case/customer.md``.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
 from datetime import datetime, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.gates import StateStore, changed_since
 from company_brain.agents.product.shared.workstream_config import use_case_cfg
 from company_brain.wiki.publish import (
     APPEND,
@@ -35,6 +37,22 @@ class UseCaseTrackAgent(BaseAgent):
     name = "use_case_track"
     WRITE_MODE = APPEND
 
+    def __init__(self, config, **kwargs: Any):
+        super().__init__(config, **kwargs)
+        self._state = StateStore()
+
+    def should_run(self, *, force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate on the monthly source snapshot used to build the query."""
+        if force:
+            return True
+        signature = self._source_signature()
+        return changed_since(
+            "use_case_track:source",
+            signature,
+            store=self._state,
+            update=False,
+        )
+
     def run(self, *, force: bool = False, **kwargs: Any) -> dict[str, Any]:
         _ensure_customer_seed()
         customer = read_wiki_page(CUSTOMER_PATH) or ""
@@ -43,6 +61,7 @@ class UseCaseTrackAgent(BaseAgent):
         gathered = _gather(query)
         ideas = _extract_ideas(gathered, customer=customer)
         if not ideas:
+            self._state.set("use_case_track:source", self._source_signature())
             return {
                 "status": "ok",
                 "added": 0,
@@ -66,12 +85,20 @@ class UseCaseTrackAgent(BaseAgent):
             section="product",
             type_="report",
         )
+        self._state.set("use_case_track:source", self._source_signature())
         return {
             "status": "ok",
             "added": len(ideas),
             "wiki_path": ADJACENT_PATH,
             "query": query,
         }
+
+    @staticmethod
+    def _source_signature() -> str:
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+        customer = read_wiki_page(CUSTOMER_PATH) or ""
+        features = read_wiki_page(FEATURE_WIKI) or ""
+        return hashlib.sha256(f"{month}\n{customer}\n{features}".encode()).hexdigest()
 
 
 def _ensure_customer_seed() -> None:

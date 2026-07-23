@@ -59,6 +59,15 @@ class BaseAgent(ABC):
         """
         return True
 
+    def cost_gate_skip_output(self, **kwargs: Any) -> Any:
+        """Return the value exposed when ``should_run`` is false.
+
+        Most agents use the ``SKIPPED`` sentinel. Read specialists may override
+        this to return a cached deterministic result to their manager without
+        paying for the expensive source call again.
+        """
+        return SKIPPED
+
     def verify(self, output: Any, **kwargs: Any) -> AgentResult:
         """Check output against the agent's standard.
 
@@ -103,7 +112,7 @@ class BaseAgent(ABC):
                 return SKIPPED
         if not self.should_run(**kwargs):
             self.logger.info("Agent '%s' skipped by cost gate (no change)", self.name)
-            return SKIPPED
+            return self.cost_gate_skip_output(**kwargs)
 
         session_id = kwargs.get("session_id")
         if session_id:

@@ -162,6 +162,28 @@ def test_run_once_business_dedupes(
     mock_persist.assert_called_once()
 
 
+def test_run_once_does_not_mark_failed_empty_fetch(monkeypatch):
+    mark = MagicMock()
+    monkeypatch.setattr(cfg, "granola_is_configured", lambda: True)
+    monkeypatch.setattr(cfg, "granola_mode", lambda: "enterprise")
+    monkeypatch.setattr(cfg, "enterprise_api_key", lambda: "grn_test")
+    monkeypatch.setattr(
+        client,
+        "list_notes_for_day",
+        MagicMock(side_effect=client.GranolaAPIError("temporary failure")),
+    )
+    monkeypatch.setattr(
+        "company_brain.agents.operations.granola.ingest.is_handled",
+        lambda *args: False,
+    )
+    monkeypatch.setattr("company_brain.agents.operations.granola.ingest.mark_handled", mark)
+
+    result = IngestAgent(MagicMock()).run_once(target_date=date(2026, 6, 23))
+
+    assert result["status"] == "retry"
+    mark.assert_not_called()
+
+
 def test_granola_api_error_status(monkeypatch):
     def fake_request(*args, **kwargs):
         resp = MagicMock()

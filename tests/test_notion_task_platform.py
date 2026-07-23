@@ -257,7 +257,7 @@ def test_linear_completed_dispatches_notion(tmp_path, monkeypatch):
             return_value=["linear", "notion"],
         ),
         patch(
-            "company_brain.agents.operations.notion.task_sync.TaskSyncAgent.run",
+            "company_brain.agents.operations.notion.task_sync.TaskSyncAgent.execute",
             return_value={"status": "updated"},
         ) as sync_run,
     ):

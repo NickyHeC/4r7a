@@ -6,13 +6,18 @@ templates otherwise.
 
 from __future__ import annotations
 
+import hashlib
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.gates import StateStore, changed_since
 from company_brain.agents.growth.activity.event_paths import slugify_event
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
+
+logger = logging.getLogger(__name__)
 
 WRITE_MODE = UPDATE
 DRAFT_DIR = "growth/content/draft"
@@ -74,6 +79,17 @@ class DraftWriterAgent(BaseAgent):
     name = "draft_writer"
     WRITE_MODE = WRITE_MODE
 
+    def __init__(self, config, **kwargs: Any):
+        super().__init__(config, **kwargs)
+        self._state = StateStore()
+
+    def should_run(self, *, force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate repeated automated requests; human callers pass ``force``."""
+        if force:
+            return True
+        key, signature = _draft_gate(kwargs)
+        return changed_since(key, signature, store=self._state, update=False)
+
     def run(
         self,
         *,
@@ -83,6 +99,7 @@ class DraftWriterAgent(BaseAgent):
         suggested_author: str = "",
         source_event: str = "",
         slug: str = "",
+        force: bool = False,
         **kwargs: Any,
     ) -> dict[str, Any]:
         channel = (channel or "blog").strip().lower()
@@ -119,7 +136,39 @@ class DraftWriterAgent(BaseAgent):
                 "suggested_author": suggested_author,
             },
         )
+        key, signature = _draft_gate(
+            {
+                "channel": channel,
+                "instructions": instructions,
+                "title": title,
+                "suggested_author": suggested_author,
+                "source_event": source_event,
+                "slug": slug,
+            }
+        )
+        self._state.set(key, signature)
         return {"status": "ok", "wiki_path": rel, "slug": draft_slug}
+
+
+def _draft_gate(values: dict[str, Any]) -> tuple[str, str]:
+    channel = str(values.get("channel") or "blog").strip().lower()
+    instructions = str(values.get("instructions") or "")
+    title = str(values.get("title") or "")
+    slug = str(values.get("slug") or "")
+    draft_slug = slug or slugify_event(title or instructions[:48] or f"{channel}-draft")
+    if channel not in draft_slug:
+        draft_slug = f"{draft_slug}-{channel}"
+    raw = "\n".join(
+        [
+            channel,
+            instructions,
+            title,
+            str(values.get("suggested_author") or ""),
+            str(values.get("source_event") or ""),
+            slug,
+        ]
+    )
+    return f"draft_writer:{draft_rel_path(draft_slug)}", hashlib.sha256(raw.encode()).hexdigest()
 
 
 def _compose_draft(*, channel: str, instructions: str, title: str) -> str:
@@ -144,7 +193,7 @@ def _compose_draft(*, channel: str, instructions: str, title: str) -> str:
         if text:
             return text
     except Exception:
-        pass
+        logger.warning("LLM draft failed; using deterministic template", exc_info=True)
 
     if channel == "x":
         return f"{title}: {instructions.strip() or 'Ship note.'}"[:280]

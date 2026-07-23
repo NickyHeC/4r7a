@@ -11,18 +11,25 @@ flowchart LR
   OPS[Operations] --> WIKI
   GRO[Growth] --> WIKI
   PRO[Product] --> WIKI
+  ADM[Admin] --> WIKI
+  HR[HR] --> WIKI
+  EXT[External Wiki] --> WIKI
+  EW[Employee Wiki] --> EWIKI[employee wiki MD]
+  WIKI -. scoped reads .-> BR[Member Bridge]
+  BR --> EWIKI
   WIKI --> Notion[Notion mirror]
+  EWIKI --> Notion
 ```
 
 ## Departments
 
 | Department | Scope | Handbook |
 |------------|-------|----------|
-| **Engineering** | GitHub — PRs, branches, feature updates | [engineering.md](engineering.md) |
+| **Engineering** | GitHub + Linear — code activity, issues, and completion propagation | [engineering.md](engineering.md) |
 | **Finance** | Mercury + Ramp — expenses, quarterly metrics, subscriptions | [finance.md](finance.md) |
 | **Growth** | Discord + Google Ads; activity / content / competitor / lead workstreams | [growth.md](growth.md) |
 | **Product** | PostHog + workstreams (update, use cases, docs, progress, attribution) | [product.md](product.md) |
-| **Operations** | Gmail, Slack, Granola, Notion (wiki mirror + task/CRM/Weave) | [operations.md](operations.md) |
+| **Operations** | Gmail, Slack, Google Calendar, Granola, and Notion | [operations.md](operations.md) |
 | **Admin** | Guided install, admin console, Weave (`@weave`), LLM ops + scouts/self-heal, investor draft, knowledge paste, daily `wiki_commit` | [admin.md](admin.md) |
 | **HR** | Status, LinkedIn bio/voice, offboard confirm + wiki archive | [hr.md](hr.md) |
 | **Employee Wiki** | Per-member work buildings — ledger materializers, zip import | [employee_wiki.md](employee_wiki.md) |
@@ -36,8 +43,9 @@ department folder; specialists live under their platform folder. **Workstream**
 packages (multi-source, not a connected platform) are also allowed — e.g. growth
 `activity` / `content` / `competitor` / `leads`.
 
-**Lifecycle:** Every agent runs `should_run` (cost gate) → `setup` → `run` → `verify`
-via `BaseAgent.execute()`. Persistent agents sleep between scheduled wakes; ephemeral
+**Lifecycle:** Every agent runs `should_run` (cost gate) → `setup` →
+[`run` → `verify`] up to `max_iterations` → `teardown` via
+`BaseAgent.execute()`. Persistent agents sleep between scheduled wakes; ephemeral
 agents run to completion when dispatched.
 
 **Wiki flow:** Markdown is the source of truth; Notion is a synced mirror. Agents call

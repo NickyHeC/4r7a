@@ -32,6 +32,9 @@ _RESULT_START = "<<<HR_LINKEDIN>>>"
 _RESULT_END = "<<<END_HR_LINKEDIN>>>"
 
 STATE_PREFIX = "hr:linkedin:"
+DUE_PREFIX = "hr:linkedin_due:"
+WRITE_MODE = UPDATE
+VOICE_WRITE_MODE = APPEND
 
 
 class PullAgent(BaseAgent):
@@ -39,10 +42,20 @@ class PullAgent(BaseAgent):
 
     name = "pull"
     max_iterations = 1
+    WRITE_MODE = WRITE_MODE
+    VOICE_WRITE_MODE = VOICE_WRITE_MODE
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
         self._state = StateStore()
+
+    def should_run(self, *, member_key: str = "", force: bool = False, **kwargs: Any) -> bool:
+        """Cost gate: public-profile research runs at most monthly per scope."""
+        if force:
+            return True
+        scope = (member_key or "all").strip()
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+        return self._state.get(f"{DUE_PREFIX}{scope}") != month
 
     def run(
         self,
@@ -53,12 +66,29 @@ class PullAgent(BaseAgent):
     ) -> dict[str, Any]:
         key = (member_key or "").strip()
         if key:
-            return self._pull_one(key, force=force)
+            result = self._pull_one(key, force=force)
+            if _pull_completed(result):
+                self._mark_due(key)
+            return result
 
         results: dict[str, Any] = {}
         for k, url in _active_linkedin_targets().items():
             results[k] = self._pull_one(k, force=force, linkedin_url=url)
-        return {"status": "ok", "members": results}
+        if not results:
+            self._mark_due("all")
+            return {"status": "ok", "reason": "no_targets", "members": {}}
+        if all(_pull_completed(result) for result in results.values()):
+            self._mark_due("all")
+            return {"status": "ok", "members": results}
+        return {
+            "status": "error",
+            "reason": "incomplete",
+            "members": results,
+        }
+
+    def _mark_due(self, scope: str) -> None:
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+        self._state.set(f"{DUE_PREFIX}{scope}", month)
 
     def _pull_one(
         self,
@@ -97,7 +127,7 @@ class PullAgent(BaseAgent):
             BIO_TITLE,
             bio or f"# Bio\n\n_No profile summary from LinkedIn search for `{url}`._\n",
             member=member_key,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             sync="private",
             sources=[url],
             mirror_notion=False,
@@ -111,7 +141,7 @@ class PullAgent(BaseAgent):
                 VOICE_TITLE,
                 "# Voice\n\n_Public LinkedIn posts and writing samples._\n",
                 member=member_key,
-                mode=UPDATE,
+                mode=self.WRITE_MODE,
                 sync="private",
                 mirror_notion=False,
             )
@@ -129,7 +159,7 @@ class PullAgent(BaseAgent):
                 VOICE_TITLE,
                 section,
                 member=member_key,
-                mode=APPEND,
+                mode=self.VOICE_WRITE_MODE,
                 sync="private",
                 sources=[url],
                 mirror_notion=False,
@@ -244,6 +274,15 @@ If no posts found, write: (none)
             if isinstance(result, str):
                 out.append(result)
         return "\n".join(out)
+
+
+def _pull_completed(result: dict[str, Any]) -> bool:
+    if result.get("status") == "ok":
+        return True
+    return result.get("status") == "skipped" and result.get("reason") in {
+        "unchanged",
+        "no_linkedin_url",
+    }
 
 
 def _extract_marked(raw: str) -> str:

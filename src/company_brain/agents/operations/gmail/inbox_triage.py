@@ -40,9 +40,19 @@ class InboxTriageAgent(BaseAgent):
         self.mailbox = mailbox or mailbox_id()
         self._store = RoutingStore()
 
-    def run(self, *, once: bool = False, backfill: bool = False, **kwargs: Any) -> Any:
+    def run(
+        self,
+        *,
+        once: bool = False,
+        backfill: bool = False,
+        backfill_days_override: int | None = None,
+        **kwargs: Any,
+    ) -> Any:
         if once:
-            return self.run_once(backfill=backfill)
+            return self.run_once(
+                backfill=backfill,
+                backfill_days_override=backfill_days_override,
+            )
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
@@ -65,10 +75,16 @@ class InboxTriageAgent(BaseAgent):
             self.logger.info("Next triage at %s (sleep %.0fs)", nxt.isoformat(), wait)
             await asyncio.sleep(max(wait, 1))
 
-    def run_once(self, *, backfill: bool = False) -> dict[str, Any]:
+    def run_once(
+        self,
+        *,
+        backfill: bool = False,
+        backfill_days_override: int | None = None,
+    ) -> dict[str, Any]:
         query = None
         if backfill:
-            query = f"in:inbox newer_than:{backfill_days()}d"
+            days = backfill_days_override if backfill_days_override is not None else backfill_days()
+            query = f"in:inbox newer_than:{days}d"
         ids = collect_message_ids(mailbox=self.mailbox, backfill_query=query)
         self.logger.info("Triage processing %d message(s)", len(ids))
 

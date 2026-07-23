@@ -47,10 +47,17 @@ class GmailOnboardingAgent(BaseAgent):
             self.logger.info("Created %d CRM seed wiki page(s)", seeded)
 
         from company_brain.agents.operations.gmail.inbox_triage import InboxTriageAgent
+        from company_brain.runtime import get_runtime
 
         days = backfill_days_override if backfill_days_override is not None else backfill_days()
-        triage = InboxTriageAgent(self.config, mailbox=self.mailbox)
-        summary = triage.run_once(backfill=True)
+        summary = get_runtime().run(
+            InboxTriageAgent,
+            self.config,
+            mailbox=self.mailbox,
+            once=True,
+            backfill=True,
+            backfill_days_override=days,
+        )
         self.logger.info("Backfill triage: %s", summary)
 
         if start_manager:

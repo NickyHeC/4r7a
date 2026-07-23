@@ -3,7 +3,8 @@
 Finance agents under `src/company_brain/agents/finance/`. Mercury and Ramp are
 **read-only at the source** — agents never move money or mutate bank/card state.
 
-**Config:** [`config/finance.yaml`](../../config/finance.yaml) (schedules, Notion titles, Slack channel).
+**Config:** [`config/finance.yaml`](../../config/finance.yaml) (schedules, Slack
+channel, wiki paths, and learned categories).
 
 **Notifications:** every Slack `#finance` message is severity-gated through
 `from_finance_config(cfg).emit(Signal(...))` (never a direct Slack call) — `info` is
@@ -69,6 +70,12 @@ per-month breakdown; cross-verifies against monthly expense reports. Then starts
 
 ## Cross-platform agents (`finance/`)
 
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `budget_report.py` | Quarterly via manager | Append a budget narrative from quarterly metrics and company events |
+| `subscription_audit.py` | Quarterly via manager | Refresh recurring-vendor and overlap review |
+| `request_manual_accounting.py` | On uncategorized spend; daily noon checks | Collect human category corrections and rerun the source manager |
+
 ### `budget_report.py`
 
 | | |
@@ -109,7 +116,7 @@ log). Config: `config/finance.yaml` → `wiki.vendor_dir`.
 |---|---|
 | **State** | ephemeral |
 | **Schedule** | Started by managers on uncategorized spend; polls **daily at noon** |
-| **Source** | Notion Manual Accounting page (human input) + Slack |
+| **Source** | Manual Accounting wiki page (human edits pulled from the Notion mirror) + Slack |
 | **Destination** | `finance/manual-accounting.md` |
 | **Notion** | Manual Accounting |
 | **Write mode** | update |
@@ -121,6 +128,12 @@ the source manager.
 ---
 
 ## Mercury specialists (`finance/mercury/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `asset_compile.py` | Monthly via manager / on demand | Append total-asset snapshots |
+| `bank_transaction.py` | On demand via managers | Return normalized bank transactions |
+| `card_spend.py` | On demand via managers | Return categorized Mercury IO card spend |
 
 ### `asset_compile.py`
 
@@ -164,6 +177,10 @@ Mercury IO card outflows, categorized by Mercury transaction categories.
 
 ## Ramp specialists (`finance/ramp/`)
 
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `card_spend.py` | On demand via managers | Return Ramp card spend by QuickBooks category |
+
 ### `card_spend.py`
 
 | | |
@@ -173,7 +190,9 @@ Mercury IO card outflows, categorized by Mercury transaction categories.
 | **Source** | Ramp (via MCP) |
 | **Destination** | — (returns data to caller) |
 
-Ramp card transactions categorized by QuickBooks accounting category.
+Ramp card transactions categorized by QuickBooks accounting category. Completed
+date-range results are cached by the agent-level cost gate; callers may pass
+`force=True` to refresh late-settling transactions.
 
 **LLM vendor reconcile (admin Costs):** `company_brain.llm.reconcile` sums Mercury
 + Ramp card spend for known LLM vendors (read-only). Surfaces drift vs tracked
@@ -189,8 +208,13 @@ token estimates; labeled as estimates until invoice reconcile.
 |---|---|
 | **State** | ephemeral |
 | **Schedule** | Once, on first finance connection |
-| **Source** | Mercury transaction history |
+| **Source** | Mercury history for the start month; Mercury + Ramp specialists for backfill |
 
 Backfills by running **`monthly_expense`** and **`quarterly_calculation`** for every
 historical month/quarter (`escalate=False` so historical periods don't spam manual
 accounting). Starts both persistent managers via `get_runtime().start()` and exits.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for finance items that remain intentionally
+deferred or out of scope.

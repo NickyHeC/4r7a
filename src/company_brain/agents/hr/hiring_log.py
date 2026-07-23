@@ -52,8 +52,16 @@ class HiringLogAgent(BaseAgent):
 
 def append_hiring_log(heading: str, body: str, *, trigger: str, why: str = "") -> None:
     from company_brain.config import load_config
+    from company_brain.runtime import get_runtime
 
-    HiringLogAgent(load_config()).run(heading=heading, body=body, trigger=trigger, why=why)
+    get_runtime().run(
+        HiringLogAgent,
+        load_config(),
+        heading=heading,
+        body=body,
+        trigger=trigger,
+        why=why,
+    )
 
 
 def backfill_hire_entry(

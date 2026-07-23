@@ -3,8 +3,8 @@
 A persistent department manager. On the 1st of each month at 08:00 it dispatches
 the transaction specialists (Mercury bank, Mercury card, Ramp card) for the
 previous month, sorts outbound spend into budget categories, posts the compiled
-report to Slack #finance, and creates a Notion page "<Month> Expense Report"
-under the "Monthly Expense Reports" page. Idles between runs.
+report to Slack #finance, and writes the month's wiki expense report before its
+Notion mirror. Idles between runs.
 
 SDK: Anthropic Claude Agent SDK (optional narrative polish of the report) layered
 on deterministic categorization. Orchestration (dispatch + schedule) is plain
@@ -18,18 +18,16 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, time
+from datetime import datetime
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
+from company_brain.agents.scheduling.calendar import next_calendar_run, parse_hhmm
 from company_brain.config import AppConfig
 
 from .shared import categories as cat
 from .shared import notion_pages, transactions
 from .shared.config import load_finance_config
-
-RUN_DAY = 1
-RUN_TIME = time(8, 0)
 
 PARENT_KEY = "monthly_expense_reports"
 PARENT_TERMS = ["Monthly Expense Reports", "Monthly Expense Report"]
@@ -45,6 +43,7 @@ class MonthlyExpenseManager(BaseAgent):
     name = "finance_monthly_expense"
     track_duration = False
     WRITE_MODE = "update"
+    fleet_exempt = True
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -53,10 +52,17 @@ class MonthlyExpenseManager(BaseAgent):
 
     # -- lifecycle ---------------------------------------------------------
 
-    def run(self, *, once: bool = False, month: str | None = None, **kwargs: Any) -> Any:
+    def run(
+        self,
+        *,
+        once: bool = False,
+        month: str | None = None,
+        escalate: bool = True,
+        **kwargs: Any,
+    ) -> Any:
         """Start the persistent loop, or run a single month when ``once``."""
         if once:
-            return self.run_once(month or transactions.previous_month())
+            return self.run_once(month or transactions.previous_month(), escalate=escalate)
         asyncio.run(self._loop())
 
     async def _loop(self) -> None:
@@ -67,14 +73,28 @@ class MonthlyExpenseManager(BaseAgent):
             wait = (nxt - now).total_seconds()
             self.logger.info("Next monthly run at %s (sleep %.0fs)", nxt.isoformat(), wait)
             await asyncio.sleep(wait)
-            try:
-                self.run_once(transactions.previous_month())
-            except Exception:
-                self.logger.exception("Monthly expense run failed")
+            while True:
+                try:
+                    result = self.run_once(transactions.previous_month())
+                    if result.get("reason") != "fleet_paused":
+                        break
+                except Exception:
+                    self.logger.exception("Monthly expense run failed")
+                    break
+                await asyncio.sleep(300)
 
     # -- core --------------------------------------------------------------
 
     def run_once(self, month: str, *, escalate: bool = True) -> dict[str, Any]:
+        """Run one report inside a fleet dispatch slot."""
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                return {"status": "skipped", "reason": "fleet_paused", "month": month}
+            return self._run_report(month, escalate=escalate)
+
+    def _run_report(self, month: str, *, escalate: bool = True) -> dict[str, Any]:
         """Compile and publish the expense report for ``month`` (YYYY-MM).
 
         ``escalate`` controls whether uncategorized transactions trigger
@@ -91,8 +111,8 @@ class MonthlyExpenseManager(BaseAgent):
         grouped, grand_total = self._categorize(txns)
         report = self._build_report(month, grouped, grand_total)
 
-        page_id = self._publish_notion(month, report)
-        self._publish_slack(month, grand_total, page_id)
+        wiki_path = self._publish_report(month, report)
+        self._publish_slack(month, grand_total, wiki_path)
 
         # Snapshot total assets for the reported month-end (≈ start of the new
         # month, which is when this manager runs). Best-effort; Mercury may be
@@ -113,7 +133,7 @@ class MonthlyExpenseManager(BaseAgent):
             "transaction_count": len(txns),
             "grand_total": grand_total,
             "uncategorized_count": len(uncategorized),
-            "notion_page_id": page_id,
+            "wiki_path": wiki_path,
             "total_assets": (assets or {}).get("total_assets"),
             "report": report,
         }
@@ -153,7 +173,13 @@ class MonthlyExpenseManager(BaseAgent):
         txns.extend(card.get("transactions", []))
 
         try:
-            ramp = runtime.run(RampCardSpendAgent, self.config, start=start, end=end)
+            ramp = runtime.run(
+                RampCardSpendAgent,
+                self.config,
+                start=start,
+                end=end,
+                force=True,
+            )
             txns.extend(ramp.get("transactions", []))
         except Exception:
             self.logger.exception("Ramp card spend unavailable; continuing with Mercury only")
@@ -189,22 +215,21 @@ class MonthlyExpenseManager(BaseAgent):
             lines.append("")
         return "\n".join(lines)
 
-    def _publish_notion(self, month: str, report: str) -> str | None:
+    def _publish_report(self, month: str, report: str) -> str:
         # Each month gets its own page under "Monthly Expense Reports", overwritten
         # in place on re-run.
         notion_pages.ensure_page(PARENT_KEY, PARENT_TERMS, "Monthly Expense Reports")
         label = transactions.month_label(month)
         child_key = f"monthly_expense_{month}"
-        page_id = notion_pages.ensure_page(
+        wiki_path = notion_pages.ensure_page(
             child_key,
             [f"{label} Expenses"],
             f"{label} Expenses",
-            parent_key=PARENT_KEY,
         )
-        notion_pages.update_page_body(page_id, report)
-        return page_id
+        notion_pages.update_page_body(wiki_path, report)
+        return wiki_path
 
-    def _publish_slack(self, month: str, grand_total: float, page_id: str | None) -> None:
+    def _publish_slack(self, month: str, grand_total: float, wiki_path: str) -> None:
         from company_brain.notify import ACTIONABLE, INFO, Signal, from_finance_config
 
         label = transactions.month_label(month)
@@ -219,7 +244,7 @@ class MonthlyExpenseManager(BaseAgent):
                     ),
                     severity=severity,
                     link_label=f"{label} Expenses",
-                    link_url=notion_pages.page_url(page_id) if page_id else None,
+                    link_url=notion_pages.page_url(wiki_path),
                 )
             )
         except Exception:
@@ -240,13 +265,10 @@ class MonthlyExpenseManager(BaseAgent):
 
     @staticmethod
     def _next_run_time(now: datetime) -> datetime:
-        """Next occurrence of the 1st of a month at RUN_TIME."""
-        candidate = now.replace(
-            day=RUN_DAY, hour=RUN_TIME.hour, minute=RUN_TIME.minute, second=0, microsecond=0
+        """Next configured monthly expense run."""
+        schedule = (load_finance_config().get("schedules") or {}).get("monthly_expense") or {}
+        return next_calendar_run(
+            now,
+            day=int(schedule.get("day_of_month") or 1),
+            at=parse_hhmm(str(schedule.get("time") or "08:00")),
         )
-        if now >= candidate:
-            # advance to the 1st of next month
-            year = now.year + (1 if now.month == 12 else 0)
-            month = 1 if now.month == 12 else now.month + 1
-            candidate = candidate.replace(year=year, month=month)
-        return candidate

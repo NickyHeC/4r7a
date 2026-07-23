@@ -19,15 +19,18 @@ from company_brain.crm.registry import load_registry, rebuild_registry
 from company_brain.crm.schema import ContactEntity
 from company_brain.crm.slug import slug_from_email
 from company_brain.notify import ACTIONABLE, Signal
+from company_brain.wiki.publish import UPDATE, write_wiki_page
 
 _EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 RELATIONSHIP_SEGMENTS = frozenset({"connection", "customer", "investor"})
+WRITE_MODE = UPDATE
 
 
 class LeadResearchAgent(BaseAgent):
     """Process one lead research job into CRM contacts."""
 
     name = "lead_research"
+    WRITE_MODE = WRITE_MODE
 
     def should_run(self, **kwargs: Any) -> bool:
         return bool(kwargs.get("job") or kwargs.get("job_id"))
@@ -208,7 +211,6 @@ def _upsert_lead(row: dict[str, str], *, source_label: str) -> str:
 
 def _append_lead_index(email: str) -> None:
     from company_brain.crm.config import lead_index_path
-    from company_brain.wiki.publish import UPDATE, write_wiki_page
     from company_brain.wiki.store import LocalWikiStore
 
     store = LocalWikiStore()
@@ -223,4 +225,4 @@ def _append_lead_index(email: str) -> None:
     else:
         body = f"# Leads\n\n{line}\n"
         title = "Leads"
-    write_wiki_page(rel, title, body, mode=UPDATE, section="crm", sync=False)
+    write_wiki_page(rel, title, body, mode=WRITE_MODE, section="crm", sync=False)

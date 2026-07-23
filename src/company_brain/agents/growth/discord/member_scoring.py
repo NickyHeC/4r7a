@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from company_brain.agents.base import BaseAgent
-from company_brain.agents.gates import StateStore
+from company_brain.agents.gates import StateStore, changed_since
 from company_brain.agents.growth.discord import discord_client
 from company_brain.agents.growth.discord import discord_config as cfg
 from company_brain.agents.growth.discord.routing import DiscordRoutingStore
@@ -27,16 +27,27 @@ class MemberScoringAgent(BaseAgent):
     """Score active Discord members and maintain member profile pages."""
 
     name = "discord_member_scoring"
+    WRITE_MODE = UPDATE
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
         self._routing = DiscordRoutingStore()
         self._state = StateStore()
 
-    def should_run(self, **kwargs: Any) -> bool:
-        return discord_client.discord_is_configured()
+    def should_run(self, *, force: bool = False, **kwargs: Any) -> bool:
+        if not discord_client.discord_is_configured():
+            return False
+        if force:
+            return True
+        signature = self._routing_signature()
+        return changed_since(
+            "discord_member_scoring:source",
+            signature,
+            store=self._state,
+            update=False,
+        )
 
-    def run(self, **kwargs: Any) -> dict[str, Any]:
+    def run(self, *, force: bool = False, **kwargs: Any) -> dict[str, Any]:
         since = datetime.now(timezone.utc) - timedelta(days=30)
         grouped = self._group_messages(since)
         scored = 0
@@ -55,7 +66,14 @@ class MemberScoringAgent(BaseAgent):
                 if self._notify_member(handle, score, summary, use_case):
                     notified += 1
 
+        self._state.set("discord_member_scoring:source", self._routing_signature())
         return {"scored": scored, "notified": notified, "candidates": len(grouped)}
+
+    def _routing_signature(self) -> str:
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+        records = list(self._routing.iter_all())
+        latest = max((record.updated_at for record in records), default="")
+        return f"{month}:{len(records)}:{latest}"
 
     def _group_messages(self, since: datetime) -> dict[str, dict[str, Any]]:
         grouped: dict[str, dict[str, Any]] = defaultdict(
@@ -154,7 +172,7 @@ USE_CASE: <one sentence on how they may use the products, or "unknown">
             rel_path,
             handle,
             body,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="growth",
             type_="person",
             extra_frontmatter={

@@ -10,6 +10,7 @@ from company_brain.config import PROJECT_ROOT
 from company_brain.doctor.types import CheckResult, DoctorReport
 
 AGENTS_ROOT = PROJECT_ROOT / "src" / "company_brain" / "agents"
+SRC_ROOT = PROJECT_ROOT / "src" / "company_brain"
 HANDBOOK_DIR = PROJECT_ROOT / "docs" / "agents"
 VMSPEC = PROJECT_ROOT / "Smolfile"
 
@@ -18,6 +19,15 @@ _SKIP_SUFFIXES = ("_client.py",)
 _HOST_ASSIGN_RE = re.compile(
     r'^(?:[A-Z][A-Z0-9_]*)\s*=\s*["\']https://([a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,})'
 )
+_EXPENSIVE_MARKERS = (
+    "run_openai_sync",
+    "iter_claude_query",
+    "claude_websearch_prompt",
+    "gather_markdown(",
+    "Runner.run_sync",
+    "Runner.run(",
+)
+_INTERACTIVE_COST_GATE_EXEMPT = frozenset({"ask_wiki"})
 
 
 def _is_api_surface(path: Path) -> bool:
@@ -117,6 +127,114 @@ def _manager_runtime_bypasses() -> list[str]:
                     hits.append(f"{path.relative_to(AGENTS_ROOT)}: inline .execute()")
                     break
     return hits
+
+
+def _direct_agent_run_bypasses() -> list[str]:
+    """Agents calling another agent lifecycle method outside the runtime."""
+    hits: set[str] = set()
+    lifecycle_methods = {"execute", "run", "run_once"}
+    for path in _iter_agent_py_files():
+        try:
+            tree = ast.parse(path.read_text())
+        except SyntaxError:
+            continue
+
+        agent_vars: set[str] = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+                continue
+            value = node.value
+            if not isinstance(value, ast.Call):
+                continue
+            constructor = value.func
+            name = constructor.id if isinstance(constructor, ast.Name) else ""
+            if name.endswith(("Agent", "Manager")):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                agent_vars.update(target.id for target in targets if isinstance(target, ast.Name))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            if node.func.attr not in lifecycle_methods:
+                continue
+            receiver = node.func.value
+            if isinstance(receiver, ast.Call):
+                constructor = receiver.func
+                name = constructor.id if isinstance(constructor, ast.Name) else ""
+                is_agent = name.endswith(("Agent", "Manager"))
+            else:
+                is_agent = isinstance(receiver, ast.Name) and receiver.id in agent_vars
+            if is_agent:
+                hits.add(f"{path.relative_to(AGENTS_ROOT)}:{node.lineno}")
+    return sorted(hits)
+
+
+def _wiki_writer_mode_gaps() -> list[str]:
+    """Wiki-writing agent classes must declare their write mode explicitly."""
+    gaps: list[str] = []
+    for path in _iter_handbook_agent_files():
+        text = path.read_text()
+        if "write_wiki_page(" not in text and "write_employee_wiki_page(" not in text:
+            continue
+        tree = ast.parse(text)
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            bases = {
+                base.id if isinstance(base, ast.Name) else getattr(base, "attr", "")
+                for base in node.bases
+            }
+            if "BaseAgent" not in bases:
+                continue
+            fields = {
+                target.id
+                for item in node.body
+                if isinstance(item, (ast.Assign, ast.AnnAssign))
+                for target in (item.targets if isinstance(item, ast.Assign) else [item.target])
+                if isinstance(target, ast.Name)
+            }
+            if "WRITE_MODE" not in fields:
+                gaps.append(f"{path.relative_to(AGENTS_ROOT)}:{node.name}")
+    return gaps
+
+
+def _expensive_agent_gate_gaps() -> list[str]:
+    """LLM/web-search agents need a cheap gate unless each call is human-requested."""
+    gaps: list[str] = []
+    for path in _iter_handbook_agent_files():
+        text = path.read_text()
+        if not any(marker in text for marker in _EXPENSIVE_MARKERS):
+            continue
+        tree = ast.parse(text)
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            bases = {
+                base.id if isinstance(base, ast.Name) else getattr(base, "attr", "")
+                for base in node.bases
+            }
+            if "BaseAgent" not in bases:
+                continue
+            agent_name = ""
+            for item in node.body:
+                if (
+                    isinstance(item, ast.Assign)
+                    and any(
+                        isinstance(target, ast.Name) and target.id == "name"
+                        for target in item.targets
+                    )
+                    and isinstance(item.value, ast.Constant)
+                ):
+                    agent_name = str(item.value.value)
+            if agent_name in _INTERACTIVE_COST_GATE_EXEMPT:
+                continue
+            if not any(
+                isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and item.name == "should_run"
+                for item in node.body
+            ):
+                gaps.append(f"{path.relative_to(AGENTS_ROOT)}:{node.name}")
+    return gaps
 
 
 def run_agents_doctor() -> DoctorReport:
@@ -219,6 +337,63 @@ def run_agents_doctor() -> DoctorReport:
     else:
         report.checks.append(
             CheckResult("manager_runtime_dispatch", "pass", "Managers use runtime dispatch")
+        )
+
+    direct_runs = _direct_agent_run_bypasses()
+    if direct_runs:
+        report.checks.append(
+            CheckResult(
+                "agent_runtime_dispatch",
+                "warn",
+                f"Direct Agent/Manager .run() calls: {', '.join(direct_runs[:8])}",
+                "dispatch through get_runtime().run() so lifecycle gates apply",
+            )
+        )
+    else:
+        report.checks.append(
+            CheckResult(
+                "agent_runtime_dispatch",
+                "pass",
+                "Agent-to-agent calls use runtime dispatch",
+            )
+        )
+
+    mode_gaps = _wiki_writer_mode_gaps()
+    if mode_gaps:
+        report.checks.append(
+            CheckResult(
+                "agent_write_mode",
+                "warn",
+                f"Wiki writers missing class WRITE_MODE: {', '.join(mode_gaps[:8])}",
+                "declare WRITE_MODE and pass it to the publish helper",
+            )
+        )
+    else:
+        report.checks.append(
+            CheckResult(
+                "agent_write_mode",
+                "pass",
+                "Wiki-writing agents declare WRITE_MODE",
+            )
+        )
+
+    gate_gaps = _expensive_agent_gate_gaps()
+    if gate_gaps:
+        report.checks.append(
+            CheckResult(
+                "agent_cost_gate",
+                "warn",
+                f"Expensive agents missing should_run: {', '.join(gate_gaps[:8])}",
+                "add a cheap deterministic gate or document an interactive exemption",
+            )
+        )
+    else:
+        report.checks.append(
+            CheckResult(
+                "agent_cost_gate",
+                "pass",
+                "Expensive agents have cheap cost gates",
+            )
         )
 
     return report

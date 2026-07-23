@@ -83,8 +83,11 @@ def _fan_out_notion(binding: TaskBinding, linear_status: str) -> None:
     try:
         from company_brain.agents.operations.notion.task_sync import TaskSyncAgent
         from company_brain.config import load_config
+        from company_brain.runtime import get_runtime
 
-        TaskSyncAgent(load_config()).run(
+        get_runtime().run(
+            TaskSyncAgent,
+            load_config(),
             binding=binding,
             linear_status=linear_status,
             create_if_missing=False,

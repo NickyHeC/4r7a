@@ -25,7 +25,7 @@ Won’t build unless product explicitly reverses:
 - Bookface API, X/Twitter write API, Luma/Partiful integrations
 - Full Ramp receipt cross-check (platform boundary)
 - Per-page Notion ACL automation, cross-member comparative query, auto-promote employee → company wiki
-- Workspace / Notion **account deletion** from 4r7a (checklist only — see plan Session L)
+- Workspace / Notion **account deletion** from 4r7a (manual checklist only)
 - Customer newsletter Gmail draft (wiki MD draft only; delivery channel TBD below)
 
 ---
@@ -37,7 +37,7 @@ Won’t build unless product explicitly reverses:
 | Weave coding beyond allow-list / auto-merge | admin/weave | Real use + explicit product ask | Draft PR + no auto-merge stays |
 | Latent Briefing (KV cache handoff) | LLM / runtime | Self-hosted GLM-5 / Kimi (or equiv.) | Needs internal KV access — not hosted API-only |
 | Semantic / embedding hybrid search | wiki + `@wiki` + bridge | Lexical retrieve inadequate in practice | **Shipped v1:** TF+IDF+title+age in `wiki/retrieve.py` |
-| Live custom-source query plugins | ingest / `@wiki` | After scheduled ingest connectors prove useful | Plan Session F/connectors = ingest-only; live query stays here |
+| Live custom-source query plugins | ingest / `@wiki` | After scheduled ingest connectors prove useful | Connectors remain ingest-only; live query stays here |
 | Cloud builder maintenance loop | runtime | Multi-VM fleet real | Self-heal v1 queues / optional draft PR shipped; builder loop stays deferred |
 | Admin console SPA / public expose | `admin_console` | Product ask after private-mesh HTMX limits | Stay Tailscale / private mesh |
 
@@ -47,8 +47,6 @@ Won’t build unless product explicitly reverses:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Member bridge MCP | Cross / `bridge/` | Admin specs + Smol multi-member install | Dept-scoped reads; token hashes; ledger → blockers; no Linear |
-| Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP lands | Tailscale; `bridge issue-token`; Cursor env token |
 | Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | rsync, re-issue tokens, URL change |
 | Senior `propose_practice_update` via MCP | Engineering / bridge | Read-only bridge stable | Tabled |
 
@@ -101,6 +99,6 @@ Won’t build unless product explicitly reverses:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Live sync / bidirectional pull | `external_wiki` | v2 explicit scope | v1 one-shot (+ personal kind in plan Session G) |
+| Live sync / bidirectional pull | `external_wiki` | v2 explicit scope | v1 remains one-shot, including personal sources |
 | Member-initiated mounts | `external_wiki` | Policy decision | Admin-only; members submit zip for review |
 | Cryptographic provenance | `external_wiki` | Compliance ask | Provenance frontmatter today |

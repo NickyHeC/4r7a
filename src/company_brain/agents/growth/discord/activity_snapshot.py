@@ -23,6 +23,7 @@ class ActivitySnapshotAgent(BaseAgent):
     """Rebuild Discord community activity metrics on the wiki."""
 
     name = "discord_activity_snapshot"
+    WRITE_MODE = UPDATE
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -68,7 +69,7 @@ class ActivitySnapshotAgent(BaseAgent):
             WIKI_PATH,
             TITLE,
             body,
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="growth",
             type_="report",
         )

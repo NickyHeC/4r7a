@@ -19,12 +19,16 @@ from company_brain.wiki.employee_publish import APPEND, UPDATE, write_employee_w
 from company_brain.wiki.work_events import WorkEvent, WorkEventStore, event_target_members
 
 _BULLET_RE = re.compile(r"^-\s+(.+)$", re.M)
+WRITE_MODE = APPEND
+INDEX_WRITE_MODE = UPDATE
 
 
 class WorkEventMaterializerAgent(BaseAgent):
     """Materialize a single work event into employee wiki pages."""
 
     name = "work_event_materializer"
+    WRITE_MODE = WRITE_MODE
+    INDEX_WRITE_MODE = INDEX_WRITE_MODE
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -105,7 +109,7 @@ class WorkEventMaterializerAgent(BaseAgent):
             f"Work log — {rel.split('/')[-1].removesuffix('.md')}",
             section,
             member=member,
-            mode=APPEND,
+            mode=self.WRITE_MODE,
             artifact_refs=artifact_refs,
             company_links=company_links or [],
             mirror_notion=False,
@@ -229,7 +233,7 @@ def _refresh_member_index(member: str) -> None:
         store.read(index_rel).frontmatter.get("title") or "Current work",
         updated,
         member=member,
-        mode=UPDATE,
+        mode=INDEX_WRITE_MODE,
         store=store,
         mirror_notion=False,
     )

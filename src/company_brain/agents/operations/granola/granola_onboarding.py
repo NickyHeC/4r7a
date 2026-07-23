@@ -41,7 +41,9 @@ class GranolaOnboardingAgent(BaseAgent):
         days = backfill_days_override if backfill_days_override is not None else backfill_days()
         self.logger.info("Starting Granola onboarding (%d-day backfill)", days)
 
-        ingest = IngestAgent(self.config)
+        from company_brain.runtime import get_runtime
+
+        runtime = get_runtime()
         today = date.today()
         day_results: list[dict[str, Any]] = []
         total_notes = 0
@@ -49,7 +51,12 @@ class GranolaOnboardingAgent(BaseAgent):
         for offset in range(days - 1, -1, -1):
             day = today - timedelta(days=offset)
             try:
-                result = ingest.run_once(target_date=day)
+                result = runtime.run(
+                    IngestAgent,
+                    self.config,
+                    once=True,
+                    target_date=day,
+                )
             except Exception:
                 self.logger.exception("Backfill failed for %s", day.isoformat())
                 result = {"status": "error", "date": day.isoformat()}

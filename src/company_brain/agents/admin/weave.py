@@ -49,6 +49,7 @@ class WeaveAgent(BaseAgent):
 
     name = "weave"
     track_duration = False
+    WRITE_MODE = UPDATE
 
     def run(
         self,
@@ -201,7 +202,7 @@ class WeaveAgent(BaseAgent):
             request.wiki_path,
             f"Change Request — {request.requester_member}",
             change_request_body(request),
-            mode=UPDATE,
+            mode=self.WRITE_MODE,
             section="admin",
             type_="change_request",
             sync=sync,

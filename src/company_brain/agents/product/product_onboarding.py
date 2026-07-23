@@ -13,6 +13,8 @@ from company_brain.agents.base import BaseAgent
 from company_brain.wiki.publish import UPDATE, write_wiki_page
 from company_brain.wiki.store import LocalWikiStore
 
+WRITE_MODE = UPDATE
+
 SEED_PAGES: list[tuple[str, str, str]] = [
     (
         "product/use-case/customer.md",
@@ -53,6 +55,7 @@ class ProductOnboardingAgent(BaseAgent):
     """One-time product workstream setup + manager handoff."""
 
     name = "product_onboarding"
+    WRITE_MODE = WRITE_MODE
 
     def run(self, *, start_managers: bool = True, **kwargs: Any) -> dict[str, Any]:
         seeded = seed_workstream_pages()
@@ -94,6 +97,6 @@ def seed_workstream_pages() -> list[str]:
     for rel, title, body in SEED_PAGES:
         if store.exists(rel):
             continue
-        write_wiki_page(rel, title, body, mode=UPDATE, section="product", sync=False)
+        write_wiki_page(rel, title, body, mode=WRITE_MODE, section="product", sync=False)
         created.append(rel)
     return created

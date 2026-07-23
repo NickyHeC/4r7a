@@ -1,4 +1,4 @@
-# HR department — agents
+# HR — Agent Handbook
 
 People status, employee-wiki maintenance (LinkedIn bio/voice), and departure
 hygiene. HR platforms mostly lack APIs — company-brain does not actuate HRIS.
@@ -9,17 +9,10 @@ hygiene. HR platforms mostly lack APIs — company-brain does not actuate HRIS.
 **Env:** wiki-git token for archive branches (same as `wiki_commit`:
 `COMPANY_BRAIN_WIKI_GIT_TOKEN`).
 
-## Roster vs members
+## HR — how it runs
 
-| File | Who | Weave | Bridge |
-|------|-----|-------|--------|
-| `config/roster.yaml` | Trial, intern, contractor | Cannot invoke | N/A until promoted |
-| `config/members.yaml` | W2 employees | Can invoke | Token + `bridge.departments` |
-
-Department scope: `department` + `bridge.departments` on both files. Employment-type
-ingest scopes remain tabled.
-
-## How it runs
+The persistent HR manager checks monthly public-profile refreshes and daily archive
+deadlines; departure state changes remain admin-confirmed.
 
 ```mermaid
 flowchart TB
@@ -41,13 +34,14 @@ flowchart TB
   MGR -->|daily due check| WA
 ```
 
-Managers (dispatch specialists based on gathered information):
+## Managers
 
 **`hr_manager.py`** — Persistent manager (polls on `hr.manager.poll_interval_minutes`).
+
 - Monthly LinkedIn bio/voice pull for active members with `bindings.linkedin_url`.
 - Daily check for departed members due for wiki archive (T+`archive_delay_days`).
 
-## Agents
+## Specialists
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
@@ -58,7 +52,16 @@ Managers (dispatch specialists based on gathered information):
 | `wiki_archive.py` | Via manager (T+30) | Push `archive/employee/{member}` then unmount employee wiki tree |
 | `linkedin/pull.py` | Monthly via manager | Public profile → `bio.md` / posts → `voice.md` via default web search (`lsearch`, Claude fallback) |
 | `offboard_signal.py` (`operations/slack/`) | Slack `user_change` | Dispatches offboarding proposal when member deactivated |
-| `hr_onboarding.py` | Once / per member | Seed lists or single join → wiki bootstrap + hiring log + start manager |
+
+### Roster vs members
+
+| File | Who | Weave | Bridge |
+|------|-----|-------|--------|
+| `config/roster.yaml` | Trial, intern, contractor | Cannot invoke | N/A until promoted |
+| `config/members.yaml` | W2 employees | Can invoke | Token + `bridge.departments` |
+
+Department scope is recorded in both files. Employment-type ingest scopes remain
+deferred.
 
 **CLI:**
 
@@ -69,12 +72,20 @@ Managers (dispatch specialists based on gathered information):
 - `company-brain hr confirm-offboard {member_key}` — admin actuation
 - `company-brain hr manager [--once]`
 
-**Stubs (v1):** Google Workspace + Notion deactivation *detection* only (no API removal).
-Offboard proposal checklist is richer (manual SaaS steps) but **never** deletes
-Workspace/Notion accounts from 4r7a.
+Google Workspace and Notion deactivation remain detection/checklist-only. The
+offboard proposal lists manual SaaS steps; 4r7a never deletes those accounts.
 
 **Social profiles:** `config/hr.yaml` → `social_profiles[]`. Only `linkedin.pull`
 is implemented; other platforms may be listed as stubs.
 
-**Tabled:** Employment-type ingest scopes; real Workspace/Notion admin removal; CRM
-inbound → hiring log; additional social pullers beyond LinkedIn.
+## Onboarding
+
+**`hr_onboarding.py`** runs once for the initial seed or one new member, bootstraps
+the employee wiki, appends the hiring log, optionally pulls LinkedIn, and hands off
+to `hr_manager` with `get_runtime().start`.
+
+## Deferred work
+
+See [`docs/tabled.md`](../tabled.md) for employment-type ingest scopes, additional
+social pullers, and inbound hiring automation. Workspace and Notion account deletion
+are explicitly out of scope.

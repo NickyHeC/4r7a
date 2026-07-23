@@ -203,6 +203,7 @@ def _dispatch_growth_command(raw: str) -> dict[str, Any]:
             config,
             channel=channel,
             instructions=instructions,
+            force=True,
         )
         return {
             "status": "ok",

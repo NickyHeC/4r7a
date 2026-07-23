@@ -9,7 +9,7 @@ SDK: Neither (orchestration only).
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from company_brain.agents.admin.admin_maintain import AdminMaintainAgent
@@ -18,11 +18,11 @@ from company_brain.agents.admin.llm_expense_report import LlmExpenseReportAgent
 from company_brain.agents.admin.llm_ops_config import (
     llm_ops_config,
     load_operations_raw,
-    parse_hhmm,
     previous_month,
 )
 from company_brain.agents.base import BaseAgent
 from company_brain.agents.gates import StateStore
+from company_brain.agents.scheduling.calendar import next_calendar_run, parse_hhmm
 from company_brain.llm.run_context import ambient_scope, new_run_id
 from company_brain.runtime import get_runtime
 
@@ -37,39 +37,7 @@ def _investor_cfg() -> dict[str, Any]:
 
 def _next_day_of_month(now: datetime, *, day: int, time_str: str) -> datetime:
     """Next occurrence of day-of-month at HH:MM (clamps short months)."""
-    target_t = parse_hhmm(time_str)
-    try:
-        candidate = now.replace(
-            day=day,
-            hour=target_t.hour,
-            minute=target_t.minute,
-            second=0,
-            microsecond=0,
-        )
-    except ValueError:
-        nxt_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
-        last = nxt_month - timedelta(days=1)
-        candidate = last.replace(
-            hour=target_t.hour,
-            minute=target_t.minute,
-            second=0,
-            microsecond=0,
-        )
-    if now >= candidate:
-        year = candidate.year + (1 if candidate.month == 12 else 0)
-        month = 1 if candidate.month == 12 else candidate.month + 1
-        try:
-            candidate = candidate.replace(year=year, month=month, day=day)
-        except ValueError:
-            nxt = datetime(year, month, 28) + timedelta(days=4)
-            last = nxt.replace(day=1) - timedelta(days=1)
-            candidate = last.replace(
-                hour=target_t.hour,
-                minute=target_t.minute,
-                second=0,
-                microsecond=0,
-            )
-    return candidate
+    return next_calendar_run(now, day=day, at=parse_hhmm(time_str))
 
 
 class AdminManager(BaseAgent):
@@ -340,24 +308,12 @@ class AdminManager(BaseAgent):
         cfg = doc_hygiene_config()
         months = sorted(set(int(m) for m in (cfg.get("months") or [1, 4, 7, 10])))
         day = int(cfg.get("day") or 10)
-        time_str = str(cfg.get("time") or "10:00")
-        # Find next matching month
-        candidates: list[datetime] = []
-        for offset in range(0, 13):
-            year = now.year + ((now.month - 1 + offset) // 12)
-            month = (now.month - 1 + offset) % 12 + 1
-            if month not in months:
-                continue
-            try:
-                cand = datetime(year, month, day)
-            except ValueError:
-                continue
-            target_t = parse_hhmm(time_str)
-            cand = cand.replace(hour=target_t.hour, minute=target_t.minute, second=0, microsecond=0)
-            if cand > now:
-                candidates.append(cand)
-                break
-        return candidates[0] if candidates else _next_day_of_month(now, day=day, time_str=time_str)
+        return next_calendar_run(
+            now,
+            day=day,
+            at=parse_hhmm(str(cfg.get("time") or "10:00")),
+            months=months,
+        )
 
     def _next_run_time(self, now: datetime) -> datetime:
         cfg = llm_ops_config()

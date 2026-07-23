@@ -1,7 +1,8 @@
 # Operations — Agent Handbook
 
-Catch-all department for general platforms: **Gmail executive assistant** and **Linear**
-task workflows. Code lives under `src/company_brain/agents/operations/`.
+General operational platforms: **Gmail**, **Slack**, **Google Calendar**,
+**Granola**, and **Notion**. Gmail and Slack task workflows use the engineering
+department's Linear connection. Code lives under `src/company_brain/agents/operations/`.
 
 **Vision:** a team of agents working alongside the user to complete work and document
 information in the company. The **executive assistant** package (**Phases 0–5**) is
@@ -10,9 +11,11 @@ information in the company. The **executive assistant** package (**Phases 0–5*
 In the ideal case, every company Gmail account connects to company-brain and ingest
 happens automatically once each mailbox is onboarded.
 
-**Config:** [`config/operations.yaml`](../../config/operations.yaml) — profile
-definitions in `gmail.profiles`, active default in `gmail.profile`, per-mailbox
-overrides in `gmail.mailbox_profiles`. **Env:** `GMAIL_*`, `GRANOLA_*`, `LINEAR_*`, `SLACK_WIKI_BOT_TOKEN`
+**Config:** [`config/operations.yaml`](../../config/operations.yaml) — `gmail`,
+`slack_platform`, `gcal`, `granola`, and `notion_platform`;
+[`config/notion.yaml`](../../config/notion.yaml);
+[`config/slack_channels.json`](../../config/slack_channels.json).
+**Env:** `GMAIL_*`, `GCAL_*`, `GRANOLA_*`, `LINEAR_*`, and `SLACK_WIKI_*`.
 
 **Posture:** Gmail agents **read, label, and draft only — never send**. Finance platforms
 stay read-only at the source (see [Finance handbook](finance.md)).
@@ -21,9 +24,9 @@ stay read-only at the source (see [Finance handbook](finance.md)).
 
 ## Gmail — how it runs
 
-The Gmail package is a fleet of agents around a **routing record** per message. Only
-**`inbox_triage`** reads raw mail on a schedule; specialists act on routing records
-keyed by message id.
+The Gmail package is a fleet of agents around a **routing record** per message.
+**`inbox_triage`** is the only scheduled inbox reader; `thread_watcher` separately
+reads sent-mail deltas. Other specialists act on routing records keyed by message id.
 
 ```mermaid
 flowchart TD
@@ -41,6 +44,19 @@ flowchart TD
   SPEC -->|Meeting Request| GCAL[calendar_availability · book_meeting]
   GR --> WIKI[raw entries + daily digest MD]
 ```
+
+### Manager — `gmail_manager.py`
+
+| | |
+|---|---|
+| **State** | persistent |
+| **Schedule** | **08:00, 12:00, 16:00, 22:00** on workdays |
+| **Source** | Routing records (`wiki/operations/gmail/routing/`) |
+
+At **08:00, 12:00, and 16:00**, it runs `duplicate_across_mailboxes` first, then
+every profile-enabled specialist in dispatch order. At **22:00**, it runs
+`inbox_sweep` when enabled. It never reads Gmail directly and dispatches through
+`get_runtime().run()`.
 
 ### Schedules (workdays, configurable)
 
@@ -117,7 +133,6 @@ Prospect vs customer disambiguation lives in the routing record / CRM logic.
 | Sub-label | Triage disposition |
 |-----------|-------------------|
 | `Sales Outreach` | Mark read + archive |
-| `Job Seekers` | Mark read + archive |
 | `Miscellaneous` | Mark read + archive |
 | `Investor Interest` | Keep in inbox → **`inbound_crm`** |
 | `Partnership` | Keep in inbox → **`inbound_crm`** |
@@ -149,6 +164,7 @@ Employee profile: no Investor label; investor detection skipped.
 | `Vendor` | triage | Billing/renewal comms |
 | `People` | triage | Connections (not investors) |
 | `Warm intro` | triage | EA only; confident cases |
+| `Security` | triage | Alert + append security log; never archive |
 | `Decision` | thread_watcher | Real decisions in sent mail (not thanks/pass) |
 
 ### Disposition at triage
@@ -182,25 +198,12 @@ specialists follow the active profile.
 
 ---
 
-## Manager
-
-### `gmail_manager.py`
-
-| | |
-|---|---|
-| **State** | persistent |
-| **Schedule** | **08:00, 12:00, 16:00, 22:00** on workdays |
-| **Source** | Routing records (`wiki/operations/gmail/routing/`) |
-
-At **8/12/4:** runs **`duplicate_across_mailboxes`** first, then every profile-enabled
-specialist in dispatch order. Weekly agents only on their configured day/time.
-At **22:00:** **`inbox_sweep`** when enabled for the profile.
-
-Does not read Gmail directly — only dispatches specialists via `get_runtime().run()`.
-
----
-
 ## Persistent Gmail agents (`operations/gmail/`)
+
+| Agent | Schedule | Description |
+|-------|----------|-------------|
+| `inbox_triage.py` | Every 30 minutes on workdays | Read inbox deltas, classify, label, and write routing records |
+| `thread_watcher.py` | Every 15 minutes on workdays | Read sent-mail deltas and dispatch decision/ingest handling |
 
 ### `inbox_triage.py`
 
@@ -467,6 +470,13 @@ Ramp auto-attaches from the destination inbox. This agent only routes mail there
 it does not cross-check Ramp transactions (Ramp owns documentation gaps).
 Forwarding logic lives in `receipt_forward.py` (invoked by `receipt_router`).
 
+### Gmail onboarding
+
+**`gmail_onboarding.py`** runs once per connected mailbox. It ensures the
+profile-specific label taxonomy, seeds the profile-allowed CRM pages, runs the
+default 30-day triage backfill, starts `inbox_triage`, `thread_watcher`, and
+`gmail_manager` with `get_runtime().start()`, then exits.
+
 ---
 
 ## Linear (via engineering connection layer)
@@ -487,12 +497,21 @@ Used by **`inbox_task`** and **`team_on_it`** for issue creation. Team defaults:
 
 ---
 
-## Google Calendar (`operations/gcal/`)
+## Google Calendar — how it runs
 
 Connection mirrors Gmail: official Google-hosted Calendar MCP at
 `https://calendarmcp.googleapis.com/mcp/v1` plus REST (`gcal_rest.py`) for
 deterministic agents. OAuth token can be shared with Gmail when calendar scopes
 are on the same consent.
+
+```mermaid
+flowchart LR
+  GMAIL[meeting request] --> AV[calendar_availability]
+  AV --> DRAFT[Gmail draft proposal]
+  GMAIL -->|human confirmed| BOOK[book_meeting]
+  BOOK --> GCAL[Google Calendar + Meet]
+  AGENDA[daily_agenda opt-in] --> SLACK[Slack DM]
+```
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
@@ -607,20 +626,17 @@ flowchart TD
 | `customer_intake.py` | Events hot lane + manager | Slack Connect / customer channels → orchestrator |
 | `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; dispatches `action_items` / `customer_intake` |
 | `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL Q&A via planner fan-out (wiki + CRM + practices, max 3; fail closed) + Notion citations + who_knows people hints (no DMs) |
-| `wiki_planner.py` | Via `ask_wiki` | Parallel retrieve; project registry prefixes when channel has `project:` or registry channel match |
 | `thread_absorb.py` | Daily via manager / CLI | Distill closed/aged internal threads → `raw/entries` (no LLM); long threads get burst distill first; skips Connect/customer |
-| `burst_distill.py` | Via `thread_absorb` | Segment long threads by idle gap / speaker shift; structured bullets (not an agent) |
-| `wiki_commands.py` | `@wiki` mention | `threads`, `help`, `sync now <platform>` (notion/crm/github/posthog); blocked in Connect channels |
-| `internal_meeting_scheduler.py` | `@wiki` meeting keywords | Propose/book slots on primary calendar |
 | `thread_watcher.py` | Via manager | Poll backup; runs triage on each message |
 | `open_thread_monitor.py` | Via manager | Rebuild `employee_wiki/{member}/open-thread.md` from open routing records |
 | `action_items.py` | Via triage / watcher | Action thread → Linear + routing record |
 | `channel_registry.py` | Daily via manager | Sync `config/slack_channels.json`; auto-join internal channels |
-| `events_router.py` / `events_server.py` | CLI `slack events` | Socket Mode or HTTP Events API |
-| `weave_events_router.py` / `weave_events_server.py` | CLI `weave events` | Weave app `@weave` mentions |
-| `slack_onboarding.py` | Once (`slack onboarding run`) | $0 estimate + backfill; starts `slack_manager` |
 | `offboard_signal.py` | `user_change` Events + CLI | Slack deactivation → HR offboard proposal |
-| `slack_client.py` | — | Slack Web API (wiki bot; not an agent) |
+
+Runtime surfaces and helpers (not agents): `events_router.py` / `events_server.py`,
+`weave_events_router.py` / `weave_events_server.py`, `wiki_planner.py`,
+`wiki_commands.py`, `internal_meeting_scheduler.py`, `burst_distill.py`, and
+`slack_client.py`.
 
 **Retrieval:** shared [`wiki/retrieve.py`](../../src/company_brain/wiki/retrieve.py) — title boost +
 term frequency + simple IDF + age decay (no embeddings). Scope for humans =
@@ -714,7 +730,9 @@ flowchart TD
 | `task_scanner.py` | Via manager | Query updated task DB rows; link by Linear ID (read-first) |
 | `orphan_discovery.py` | Weekly via manager | Crawl configured teamspace roots; unbound pages → `admin/notion-orphan-review/` (Adopt / Ignore / Archive; never auto-adopt) |
 | `task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
-| `db.py` / `conflict_store.py` | — | Helpers (not agents) |
+
+Helpers (not agents): `db.py`, `conflict_store.py`, `platform_config.py`, and
+`task_config.py`.
 
 Also each manager pass: **CRM** `sync_all_crm` and **Weave** `poll_approved_dispatch`.
 
@@ -749,29 +767,9 @@ when a task `database_id` is set.
 3. Without confirm on a non-empty workspace: ingest-only (`mirror_enabled: false`).
 4. Starts **`notion_manager`** via `get_runtime().start()` and exits.
 
-Deferred: accounting/CRM review-queue expansions —
-[`docs/tabled.md`](../tabled.md).
-
----
-
-## Onboarding
-
-### `gmail_onboarding.py`
-
-| | |
-|---|---|
-| **State** | ephemeral |
-| **Schedule** | Once, on first Gmail connection |
-| **Source** | Gmail (default **30-day** backfill) |
-
-1. Ensures label taxonomy for the mailbox profile.
-2. Seeds CRM wiki pages (profile-filtered).
-3. Runs backfill triage.
-4. Starts persistent **`inbox_triage`**, **`thread_watcher`**, **`gmail_manager`** via
-   `get_runtime().start()` and exits.
-
 ---
 
 ## Deferred work
 
-See [`docs/tabled.md`](../tabled.md) — Operations (Gmail, Slack, Notion, other).
+See [`docs/tabled.md`](../tabled.md) for cross-cutting search, sync, and platform
+work that may later affect operations agents.

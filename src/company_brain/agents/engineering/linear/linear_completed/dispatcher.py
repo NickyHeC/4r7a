@@ -42,13 +42,18 @@ class LinearCompletedAgent(BaseAgent):
         linear_status = (linear_issue or {}).get("state", {}).get("name") or "Done"
         fan_out = task_class_fan_out(binding.task_class)
         results: dict[str, Any] = {"task_id": binding.task_id, "platforms": {}}
+        from company_brain.runtime import get_runtime
+
+        runtime = get_runtime()
 
         if "gmail" in fan_out and binding.platforms.get("gmail"):
             from company_brain.agents.engineering.linear.linear_completed.archive_gmail import (
                 ArchiveGmailAgent,
             )
 
-            results["platforms"]["gmail"] = ArchiveGmailAgent(self.config).run(
+            results["platforms"]["gmail"] = runtime.run(
+                ArchiveGmailAgent,
+                self.config,
                 binding=binding,
                 linear_status=linear_status,
             )
@@ -56,7 +61,9 @@ class LinearCompletedAgent(BaseAgent):
         if "slack" in fan_out and binding.platforms.get("slack"):
             from .slack_thread_respond import SlackThreadRespondAgent
 
-            results["platforms"]["slack"] = SlackThreadRespondAgent(self.config).run(
+            results["platforms"]["slack"] = runtime.run(
+                SlackThreadRespondAgent,
+                self.config,
                 binding=binding,
                 linear_status=linear_status,
             )
@@ -64,7 +71,9 @@ class LinearCompletedAgent(BaseAgent):
         if "notion" in fan_out:
             from company_brain.agents.operations.notion.task_sync import TaskSyncAgent
 
-            results["platforms"]["notion"] = TaskSyncAgent(self.config).run(
+            results["platforms"]["notion"] = runtime.run(
+                TaskSyncAgent,
+                self.config,
                 binding=binding,
                 linear_status=linear_status,
                 create_if_missing=True,

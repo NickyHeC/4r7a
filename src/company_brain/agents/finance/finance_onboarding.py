@@ -56,21 +56,34 @@ class FinanceOnboardingAgent(BaseAgent):
             start_month,
         )
 
+        from company_brain.runtime import get_runtime
+
         from .monthly_expense import MonthlyExpenseManager
         from .quarterly_calculation import QuarterlyCalculationManager
 
-        monthly = MonthlyExpenseManager(self.config)
-        quarterly = QuarterlyCalculationManager(self.config)
+        runtime = get_runtime()
 
         for m in months:
             try:
-                monthly.run_once(m, escalate=False)
+                runtime.run(
+                    MonthlyExpenseManager,
+                    self.config,
+                    once=True,
+                    month=m,
+                    escalate=False,
+                )
             except Exception:
                 self.logger.exception("Backfill monthly run failed for %s", m)
 
         for q in quarters:
             try:
-                quarterly.run_once(q, escalate=False)
+                runtime.run(
+                    QuarterlyCalculationManager,
+                    self.config,
+                    once=True,
+                    quarter=q,
+                    escalate=False,
+                )
             except Exception:
                 self.logger.exception("Backfill quarterly run failed for %s", q)
 
