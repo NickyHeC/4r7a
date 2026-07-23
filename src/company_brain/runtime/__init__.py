@@ -1,5 +1,6 @@
 """Agent runtime: run agents in-process today, on cloud VMs tomorrow."""
 
+from company_brain.runtime import fleet_gate
 from company_brain.runtime.builder_session import (
     builder_env_for_backend,
     builder_runtime_available,
@@ -32,4 +33,5 @@ __all__ = [
     "builder_runtime_available",
     "builder_env_for_backend",
     "run_in_builder_vm",
+    "fleet_gate",
 ]

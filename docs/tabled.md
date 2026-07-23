@@ -3,6 +3,10 @@
 Canonical backlog of **deferred** work — features specced or discussed but not built.
 The agent reads this file when starting work in a matching department/platform.
 
+**Active build program:** [`docs/plans/tabled-revisit-2026-07.md`](plans/tabled-revisit-2026-07.md)
+(sessions A–L). Items in that plan are **not** listed here; remove plan rows from the
+plan (and fold into steady-state docs) as each session ships.
+
 **Not here:** intentional out-of-scope items in README (nudge/chase agents).
 **Scratch pad:** `notepad.md` (migrate rows here when a deferral is real).
 
@@ -13,131 +17,74 @@ Format for new rows:
 
 ---
 
-## Cross-cutting
+## Explicitly out of scope / removed
 
-| Item | Department / platform | Trigger to build | Notes |
-|------|----------------------|------------------|-------|
-| Versioning + rollback | Wiki | Security-sensitive write volume justifies it | Listed in `access-control.mdc` Pending. **Partial:** daily `wiki_commit` → admin-only GitHub backup shipped. Full in-wiki versioning still pending. **Volume restore:** manual admin only (documented in `project_install.md`) — no rollback agents |
-| Automated upstream sync into private 4r7a | Admin / deploy | Company asks for dependabot-style upstream PRs | v1: admin-driven `fetch upstream` only; Weave never targets public 4r7a |
-| Weave coding beyond allow-list / auto-merge | admin/weave | Explicit product ask | Draft PR + no auto-merge stays; expanding `.py` edit scope is a separate ship |
-| Bidirectional GitHub ↔ wiki volume | Wiki git | Never without conflict design | v1 one-way volume → GitHub; GitHub is backup only |
-| Batch absorb by urgency | operations/slack + notion | Optional `--absorb` on Slack onboarding | Three-tier lanes shipped; **`thread_absorb` → raw/entries** daily; encyclopedia absorb still opt-in / separate LLM pass |
-| Weave hot-reload / agent pause-resume | admin/weave | Implement+prove v1 stable + product ask | Option B from Slack design — pause persistent agents, edit, resume. **Shipped:** config_only implement+prove (Codex default / in_house opt-in), allow-list, fail-closed prove, `admin/weave-queue.md` |
+Won’t build unless product explicitly reverses:
 
-| Ramp LLM vendor reconcile | Finance / LLM | Ramp MCP stable in reconcile path | Mercury card vendor bills wired; add Ramp card txns to `llm/reconcile.py` |
-| Process artifacts (Architect/Doer) | Cross | Agents living on cloud VMs | Compile reusable Processes (steps, inputs, temporal deps) from observed workflows; second-order automation per Ramp Labs |
-| Self-maintaining monitor-driven ops | Cross / runtime | Agents living on cloud VMs | PR-merge monitor generation, alert → sandbox reproduce → propose fix; includes cloud builder agent maintenance loop |
-| Latent Briefing (KV cache handoff) | LLM / runtime | Self-hosted GLM-5 (`COMPANY_BRAIN_LLM_PROVIDER=glm`) | Ramp Labs multi-agent memory compaction; needs internal KV access — not for hosted API-only |
-| Review queue UX for actionable outputs | operations/notion | Accounting/CRM promotions follow-on | Stale review shipped (Session 6); drafts/accounting/CRM promotions still deferred |
-| Ingest existing / personal wikis | External wiki + employee wiki | Admin mount flow stable | Use `migrate-names` on import; see external wiki plan |
-| AI pages too long → unread | All writers | Absorb/handbook quality pass | Length targets in absorb prompt + `config/wiki.yaml`; anti-cram split ongoing |
+- In-wiki versioning + rollback agents (GitHub via `wiki_commit` is enough; volume restore stays manual admin)
+- Bidirectional GitHub ↔ wiki **content** sync (wiki edits via CLI/agents only)
+- Bookface API, X/Twitter write API, Luma/Partiful integrations
+- Full Ramp receipt cross-check (platform boundary)
+- Per-page Notion ACL automation, cross-member comparative query, auto-promote employee → company wiki
+- Workspace / Notion **account deletion** from 4r7a (checklist only — see plan Session L)
+- Customer newsletter Gmail draft (wiki MD draft only; delivery channel TBD below)
 
 ---
 
-## Admin / LLM ops
+## Cross-cutting / runtime
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Monthly optimization scout | `admin/` | Explicit product ask after admin coding sessions are in use | Walks system + human behavior; proposes deeper workflow optimizations. **Shipped:** `admin_manager` + `llm_expense_report` + `admin_maintain` (monthly expense + thin maintain/session request). This scout stays deferred |
+| Weave coding beyond allow-list / auto-merge | admin/weave | Real use + explicit product ask | Draft PR + no auto-merge stays |
+| Latent Briefing (KV cache handoff) | LLM / runtime | Self-hosted GLM-5 / Kimi (or equiv.) | Needs internal KV access — not hosted API-only |
+| Semantic / embedding hybrid search | wiki + `@wiki` + bridge | Lexical retrieve inadequate in practice | **Shipped v1:** TF+IDF+title+age in `wiki/retrieve.py` |
+| Live custom-source query plugins | ingest / `@wiki` | After scheduled ingest connectors prove useful | Plan Session F/connectors = ingest-only; live query stays here |
+| Cloud builder maintenance loop | runtime | Multi-VM fleet real | Self-heal draft PRs are in plan Session L; this loop stays deferred |
+| Admin console SPA / public expose | `admin_console` | Product ask after private-mesh HTMX limits | Stay Tailscale / private mesh |
 
 ---
 
-## 4r7a onboarding (new admin / member deploy)
+## Bridge (member MCP)
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Wiki git empty-repo API create | Admin onboarding | Product ask for API provisioning | **Shipped guided path:** admin creates repos; `install profile/foundation` captures URLs + validates. No programmatic `gh repo create` in v1 |
-| Member bridge MCP | Cross / `bridge/` | Admin specs + pushes upstream at Smol multi-member install | Co-located with wiki; private mesh; token hashes; ledger → `bridge_manager` → materializer → rollup 08:00; **no Linear**; per-dept bridge index; skills `_index.yaml` per dept; rate limits 60 reads/min + 20 report/day; **read: dept-scoped** — `bridge.departments` required; engineering uses `sync: location:engineering`; `sync: company` only for cross-dept pages (master table); own employee tree; `bridge_readiness` doctor |
-| Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP implementation lands | After employee wiki onboarding; Tailscale; `company-brain bridge issue-token`; env-var token in Cursor |
-| Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | Tabled — rsync, re-issue tokens, URL change |
+| Member bridge MCP | Cross / `bridge/` | Admin specs + Smol multi-member install | Dept-scoped reads; token hashes; ledger → blockers; no Linear |
+| Bridge setup in `project_install.md` | Admin onboarding | Bridge MCP lands | Tailscale; `bridge issue-token`; Cursor env token |
+| Local → cloud bridge migration | Admin / bridge | First NAS → cloud VM move | rsync, re-issue tokens, URL change |
 | Senior `propose_practice_update` via MCP | Engineering / bridge | Read-only bridge stable | Tabled |
-| Human vs agent Notion/MD sync lag | Bridge / Notion | Bridge MCP ships | Signature-gated bidirectional sync shipped; bridge citation lag TBD |
-| Company process mining (evolving agents) | Cross / admin | Explicit design pass later | Expanded beyond Loom/admin-only — observe company processes in general; suggest/write agents that evolve with behavior |
-| Quarterly doc pass | Admin / docs | First multi-member deploy or major release | Handbooks vs code paths, `migrate-names`, trim stale plans |
 
 ---
 
-## Employee wiki
+## Employee wiki / Notion sync
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Notion → MD write-back | `employee_wiki` | Members edit in Notion regularly | Phase I in employee wiki plan |
-| Per-page Notion ACL automation | `employee_wiki` | Beyond personal teamspace + manual share | Sharing stays in Notion UI for v1 |
-| Cross-member comparative query | `employee_wiki` | Explicit product ask only | Evaluation territory; citation-only per-member in v1 |
-| Auto-promote employee → company wiki | `employee_wiki` | Never without employee submit + admin gate | Materializer ≠ company promotion |
-| Citation-only query UI | `employee_wiki` | Manager query workflow defined | Offboarding path TBD |
+| Notion ↔ employee wiki sync (all) | `employee_wiki` | Explicit product ask | Includes Notion→MD write-back; tabled as a block (2026-07 debate) |
+| Work logs in Notion | `employee_wiki` | When admin wants Notion mirror of work-log | Depends on employee Notion pull |
 
 ---
 
-## Operations — Gmail
+## Growth / Ads
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| `security_triage` | `operations/gmail` | First auth-alert / wire-transfer incident | Never auto-archive; alert channel |
-| Warm intro classifier | `operations/gmail` | EA profile + confident heuristic | Confident cases only |
-| `inbox_task` archive on Linear Done | `engineering/linear` | Linear completion flow stable | Not gmail sweep |
-| Full Ramp receipt cross-check | — | **Do not build** unless explicit approval | Platform boundary; router only |
-
----
-
-## Operations — Slack / wiki search
-
-| Item | Department / platform | Trigger to build | Notes |
-|------|----------------------|------------------|-------|
-| Semantic / embedding hybrid search | wiki + `@wiki` + bridge | Lexical retrieve inadequate in practice | **Shipped v1:** TF+IDF+title+age in `wiki/retrieve.py`. Defer vector/RRF |
-| `@wiki` planner tool fan-out | operations/slack | Multi-source answers needed | Parallel wiki + routing + code tools; Cerebras-style planner |
-| who_knows expertise graph | operations + people/ | People pages + thread authors stable | Cite experts from participation, not static roster |
-| Slack burst-level distill | operations/slack | Long threads lose answers in summaries | Cerebras bursting; LLM normalize of threads also deferred |
-| First-class project registry | wiki Q&A scopes | Multi-team search noise | v1 uses channel `wiki_prefixes` + `bridge.departments` as scope |
-| Custom source connectors (PR plugins) | ingest | Team-owned DBs need same query surface | Shared row contract; not a new SoT |
-
-## Operations — Notion
-
-| Item | Department / platform | Trigger to build | Notes |
-|------|----------------------|------------------|-------|
-| Review queue UX for actionable outputs | `operations/notion` | Accounting/CRM promotions follow-on | Stale review shipped; drafts/accounting proposals still deferred |
-| Human-added pages ingest | `operations/notion` | Broader ingest polish | Onboarding ingest shipped; live orphan discovery still TBD |
-| Version control | Wiki | Same as cross-cutting versioning | |
-| Sign-in / account management | Product | Multi-member deploy | Admin console v1 uses password session; SSO / multi-admin product still deferred |
-| Admin console SPA / public expose | `admin_console` | Product ask | v1 is HTMX on private mesh (`127.0.0.1:8780`) |
-| Admin console pause/resume managers | `admin_console` | Weave pause-resume | Status heartbeats only in v1 |
-| Admin console non-LLM cost (host/Ads) | `admin_console` | Finance/growth ask | v1 Costs = LLM budget only |
-| Work logs in Notion | `employee_wiki` | Employee wiki Notion pull built | |
-| Product progress Discord feature-dedup v2 | `product/` + growth | After progress_compile stable | Progress page shipped; Discord dedup still deferred |
-| Company admin API analytics | `product/admin_api` | Concrete API + env contract | Yaml stub only in product hybrid v1 |
-| Billing / margin provider | `product/billing` | Provider API chosen | Yaml stub only in product hybrid v1 |
-| Customer newsletter Gmail draft | `product/update` | After wiki draft proven | v1 is wiki MD draft only; never send |
-
----
-
-## Operations — other
-
-| Item | Department / platform | Trigger to build | Notes |
-|------|----------------------|------------------|-------|
-| Bookface API integration | Growth / admin | Platform API available | **Shipped without API:** admin `knowledge paste` for misc Bookface/notes. Full Bookface connector still TBD |
-
----
-
-## Growth / marketing platforms
-
-| Item | Department / platform | Trigger to build | Notes |
-|------|----------------------|------------------|-------|
-| Google Ads mutates / recommendation apply | `growth/google_ads` | Explicit write approval | v1 is read-only snapshots |
+| Google Ads mutates / recommendation apply | `growth/google_ads` | Explicit write approval | v1 read-only snapshots |
 | Google Ads product-true CPA | `growth/google_ads` | Eng + Ads conversion setup | v1 uses Ads-reported CPA only |
 | Google Ads keyword / Smart Bidding tools | `growth/google_ads` | Ads config session | |
-| X / Twitter write / rich ingest | Growth | API access | Drafts + weekly published pull shipped without write API |
-| Luma / Partiful integrations | Growth / activity | Explicit ask | Hosted pages stay human; no API in v1 |
 
 ---
 
-## Product / PostHog
+## Product / PostHog / billing
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Richer PostHog agents (replay, retention, persons) | `product/posthog` | Heavy PostHog use | v1: audit, usage, experiments, signup funnel only |
-| PostHog write-back (flags/experiments) | `product/posthog` | Explicit write approval | v1 is read-only private REST |
-| Daily experiment watch | `product/posthog` | Weekly cadence too slow | v1 weekly with all specialists |
-| Auto-sync feature↔event naming contract | `product/posthog` | Eng naming conventions stable | v1 heuristic match vs `product/feature.md` |
+| Richer PostHog agents (replay, retention, persons) | `product/posthog` | Heavy PostHog use | v1: audit, usage, experiments, signup funnel |
+| PostHog write-back (flags/experiments) | `product/posthog` | Explicit write approval | v1 read-only private REST |
+| Daily experiment watch | `product/posthog` | Weekly cadence too slow | |
+| Auto-sync feature↔event naming contract | `product/posthog` | Eng naming conventions stable | v1 heuristic vs `product/feature.md` |
+| Company admin API analytics | `product/admin_api` | Concrete API + env contract | Yaml stub only |
+| Billing / margin provider | `product/billing` | Provider API chosen | Yaml stub only |
+| Customer newsletter delivery | `product/update` | Delivery channel chosen | Wiki MD draft only; no Gmail/ESP until decided |
 
 ---
 
@@ -145,26 +92,16 @@ Format for new rows:
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Roster scopes by employment type | `hr` / `config/roster.yaml` | Explicit product ask | Department scope shipped; per-type ingest scopes TBD |
-| Google Workspace offboard actuation | `hr` | Full Workspace Admin API | v1 detect/ask stub only; no account removal |
-| Notion user removal actuation | `hr` | Notion admin API | v1 detect/ask stub only; no account removal |
-| Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Manual/seed + LinkedIn bio shipped; CRM candidate type still TBD |
-| Social beyond LinkedIn WebSearch | `hr` | API / export available | Monthly LinkedIn WebSearch only in v1 |
+| Roster scopes by employment type | `hr` / `config/roster.yaml` | Explicit product ask | Department scope shipped |
+| Hiring log auto-track (inbound) | `hr` or `operations/gmail` | CRM inbound stable | Manual/seed + LinkedIn bio shipped |
+| Additional social pullers | `hr` | Per-platform WebSearch puller | Config `hr.social_profiles[]` in plan Session L; LinkedIn only implemented today |
 
 ---
 
-## External wiki (v1 gaps)
+## External wiki (v2)
 
 | Item | Department / platform | Trigger to build | Notes |
 |------|----------------------|------------------|-------|
-| Live sync / bidirectional pull | `external_wiki` | v2 explicit scope | v1 is one-shot mount |
-| Member-initiated mounts | `external_wiki` | Policy decision | Admin-only in v1 |
+| Live sync / bidirectional pull | `external_wiki` | v2 explicit scope | v1 one-shot (+ personal kind in plan Session G) |
+| Member-initiated mounts | `external_wiki` | Policy decision | Admin-only; members submit zip for review |
 | Cryptographic provenance | `external_wiki` | Compliance ask | Provenance frontmatter today |
-
----
-
-## Wiki operators (future)
-
-| Item | Department / platform | Trigger to build | Notes |
-|------|----------------------|------------------|-------|
-| Deeper wiki-level operators | Admin | After install operators in production use | **Shipped v1:** `install_*`, investor newsletter, knowledge paste. Remaining: richer cross-building maintenance / optimization scout (see Admin / LLM ops) |

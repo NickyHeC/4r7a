@@ -32,6 +32,13 @@ _WIKI_WRITE_RE = re.compile(
     r"(Path\([^)]*wiki|open\([^)]*wiki|\.write_text\([^)]*wiki|wiki_dir\s*/\s*)",
     re.IGNORECASE,
 )
+# Non-MD state under the wiki volume (JSON queues, not articles) — not a
+# write_wiki_page path; must not sync to Notion.
+_WIKI_WRITE_ALLOW = frozenset(
+    {
+        "growth/leads/queue.py",
+    }
+)
 
 
 def _iter_agent_py_files() -> list[Path]:
@@ -73,7 +80,7 @@ def run_wiki_doctor() -> DoctorReport:
         if path.is_relative_to(PROJECT_ROOT / "src" / "company_brain" / "wiki"):
             continue
         rel = path.relative_to(AGENTS_ROOT).as_posix()
-        if rel.endswith("wiki_crm.py"):
+        if rel.endswith("wiki_crm.py") or rel in _WIKI_WRITE_ALLOW:
             continue
         text = path.read_text()
         if "write_wiki_page" in text or "read_wiki_page" in text:

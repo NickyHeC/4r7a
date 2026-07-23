@@ -34,6 +34,7 @@ class GitHubManager(BaseAgent):
 
     name = "github_manager"
     track_duration = False
+    fleet_exempt = True
 
     def __init__(self, config: AppConfig, repo: str | None = None, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -67,10 +68,16 @@ class GitHubManager(BaseAgent):
 
     async def _loop(self) -> None:
         from company_brain.admin_console.heartbeats import record_heartbeat
+        from company_brain.runtime.fleet_gate import (
+            can_dispatch,
+            manager_heartbeat_detail,
+            try_enter_paused,
+        )
 
         self.logger.info("GitHub manager starting persistent loop")
         while True:
-            record_heartbeat(self.name, detail="idle")
+            try_enter_paused()
+            record_heartbeat(self.name, detail=manager_heartbeat_detail())
             now = datetime.now()
             next_check = self._next_run_time(now)
             wait_seconds = (next_check - now).total_seconds()
@@ -82,29 +89,38 @@ class GitHubManager(BaseAgent):
             await asyncio.sleep(chunk)
             if datetime.now() < next_check:
                 continue
+            if not can_dispatch():
+                try_enter_paused()
+                continue
             await self._morning_check()
             record_heartbeat(self.name, detail="morning_check_done")
 
     async def _morning_check(self) -> None:
         """Run the daily morning check and dispatch specialists as needed."""
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
         self.logger.info("Running morning GitHub check")
         today = datetime.now()
         is_monday = today.weekday() == 0
 
-        # Branch status is refreshed every morning regardless of other activity.
-        self._dispatch("branch_monitor")
+        with dispatch_slot(self.name) as allowed:
+            if not allowed:
+                self.logger.info("Morning check skipped — fleet paused")
+                return
+            # Branch status is refreshed every morning regardless of other activity.
+            self._dispatch("branch_monitor")
 
-        if self._has_open_pr_changes():
-            self._dispatch("open_pr")
+            if self._has_open_pr_changes():
+                self._dispatch("open_pr")
 
-        if is_monday and self._has_commit_activity_this_week():
-            self._dispatch("feature_update")
+            if is_monday and self._has_commit_activity_this_week():
+                self._dispatch("feature_update")
 
-        if self._has_commit_activity_since_last_run():
-            self._dispatch("product_features")
+            if self._has_commit_activity_since_last_run():
+                self._dispatch("product_features")
 
-        if self.repo:
-            self._dispatch("issue_sync")
+            if self.repo:
+                self._dispatch("issue_sync")
 
     def _dispatch(self, specialist_key: str) -> None:
         agent_cls = self._specialist_class(specialist_key)

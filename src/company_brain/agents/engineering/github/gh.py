@@ -140,7 +140,7 @@ def create_pull_request(
     repo: str | None = None,
     draft: bool = True,
 ) -> dict[str, Any]:
-    """Create a pull request (Weave dispatch only)."""
+    """Create a pull request (Weave / upstream_sync draft PRs)."""
     args = [
         "pr",
         "create",

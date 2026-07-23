@@ -8,7 +8,11 @@ import subprocess
 from dataclasses import dataclass, field
 from typing import Any
 
-from company_brain.agents.admin.install_profile import InstallProfile, load_install_profile
+from company_brain.agents.admin.install_profile import (
+    InstallProfile,
+    load_install_profile,
+    save_install_profile,
+)
 from company_brain.config import load_notion_config
 
 
@@ -61,18 +65,30 @@ def _gh_auth_ok() -> bool:
         return False
 
 
+def github_owner_repo(url: str) -> str | None:
+    url = (url or "").strip().rstrip("/").removesuffix(".git")
+    if "github.com/" not in url:
+        return None
+    part = url.split("github.com/", 1)[1]
+    bits = [b for b in part.split("/") if b]
+    if len(bits) < 2:
+        return None
+    return f"{bits[0]}/{bits[1]}"
+
+
+def github_owner(url: str) -> str | None:
+    slug = github_owner_repo(url)
+    return slug.split("/", 1)[0] if slug else None
+
+
 def _repo_accessible(url: str) -> bool:
     """Best-effort: prefer ``gh`` view for github.com URLs; else non-empty URL."""
     url = (url or "").strip()
     if not url:
         return False
     if "github.com" in url and shutil.which("gh"):
-        # Normalize to owner/repo
-        slug = url.rstrip("/").removesuffix(".git")
-        if "github.com/" in slug:
-            slug = slug.split("github.com/", 1)[1]
-        if slug.count("/") >= 1:
-            owner_repo = "/".join(slug.split("/")[:2])
+        owner_repo = github_owner_repo(url)
+        if owner_repo:
             try:
                 proc = subprocess.run(
                     ["gh", "repo", "view", owner_repo, "--json", "name"],
@@ -87,7 +103,124 @@ def _repo_accessible(url: str) -> bool:
     return True
 
 
-def run_foundation_checks(profile: InstallProfile | None = None) -> FoundationReport:
+def ensure_wiki_repo(
+    profile: InstallProfile,
+    *,
+    create: bool = True,
+) -> tuple[InstallProfile, FoundationCheck]:
+    """Ensure ``wiki_repo_url`` exists; optionally ``gh repo create`` when missing.
+
+    Never overwrites an existing reachable remote. Name defaults to
+    ``profile.wiki_repo_name`` (``company-wiki``).
+    """
+    if not profile.wiki_git_backup:
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            True,
+            "wiki_git_backup disabled — skip wiki repo ensure",
+            required=False,
+        )
+
+    name = (profile.wiki_repo_name or "company-wiki").strip() or "company-wiki"
+    url = (profile.wiki_repo_url or "").strip()
+    if url and _repo_accessible(url):
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            True,
+            f"company-wiki already reachable ({url})",
+            required=False,
+        )
+
+    owner = github_owner(profile.brain_repo_url) or github_owner(url or "")
+    if not owner:
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            False,
+            "cannot derive GitHub org/user for company-wiki create",
+            hint="set brain_repo_url (or wiki_repo_url) to a github.com URL",
+            required=bool(create),
+        )
+
+    target = f"{owner}/{name}"
+    target_url = f"https://github.com/{target}"
+
+    if _repo_accessible(target_url):
+        profile.wiki_repo_url = target_url
+        save_install_profile(profile)
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            True,
+            f"found existing {target}; wrote wiki_repo_url",
+            required=False,
+        )
+
+    if not create:
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            False,
+            f"{target} missing and create disabled",
+            hint="re-run with create enabled or `gh repo create` manually",
+            required=True,
+        )
+
+    if not _gh_auth_ok():
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            False,
+            f"{target} missing; gh auth required to create",
+            hint="gh auth login then company-brain install foundation",
+            required=True,
+        )
+
+    try:
+        proc = subprocess.run(
+            [
+                "gh",
+                "repo",
+                "create",
+                target,
+                "--private",
+                "--description",
+                "company-brain MD wiki backup (admin-only)",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            False,
+            f"failed to create {target}: {exc}",
+            required=True,
+        )
+
+    if proc.returncode != 0:
+        err = (proc.stderr or proc.stdout or "").strip()[:300]
+        return profile, FoundationCheck(
+            "wiki_repo_ensure",
+            False,
+            f"gh repo create {target} failed: {err}",
+            hint="create the empty private repo manually and set wiki_repo_url",
+            required=True,
+        )
+
+    profile.wiki_repo_url = target_url
+    save_install_profile(profile)
+    return profile, FoundationCheck(
+        "wiki_repo_ensure",
+        True,
+        f"created empty private repo {target}",
+        required=False,
+    )
+
+
+def run_foundation_checks(
+    profile: InstallProfile | None = None,
+    *,
+    create_wiki_repo: bool = True,
+) -> FoundationReport:
     profile = profile or load_install_profile()
     report = FoundationReport()
 
@@ -117,11 +250,13 @@ def run_foundation_checks(profile: InstallProfile | None = None) -> FoundationRe
         )
 
     if profile.wiki_git_backup:
+        profile, ensure_check = ensure_wiki_repo(profile, create=create_wiki_repo)
+        report.checks.append(ensure_check)
         add(
             "wiki_repo_url",
             bool(profile.wiki_repo_url.strip()),
             "company-wiki repo URL set in install profile",
-            "create empty private repo; set --wiki-repo-url",
+            "set --wiki-repo-url or allow foundation to create company-wiki",
         )
         if profile.wiki_repo_url.strip():
             add(

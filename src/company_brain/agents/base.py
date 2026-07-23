@@ -38,6 +38,10 @@ class BaseAgent(ABC):
     #: managers set this False — they dispatch specialists; they are not timed.
     track_duration: bool = True
 
+    #: Persistent managers that observe the fleet pause gate set this True so
+    #: ``execute`` is not skipped while they drain busy work / idle.
+    fleet_exempt: bool = False
+
     def __init__(self, config: AppConfig, **kwargs: Any):
         self.config = config
         self.logger = logging.getLogger(f"company_brain.agents.{self.name}")
@@ -74,6 +78,15 @@ class BaseAgent(ABC):
     def execute(self, **kwargs: Any) -> Any:
         """Full agent lifecycle: cost gate -> setup -> run/verify loop -> teardown."""
         self.logger.info("Starting agent '%s'", self.name)
+        if not self.fleet_exempt:
+            from company_brain.runtime.fleet_gate import should_start_work
+
+            if not should_start_work():
+                self.logger.info(
+                    "Agent '%s' skipped by fleet pause gate",
+                    self.name,
+                )
+                return SKIPPED
         if not self.should_run(**kwargs):
             self.logger.info("Agent '%s' skipped by cost gate (no change)", self.name)
             return SKIPPED

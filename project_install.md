@@ -69,23 +69,46 @@ Runtime is co-located: one host runs the **private agent checkout** and mounts t
 **MD volume** (`COMPANY_BRAIN_WIKI_DIR`, employee wiki, `raw/`). GitHub separation
 does not require two machines.
 
-**Repos repos (admin creates these):** private company **4r7a** clone (brain) and
-an empty private **company-wiki**. Paste both URLs into
-`company-brain install profile` — the installer validates access; it does not
-create GitHub repos.
+**Repos repos:** create a private company **4r7a** clone (brain) and record its
+URL in `company-brain install profile`. For **company-wiki**, either paste an
+existing empty private repo URL, or let `company-brain install foundation`
+auto-create `{org}/company-wiki` via `gh` when missing (name overridable as
+`wiki_repo_name` in the profile; `--no-create-wiki-repo` to skip).
 
 Copy `.env.example` to `.env` and fill values as you go (or from
 `install credentials`).
 
 ### Wiki GitHub backup (`wiki_commit`) — optional but recommended
 
-1. Admin creates a **private** `{org}/company-wiki` repo (admin-only GitHub ACL).
+1. Ensure a **private** `{org}/company-wiki` exists (manual create, or
+   `install foundation` auto-create). Admin-only GitHub ACL.
 2. Clone it on the wiki host to `./.wiki_git` (or `COMPANY_BRAIN_WIKI_GIT_DIR`).
-   First-push / empty-repo bootstrap UX is still tabled — pre-create and clone manually.
 3. Set `COMPANY_BRAIN_WIKI_GIT_TOKEN` (contents:write on company-wiki only).
 4. In `config/operations.yaml` → `admin.wiki_commit`: set `enabled: true`,
    `remote_url` to the HTTPS clone URL, optional `hour_utc` (default 6).
 5. Start: `company-brain admin wiki-commit --loop` (or `--force` for a one-shot test).
+
+### Fleet pause + redeploy
+
+After agent-code PRs merge (or Weave opens one), a **redeploy cue** may be set in
+`config/state.json`. On the next admin/coding-agent session:
+
+```bash
+company-brain admin fleet status
+company-brain admin fleet pause   # wait until busy managers drain
+# pull/restart 4r7a + restart persistent managers
+company-brain admin fleet resume
+company-brain admin fleet clear-redeploy
+```
+
+Console Status pane has the same Pause / Resume / redeploy controls.
+
+### Monthly upstream sync
+
+`admin_manager` (or `company-brain admin upstream-sync`) opens a **draft** PR from
+public upstream (`admin.upstream_sync.upstream_repo`) into the private brain repo,
+filtered to always-safe core paths + platforms enabled in `install_profile.yaml`.
+Admin resolves conflicts and merges — never auto-merge.
 
 Daily job mirrors `wiki/`, `employee_wiki/`, and `raw/` into the clone and pushes
 one commit to `main` when dirty (never force-push). Failures notify `#wiki-admin`.

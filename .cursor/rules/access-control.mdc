@@ -181,5 +181,6 @@ artifact when connecting a member's coding agent).
 
 ## Pending (not yet built)
 
-- **Versioning** — wiki content versioning (validated writes + rollback) is
-  forthcoming.
+- **Member bridge MCP** — see `docs/tabled.md` / `docs/agents/bridge.md` (not
+  in-wiki versioning: GitHub via daily `wiki_commit` is the history SoT; volume
+  restore stays manual admin).

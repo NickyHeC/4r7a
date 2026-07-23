@@ -110,7 +110,7 @@ manager pass.
 
 ```mermaid
 flowchart TD
-  GW[discord_gateway WebSocket] --> TR[ingest_triage]
+  GW[gateway WebSocket] --> TR[ingest_triage]
   PW[poll_watcher backup] --> TR
   TR --> RR[(routing record JSON)]
   DM[discord_manager persistent] --> PW
@@ -156,7 +156,7 @@ Gateway is **not** embedded — start via `company-brain discord gateway` or aft
 | `activity_snapshot.py` | Daily via manager | Channel/member activity aggregates |
 | `member_scoring.py` | Monthly via manager | LLM batch scores active members; `#growth` alert when score ≥ threshold |
 | `technical_absorb.py` | Daily via manager | Enqueue discussion/technical threads → `raw/entries` for absorb |
-| `discord_gateway.py` | CLI `discord gateway` | WebSocket listener (not dispatched by manager) |
+| `gateway.py` | CLI `discord gateway` | WebSocket listener (not dispatched by manager) |
 | `events_router.py` | Via gateway | Routes Gateway events to triage |
 | `discord_client.py` | — | REST + Gateway helpers (not an agent) |
 | `discord_onboarding.py` | Once (`discord onboarding run`) | $0 estimate + backfill; starts `discord_manager` |

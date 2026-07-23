@@ -883,6 +883,83 @@ def admin_wiki_commit_cmd(loop: bool, force: bool) -> None:
         click.echo(result)
 
 
+@admin.command("upstream-sync")
+@click.option("--force", is_flag=True, help="Bypass monthly already-ran gate.")
+def admin_upstream_sync_cmd(force: bool) -> None:
+    """Open a filtered draft PR from public 4r7a into the private brain repo."""
+    from company_brain.agents.admin.upstream_sync import UpstreamSyncAgent
+
+    config = load_config()
+    result = UpstreamSyncAgent(config).execute(force=force)
+    click.echo(result)
+
+
+@admin.group("fleet")
+def admin_fleet_group() -> None:
+    """Fleet pause / resume / redeploy cue."""
+
+
+@admin_fleet_group.command("status")
+def admin_fleet_status_cmd() -> None:
+    """Print fleet pause + redeploy snapshot."""
+    import json as json_lib
+
+    from company_brain.runtime.fleet_gate import redeploy_instructions, snapshot
+
+    snap = snapshot()
+    click.echo(json_lib.dumps(snap, indent=2))
+    cue = redeploy_instructions()
+    if cue:
+        click.secho("\n" + cue, fg="yellow")
+
+
+@admin_fleet_group.command("pause")
+def admin_fleet_pause_cmd() -> None:
+    """Request fleet pause (managers finish busy work, then stop dispatch)."""
+    import json as json_lib
+
+    from company_brain.runtime.fleet_gate import request_pause
+
+    click.echo(json_lib.dumps(request_pause(by="cli"), indent=2))
+
+
+@admin_fleet_group.command("resume")
+def admin_fleet_resume_cmd() -> None:
+    """Clear fleet pause so managers may dispatch again."""
+    import json as json_lib
+
+    from company_brain.runtime.fleet_gate import resume
+
+    click.echo(json_lib.dumps(resume(by="cli"), indent=2))
+
+
+@admin_fleet_group.command("request-redeploy")
+@click.option("--sha", default="", help="Merged commit SHA.")
+@click.option("--pr-url", default="", help="Merged PR URL.")
+@click.option("--note", default="", help="Optional note.")
+def admin_fleet_request_redeploy_cmd(sha: str, pr_url: str, note: str) -> None:
+    """Set redeploy cue for the next admin / install skill session."""
+    import json as json_lib
+
+    from company_brain.runtime.fleet_gate import request_redeploy
+
+    click.echo(
+        json_lib.dumps(
+            request_redeploy(sha=sha, pr_url=pr_url, by="cli", note=note),
+            indent=2,
+        )
+    )
+
+
+@admin_fleet_group.command("clear-redeploy")
+def admin_fleet_clear_redeploy_cmd() -> None:
+    """Clear the redeploy cue after managers were restarted."""
+    from company_brain.runtime.fleet_gate import clear_redeploy
+
+    clear_redeploy()
+    click.echo("cleared")
+
+
 @admin.command("console")
 @click.option("--host", default=None, help="Bind host (default from admin_console.yaml).")
 @click.option("--port", type=int, default=None, help="Bind port (default 8780).")
@@ -1028,7 +1105,7 @@ def discord() -> None:
 @discord.command("gateway")
 def discord_gateway() -> None:
     """Run the Discord Gateway WebSocket listener (hot lane)."""
-    from company_brain.agents.growth.discord.discord_gateway import serve_gateway
+    from company_brain.agents.growth.discord.gateway import serve_gateway
 
     serve_gateway()
 
@@ -1796,7 +1873,12 @@ def install_credentials_cmd() -> None:
 
 @install.command("foundation")
 @click.option("--json", "as_json", is_flag=True, help="Emit JSON report.")
-def install_foundation_cmd(as_json: bool) -> None:
+@click.option(
+    "--no-create-wiki-repo",
+    is_flag=True,
+    help="Do not auto-create missing company-wiki via gh.",
+)
+def install_foundation_cmd(as_json: bool, no_create_wiki_repo: bool) -> None:
     """Validate repos, Notion, and wiki_git readiness from the install profile."""
     import json as json_lib
 
@@ -1804,12 +1886,16 @@ def install_foundation_cmd(as_json: bool) -> None:
         format_foundation_report,
         run_foundation_checks,
     )
+    from company_brain.runtime.fleet_gate import redeploy_instructions
 
-    report = run_foundation_checks()
+    report = run_foundation_checks(create_wiki_repo=not no_create_wiki_repo)
     if as_json:
         click.echo(json_lib.dumps(report.to_dict(), indent=2))
     else:
         click.echo(format_foundation_report(report))
+        cue = redeploy_instructions()
+        if cue:
+            click.secho("\n" + cue, fg="yellow")
     if not report.ok:
         raise SystemExit(1)
 

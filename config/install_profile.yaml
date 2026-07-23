@@ -4,14 +4,13 @@
 runtime: local # local | cloud
 brain_repo_url: "" # private company 4r7a (agent code) clone URL
 wiki_repo_url: "" # private admin-only company-wiki clone URL
+wiki_repo_name: company-wiki # used when foundation auto-creates a missing wiki repo
 
 notion_sync: true
 employee_wiki: true
 wiki_git_backup: true
 bridge: false # deferred until member bridge MCP is wired
-
-notify:
-  admin_channel: "#wiki-admin"
+# Admin notify channel lives in models.yaml token_budget.admin_channel (default #wiki-admin).
 
 # Department enablement. Onboarding order after foundation:
 # engineering → operations → product → growth → finance → hr

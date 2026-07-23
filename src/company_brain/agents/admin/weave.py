@@ -169,6 +169,14 @@ class WeaveAgent(BaseAgent):
             pr_url = self._open_pr_from_worktree(request, wt)
             request.status = "dispatched"
             request.pr_url = pr_url or ""
+            if pr_url:
+                from company_brain.runtime.fleet_gate import request_redeploy
+
+                request_redeploy(
+                    pr_url=pr_url,
+                    by="weave",
+                    note="Agent-code PR opened; redeploy managers after merge",
+                )
             return {
                 "status": "dispatched" if pr_url else "recorded",
                 "pr_url": pr_url,

@@ -2,6 +2,46 @@
 {% block title %}Status{% endblock %}
 {% block content %}
 <div class="card">
+  <h1>Fleet</h1>
+  <p class="muted">
+    Pause waits for busy managers to finish (no force-kill), then blocks new specialist work.
+    Redeploy cue tells the install/coding-agent skill to restart managers after agent-code merges.
+  </p>
+  <p>
+    State:
+    {% if fleet.paused %}<span class="pill ok">paused</span>
+    {% elif fleet.pause_requested %}<span class="pill stale">pause requested</span>
+    {% else %}<span class="pill ok">running</span>{% endif %}
+    {% if fleet.busy %}
+      · busy: {{ fleet.busy | join(", ") }}
+    {% else %}
+      · idle
+    {% endif %}
+  </p>
+  {% if fleet.redeploy %}
+  <p>
+    Redeploy pending
+    {% if fleet.redeploy.pr_url %}· <a href="{{ fleet.redeploy.pr_url }}">PR</a>{% endif %}
+    {% if fleet.redeploy.note %}· {{ fleet.redeploy.note }}{% endif %}
+  </p>
+  {% endif %}
+  <form method="post" action="/fleet/pause" style="display:inline">
+    <button type="submit">Pause</button>
+  </form>
+  <form method="post" action="/fleet/resume" style="display:inline">
+    <button type="submit">Resume</button>
+  </form>
+  <form method="post" action="/fleet/request-redeploy" style="display:inline">
+    <button type="submit">Request redeploy</button>
+  </form>
+  {% if fleet.redeploy %}
+  <form method="post" action="/fleet/clear-redeploy" style="display:inline">
+    <button type="submit">Clear redeploy</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="card">
   <h1>Agent status</h1>
   <p class="muted">Heartbeats from persistent managers. Stale if older than {{ stale_minutes }} minutes. “No heartbeat” means the manager has not reported yet (may still be running via CLI).</p>
   <table>
@@ -18,7 +58,9 @@
       {% for row in rows %}
       <tr>
         <td>{{ row.label }} <span class="muted">({{ row.name }})</span></td>
-        <td><span class="pill {{ row.state }}">{{ row.state }}</span></td>
+        <td><span class="pill {{ row.state }}">{{ row.state }}</span>
+          {% if row.heartbeat_detail %}<span class="muted"> {{ row.heartbeat_detail }}</span>{% endif %}
+        </td>
         <td>{{ row.heartbeat_at or "—" }}</td>
         <td>{% if row.age_seconds is not none %}{{ row.age_seconds }}s{% else %}—{% endif %}</td>
         <td>{{ row.last_dispatch_at or "—" }} {% if row.last_dispatch_status %}<span class="muted">({{ row.last_dispatch_status }})</span>{% endif %}</td>

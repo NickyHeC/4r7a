@@ -13,8 +13,9 @@ Coding-agent companion: [`.cursor/skills/4r7a-install/SKILL.md`](../../.cursor/s
 
 ## Install — how it runs
 
-One-shot guided setup (not a persistent manager). Admin creates private 4r7a +
-empty company-wiki repos; the installer asks for URLs, compiles
+One-shot guided setup (not a persistent manager). Admin creates the private 4r7a
+brain repo; company-wiki may be created manually or by `install foundation`
+(`gh repo create`). The installer asks for URLs, compiles
 `config/install_profile.yaml`, emits credentials, validates foundation, then
 onboards departments in order.
 
@@ -71,7 +72,7 @@ flowchart TD
 
 | Surface | Description |
 |---------|-------------|
-| Status | Manager catalog + heartbeats (stale after `stale_minutes`) |
+| Status | Fleet pause/resume + redeploy cue; manager heartbeats (stale after `stale_minutes`) |
 | Costs | LLM `budget_status` + optional Mercury reconcile + expense wiki page |
 | Wiki | Full-tree search (`retrieve`) / read / edit via `write_wiki_page` |
 | Dispatch | Allow-list in `config/admin_console.yaml`; Force bypasses `should_run` (audited) |
@@ -90,6 +91,8 @@ Heartbeats are written by wired managers (`admin_manager`, `google_ads_manager`,
 
 **Does not:** replace Weave implement+prove, start persistent manager loops, or
 expose member/bridge access.
+
+**Fleet CLI:** `company-brain admin fleet status|pause|resume|request-redeploy|clear-redeploy`
 
 Connect steps: [`project_install.md`](../../project_install.md) → Admin console.
 
@@ -117,21 +120,24 @@ flowchart LR
 `remote_url`, `work_dir`, `branch`). Env: `COMPANY_BRAIN_WIKI_GIT_TOKEN`,
 optional `COMPANY_BRAIN_WIKI_GIT_DIR`. Wiki bot must not access the private 4r7a repo.
 
-**Repos:** admin creates empty private company-wiki, clones it, sets token +
-`remote_url` in profile/ops config (`company-brain install foundation` validates).
-Volume rollback stays **manual** — see `project_install.md` recovery notes.
+**Repos:** empty private company-wiki via admin or `install foundation` auto-create;
+clone it, set token + `remote_url` in profile/ops config. Volume rollback stays
+**manual** — see `project_install.md` recovery notes. History SoT is GitHub
+(`wiki_commit`); no in-wiki versioning agents.
 
 ---
 
 ## LLM ops — how it runs
 
 Monthly maintenance period (default 1st at 09:00, `config/operations.yaml` → `admin.llm_ops`).
-Persistent **`admin_manager`** dispatches two specialists in order.
+Persistent **`admin_manager`** dispatches expense/maintain, investor newsletter,
+and monthly **upstream_sync**.
 
 ```mermaid
 flowchart TD
   AM[admin_manager] -->|1 expense| EXP[llm_expense_report]
   AM -->|2 maintain| MNT[admin_maintain]
+  AM -->|monthly| UP[upstream_sync]
   SPEC[ephemeral specialists] -->|usage + duration + verify| ST[(StateStore)]
   ST --> EXP
   ST --> MNT
@@ -139,18 +145,20 @@ flowchart TD
   MNT -->|write_wiki_page| W2[admin/maintain/YYYY-MM.md]
   MNT -->|refresh| W3[admin/agent-runtime.md]
   MNT -->|actionable if drift| SL[#wiki-admin]
+  UP -->|draft PR| GH[private brain repo]
 ```
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `admin_manager.py` | Monthly (`admin.llm_ops` + investor day) | Dispatch expense, maintain, investor newsletter |
+| `admin_manager.py` | Monthly (`admin.llm_ops` + investor + upstream) | Dispatch expense, maintain, investor, upstream_sync |
 | `llm_expense_report.py` | Via manager | Month spend by agent/category; verify + duration summary |
 | `admin_maintain.py` | Via manager | Drift list + agent-runtime page; request admin coding session |
 | `investor_newsletter.py` | Via manager (`admin.investor_newsletter`, default day 3) | Concise admin_only investor draft; never sends |
+| `upstream_sync.py` | Via manager (`admin.upstream_sync`, default day 15) | Filtered draft PR from public upstream; never auto-merge |
 | `knowledge_paste.py` | On demand | Quarantine → scan → review → promote misc external notes |
 
 **CLI:** `company-brain admin manager`, `admin expense-report`, `admin maintain`,
-`admin investor-newsletter`, `admin knowledge paste|approve`
+`admin investor-newsletter`, `admin upstream-sync`, `admin knowledge paste|approve`
 
 **Notify:** `#wiki-admin` actionable on budget/duration/verify drift, investor draft
 ready, and knowledge-paste review; quiet months stay silent for LLM ops.
@@ -159,7 +167,8 @@ ready, and knowledge-paste review; quiet months stay silent for LLM ops.
 `--dest` / `--sync-label` for broader company wiki; `--to-raw` for absorb intake.
 Admin console Wiki save blocks untrusted namespaces (`external/`, `admin/knowledge/`, `raw/`).
 
-**Tabled:** Monthly optimization scout — see `docs/tabled.md`.
+**Program (in progress):** deeper process scout / self-heal — see
+[`docs/plans/tabled-revisit-2026-07.md`](../plans/tabled-revisit-2026-07.md).
 
 ---
 

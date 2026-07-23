@@ -105,6 +105,8 @@ def create_app():
         denied = _require(request)
         if denied:
             return denied
+        from company_brain.runtime.fleet_gate import snapshot
+
         return _render(
             request,
             "status.html",
@@ -113,14 +115,77 @@ def create_app():
                 "status",
                 rows=status_rows(),
                 stale_minutes=stale_minutes(),
+                fleet=snapshot(),
             ),
+        )
+
+    @app.post("/fleet/pause")
+    async def fleet_pause(request: Request):
+        denied = _require(request)
+        if denied:
+            return denied
+        from company_brain.runtime.fleet_gate import request_pause
+
+        request_pause(by="admin_console")
+        audit.append_event("fleet_pause")
+        return RedirectResponse(
+            "/status?flash=ok&msg=" + quote("Fleet pause requested"),
+            status_code=303,
+        )
+
+    @app.post("/fleet/resume")
+    async def fleet_resume(request: Request):
+        denied = _require(request)
+        if denied:
+            return denied
+        from company_brain.runtime.fleet_gate import resume
+
+        resume(by="admin_console")
+        audit.append_event("fleet_resume")
+        return RedirectResponse(
+            "/status?flash=ok&msg=" + quote("Fleet resumed"),
+            status_code=303,
+        )
+
+    @app.post("/fleet/request-redeploy")
+    async def fleet_request_redeploy(request: Request):
+        denied = _require(request)
+        if denied:
+            return denied
+        from company_brain.runtime.fleet_gate import request_redeploy
+
+        request_redeploy(by="admin_console", note="Manual redeploy cue from console")
+        audit.append_event("fleet_request_redeploy")
+        return RedirectResponse(
+            "/status?flash=ok&msg=" + quote("Redeploy cue set"),
+            status_code=303,
+        )
+
+    @app.post("/fleet/clear-redeploy")
+    async def fleet_clear_redeploy(request: Request):
+        denied = _require(request)
+        if denied:
+            return denied
+        from company_brain.runtime.fleet_gate import clear_redeploy
+
+        clear_redeploy()
+        audit.append_event("fleet_clear_redeploy")
+        return RedirectResponse(
+            "/status?flash=ok&msg=" + quote("Redeploy cue cleared"),
+            status_code=303,
         )
 
     @app.get("/api/status")
     async def api_status(request: Request):
         if not _authed(request):
             return {"error": "unauthorized"}
-        return {"rows": status_rows(), "stale_minutes": stale_minutes()}
+        from company_brain.runtime.fleet_gate import snapshot
+
+        return {
+            "rows": status_rows(),
+            "stale_minutes": stale_minutes(),
+            "fleet": snapshot(),
+        }
 
     @app.get("/costs", response_class=HTMLResponse)
     async def costs_page(request: Request):

@@ -46,6 +46,11 @@ dispatch:
     agent: company_brain.agents.admin.investor_newsletter.InvestorNewsletterAgent
     kwargs:
       force: true
+  - id: upstream_sync
+    label: Upstream sync (force)
+    agent: company_brain.agents.admin.upstream_sync.UpstreamSyncAgent
+    kwargs:
+      force: true
   - id: install_orchestrator
     label: Install orchestrator (no managers)
     agent: company_brain.agents.admin.install_orchestrator.InstallOrchestratorAgent

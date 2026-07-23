@@ -47,11 +47,11 @@ DEFAULT_PROFILE: dict[str, Any] = {
     "runtime": "local",
     "brain_repo_url": "",
     "wiki_repo_url": "",
+    "wiki_repo_name": "company-wiki",
     "notion_sync": True,
     "employee_wiki": True,
     "wiki_git_backup": True,
     "bridge": False,
-    "notify": {"admin_channel": "#wiki-admin"},
     "departments": {d: True for d in DEPARTMENT_ORDER},
     "platforms": deepcopy(DEFAULT_PLATFORMS),
 }
@@ -64,11 +64,11 @@ class InstallProfile:
     runtime: str = "local"
     brain_repo_url: str = ""
     wiki_repo_url: str = ""
+    wiki_repo_name: str = "company-wiki"
     notion_sync: bool = True
     employee_wiki: bool = True
     wiki_git_backup: bool = True
     bridge: bool = False
-    notify: dict[str, Any] = field(default_factory=lambda: {"admin_channel": "#wiki-admin"})
     departments: dict[str, bool] = field(default_factory=dict)
     platforms: dict[str, dict[str, Any]] = field(default_factory=dict)
 
@@ -77,11 +77,11 @@ class InstallProfile:
             "runtime": self.runtime,
             "brain_repo_url": self.brain_repo_url,
             "wiki_repo_url": self.wiki_repo_url,
+            "wiki_repo_name": self.wiki_repo_name,
             "notion_sync": self.notion_sync,
             "employee_wiki": self.employee_wiki,
             "wiki_git_backup": self.wiki_git_backup,
             "bridge": self.bridge,
-            "notify": dict(self.notify),
             "departments": dict(self.departments),
             "platforms": {k: dict(v) for k, v in self.platforms.items()},
         }
@@ -128,6 +128,7 @@ def _merge_defaults(raw: dict[str, Any] | None) -> dict[str, Any]:
         "runtime",
         "brain_repo_url",
         "wiki_repo_url",
+        "wiki_repo_name",
         "notion_sync",
         "employee_wiki",
         "wiki_git_backup",
@@ -135,8 +136,6 @@ def _merge_defaults(raw: dict[str, Any] | None) -> dict[str, Any]:
     ):
         if key in raw and raw[key] is not None:
             out[key] = raw[key]
-    if isinstance(raw.get("notify"), dict):
-        out["notify"].update(raw["notify"])
     if isinstance(raw.get("departments"), dict):
         for dept, enabled in raw["departments"].items():
             out["departments"][str(dept)] = bool(enabled)
@@ -157,11 +156,11 @@ def profile_from_dict(data: dict[str, Any]) -> InstallProfile:
         runtime=str(merged.get("runtime") or "local"),
         brain_repo_url=str(merged.get("brain_repo_url") or ""),
         wiki_repo_url=str(merged.get("wiki_repo_url") or ""),
+        wiki_repo_name=str(merged.get("wiki_repo_name") or "company-wiki"),
         notion_sync=bool(merged.get("notion_sync", True)),
         employee_wiki=bool(merged.get("employee_wiki", True)),
         wiki_git_backup=bool(merged.get("wiki_git_backup", True)),
         bridge=bool(merged.get("bridge", False)),
-        notify=dict(merged.get("notify") or {}),
         departments={str(k): bool(v) for k, v in (merged.get("departments") or {}).items()},
         platforms={
             str(k): dict(v) if isinstance(v, dict) else {"enabled": bool(v)}

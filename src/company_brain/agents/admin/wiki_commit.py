@@ -178,6 +178,7 @@ class WikiCommitAgent(BaseAgent):
 
     name = "wiki_commit"
     track_duration = False
+    fleet_exempt = True
 
     def __init__(self, config: AppConfig, **kwargs: Any):
         super().__init__(config, **kwargs)
@@ -206,6 +207,11 @@ class WikiCommitAgent(BaseAgent):
 
     async def _loop(self) -> None:
         from company_brain.admin_console.heartbeats import record_heartbeat
+        from company_brain.runtime.fleet_gate import (
+            can_dispatch,
+            manager_heartbeat_detail,
+            try_enter_paused,
+        )
 
         interval = cfg.wiki_commit_poll_interval_minutes()
         self.logger.info(
@@ -214,9 +220,10 @@ class WikiCommitAgent(BaseAgent):
             cfg.wiki_commit_hour_utc(),
         )
         while True:
-            record_heartbeat(self.name, detail="idle")
+            try_enter_paused()
+            record_heartbeat(self.name, detail=manager_heartbeat_detail())
             try:
-                if self.should_run():
+                if can_dispatch() and self.should_run():
                     self.run_once(force=False)
                     record_heartbeat(self.name, detail="pass")
             except Exception:
@@ -224,6 +231,14 @@ class WikiCommitAgent(BaseAgent):
             await asyncio.sleep(interval * 60)
 
     def run_once(self, *, force: bool = False) -> dict[str, Any]:
+        from company_brain.runtime.fleet_gate import dispatch_slot
+
+        with dispatch_slot(self.name) as allowed:
+            if not allowed and not force:
+                return {"status": "skipped", "reason": "fleet_paused"}
+            return self._run_once_body(force=force)
+
+    def _run_once_body(self, *, force: bool = False) -> dict[str, Any]:
         remote = cfg.wiki_commit_remote_url()
         work_dir = cfg.wiki_commit_work_dir()
         branch = cfg.wiki_commit_branch()

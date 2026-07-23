@@ -19,9 +19,14 @@ Machine profile: `config/install_profile.yaml`.
 
 ## Flow
 
+0. **Redeploy cue (if set)** — run `company-brain admin fleet status`. If a
+   redeploy cue is pending: confirm agent-code PR merged →
+   `admin fleet pause` → pull/restart 4r7a + persistent managers →
+   `admin fleet resume` → `admin fleet clear-redeploy`. Then continue.
 1. **Profile** — compile decisions (best-practice defaults; granular overrides)
 2. **Credentials** — checklist for enabled platforms only
 3. **Foundation** — MD volume, brain + wiki repo URLs/access, Notion init, wiki_commit
+   (may auto-create empty `{org}/company-wiki` via `gh` when missing)
 4. **Onboard** — engineering → operations → product → growth → finance → HR
 5. **Cleanup** — optional unused-platform removal on the **private fork** only
 6. **Steady state** — start wiki_commit / admin_manager / hot lanes as enabled
@@ -42,18 +47,21 @@ company-brain install cleanup --confirm   # prints checklist only; never rm
 
 Progress wiki page: `admin/install-progress.md` (`sync: admin_only`).
 
-## Repo topology (admin creates these)
+## Repo topology
 
-1. Private **4r7a** clone (company brain / agent code)
-2. Empty private **company-wiki** (MD backup only)
-3. Ask admin for both URLs → `install profile`
-4. Validate access via `install foundation` / `gh` — do not create repos via API
+1. Private **4r7a** clone (company brain / agent code) — admin creates; set URL in profile
+2. Empty private **company-wiki** (MD backup only) — admin creates **or**
+   `install foundation` creates `{org}/company-wiki` when missing
+   (`wiki_repo_name` overridable; `--no-create-wiki-repo` to skip)
+3. Ask admin for brain URL (+ wiki URL if already exists) → `install profile`
+4. Validate / ensure via `install foundation` / `gh`
 
 ## Defaults
 
 - `notion_sync` / `employee_wiki` / `wiki_git_backup`: on
 - `bridge`: off (deferred)
 - Notify install failures + investor drafts to `#wiki-admin`
+  (`config/models.yaml` → `token_budget.admin_channel`)
 - Unused platforms: **skip**, do not delete unless admin confirms cleanup review
 
 ## New platform / agent protocol

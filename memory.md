@@ -11,6 +11,45 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Sessions A+B shipped (fleet + upstream)
+
+- **A — Fleet:** `runtime/fleet_gate.py` (pause/resume, busy slots, redeploy cue);
+  `BaseAgent.fleet_exempt` + specialist skip; wired `admin_manager`,
+  `github_manager`, `wiki_commit`; console Status Pause/Resume/redeploy;
+  CLI `admin fleet *`; Weave sets redeploy cue on implement PR; install skill
+  step 0.
+- **B — Deploy:** `install foundation` auto-creates `{org}/company-wiki` via
+  `gh` (`wiki_repo_name`); monthly `upstream_sync` (filtered draft PR) via
+  `admin_manager` / `admin upstream-sync`.
+- Docs: admin handbook, `project_install.md`, install skill; plan A/B done.
+
+## 2026-07-22 — Tabled revisit design locked
+
+- Design debate closed; plan:
+  [`docs/plans/tabled-revisit-2026-07.md`](docs/plans/tabled-revisit-2026-07.md)
+  (sessions **A–L**). `docs/tabled.md` refreshed to deferred-only.
+- **Dropped:** in-wiki versioning, GitHub↔wiki content sync, Bookface/X/Luma APIs,
+  Ramp receipt cross-check, employee auto-promote / per-page ACL / comparative
+  query, offboard API deletion, newsletter Gmail draft.
+- **Program highlights:** fleet pause + redeploy cue; monthly upstream PR;
+  `company-wiki` create; console Review/Costs/SSO/Query; absorb lanes + burst;
+  `@wiki` planner + project registry + sync now; personal mounts + weekly
+  Notion orphans; Gmail security/warm-intro/Linear archive; `who_knows`;
+  Ramp LLM reconcile; Discord progress dedupe; single `process_scout` +
+  self-heal draft PRs + wiki maintenance/doc hygiene.
+- **Still tabled:** bridge MCP, Notion↔employee sync, embeddings, Ads/PostHog
+  writes, live connector query, console public/SPA, Latent Briefing, etc.
+- **access-control:** Pending versioning note replaced (GitHub = history SoT).
+
+## 2026-07-22 — Naming/hygiene follow-ups (gateway + install notify)
+
+- Renamed `growth/discord/discord_gateway.py` → `gateway.py` (CLI import + handbook);
+  `doctor naming` now 100 (clears prior redundant-prefix debt).
+- Dropped `install_profile.yaml` `notify.admin_channel` — single SoT remains
+  `models.yaml` `token_budget.admin_channel` (default `#wiki-admin`).
+- Wiki doctor allow-lists `growth/leads/queue.py` (JSON job queue under wiki volume,
+  not MD articles); `doctor wiki` / `doctor code` now 100.
+
 ## 2026-07-22 — Admin wiki-level operators (install + content)
 
 - **Install:** `config/install_profile.yaml` + `install_profile` /
