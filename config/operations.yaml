@@ -282,6 +282,10 @@ notion_platform:
   stub_ttl_days: 7
   archive_idle_days: 30
   stale_idle_days: 90
+  # Weekly crawl of configured Notion teamspace roots for unbound pages.
+  orphan_discovery:
+    enabled: true
+    admin_channel: ""             # falls back to gmail slack ingest_channel
 
 # External wiki mount (admin one-shot import into wiki/external/{source}/).
 external_wiki:

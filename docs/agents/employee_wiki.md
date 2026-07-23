@@ -32,8 +32,14 @@ flowchart TB
   ZIP[zip of .md] --> IMP[employee_wiki_import]
   IMP -->|quarantine + scan + dup| REV[import_review]
   REV -->|admin Slack| ADMIN[admin channel]
+  PERS[personal mount kind via external_wiki] -->|approve| EW
   EW -->|sync: label| NS[NotionSync]
 ```
+
+**Personal wiki mounts:** reuse the external mount pipeline with
+`kind: personal` + `member_key` (see [external wiki handbook](external_wiki.md)).
+Promoted pages land under `employee_wiki/{member}/` with default `sync: private`
+and migrate-names applied on promote.
 
 **Managers** (dispatch specialists based on gathered information):
 

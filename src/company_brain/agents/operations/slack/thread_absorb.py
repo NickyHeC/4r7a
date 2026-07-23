@@ -85,7 +85,7 @@ class ThreadAbsorbAgent(BaseAgent):
         return age_h >= min_age_h
 
     def _enqueue_record(self, record: SlackRoutingRecord) -> dict[str, Any]:
-        title, body, participants = self._conversation_text(record)
+        title, body, participants, bursted = self._conversation_text(record)
         if _word_count(body) < MIN_WORDS:
             self._routing.mark_handled(record, SPECIALIST_KEY)
             record.extracted["absorb_status"] = "too_short"
@@ -98,6 +98,7 @@ class ThreadAbsorbAgent(BaseAgent):
         ):
             return {"status": "skipped", "reason": "unchanged"}
 
+        section = "## Burst distill" if bursted else "## Transcript"
         header = "\n".join(
             [
                 f"# Slack thread — {title}",
@@ -107,11 +108,15 @@ class ThreadAbsorbAgent(BaseAgent):
                 f"**Kind:** {record.kind or '—'}",
                 f"**Participants:** {', '.join(participants) or '—'}",
                 "",
-                "## Transcript",
+                section,
                 "",
             ]
         )
         content = header + body
+
+        tags = ["slack", "thread", "encyclopedia", "normal"]
+        if bursted:
+            tags.append("burst")
 
         entry = RawEntry(
             source_type="slack",
@@ -124,8 +129,10 @@ class ThreadAbsorbAgent(BaseAgent):
                 "kind": record.kind or "",
                 "permalink": str((record.extracted or {}).get("permalink") or ""),
                 "participants": participants,
+                "absorb_lane": "normal",
+                "burst_distill": bursted,
             },
-            tags=["slack", "thread", "encyclopedia"],
+            tags=tags,
         )
         _persist_raw_entry(entry)
 
@@ -137,11 +144,16 @@ class ThreadAbsorbAgent(BaseAgent):
         return {"status": "enqueued", "entry_id": entry.id}
 
     def _needs_refresh(self, record: SlackRoutingRecord) -> bool:
-        _title, body, _p = self._conversation_text(record)
+        _title, body, _p, _b = self._conversation_text(record)
         signature = hashlib.sha256(body.encode()).hexdigest()[:16]
         return signature != record.extracted.get("absorb_signature")
 
-    def _conversation_text(self, record: SlackRoutingRecord) -> tuple[str, str, list[str]]:
+    def _conversation_text(self, record: SlackRoutingRecord) -> tuple[str, str, list[str], bool]:
+        from company_brain.agents.operations.slack.burst_distill import (
+            distill_bursts,
+            should_burst,
+        )
+
         preview = str((record.extracted or {}).get("text_preview") or "")
         title = str(
             (record.extracted or {}).get("title_preview") or preview[:120] or "Slack thread"
@@ -150,23 +162,29 @@ class ThreadAbsorbAgent(BaseAgent):
         try:
             messages = slack_client.fetch_thread_replies(record.channel, record.thread_ts)
             if messages:
-                parts: list[str] = []
                 seen: set[str] = set()
                 for msg in messages:
                     user = str(msg.get("user") or msg.get("username") or "")
                     if user and user not in seen:
                         seen.add(user)
                         participants.append(user)
-                    text = str(msg.get("text") or "").strip()
-                    if text:
-                        parts.append(f"**{user or 'unknown'}:** {text}")
-                combined = "\n\n".join(parts)
+                bursted = should_burst(messages)
+                if bursted:
+                    combined = distill_bursts(messages)
+                else:
+                    parts = []
+                    for msg in messages:
+                        user = str(msg.get("user") or msg.get("username") or "unknown")
+                        text = str(msg.get("text") or "").strip()
+                        if text:
+                            parts.append(f"**{user}:** {text}")
+                    combined = "\n\n".join(parts)
                 if combined.strip():
                     first_line = combined.splitlines()[0][:120]
-                    return first_line or title, combined[:14000], participants
+                    return first_line or title, combined[:14000], participants, bursted
         except Exception:
             self.logger.debug("thread fetch failed for %s/%s", record.channel, record.thread_ts)
-        return title, preview, participants
+        return title, preview, participants, False
 
 
 def _parse_ts(raw: str) -> datetime | None:

@@ -29,3 +29,19 @@ def archive_idle_days(*, config_dir: Path | None = None) -> int:
 
 def stale_idle_days(*, config_dir: Path | None = None) -> int:
     return int(_notion_platform_cfg(config_dir).get("stale_idle_days") or 90)
+
+
+def _orphan_cfg(*, config_dir: Path | None = None) -> dict[str, Any]:
+    block = _notion_platform_cfg(config_dir).get("orphan_discovery") or {}
+    return block if isinstance(block, dict) else {}
+
+
+def orphan_discovery_enabled(*, config_dir: Path | None = None) -> bool:
+    return bool(_orphan_cfg(config_dir=config_dir).get("enabled", True))
+
+
+def orphan_discovery_admin_channel(*, config_dir: Path | None = None) -> str:
+    from company_brain.agents.operations.shared.gmail_config import slack_cfg
+
+    channel = str(_orphan_cfg(config_dir=config_dir).get("admin_channel") or "").strip()
+    return channel or str(slack_cfg().get("ingest_channel") or "#ingest")

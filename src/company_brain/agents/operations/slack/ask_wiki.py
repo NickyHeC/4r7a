@@ -56,7 +56,13 @@ class AskWikiAgent(BaseAgent):
                 f"Rate limit reached ({exc.limit}/{exc.window}). Try again later.",
             )
 
-        snippets = search_wiki_snippets(text, channel_id=channel_id)
+        try:
+            from company_brain.agents.operations.slack.wiki_planner import plan_and_fetch
+
+            snippets = plan_and_fetch(text, channel_id=channel_id)
+        except Exception:
+            self.logger.exception("wiki planner failed — falling back to single retrieve")
+            snippets = search_wiki_snippets(text, channel_id=channel_id)
         if not snippets:
             return self._reply(
                 channel_id,

@@ -11,6 +11,19 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Sessions E+F+G shipped (absorb / @wiki / mounts)
+
+- **E:** Absorb lanes (`urgent`/`normal`/`bulk`) + soft encyclopedia length in
+  `wiki.yaml` / `absorb_lanes.py`; fleet pause skips absorb; Slack
+  `burst_distill` before long `thread_absorb` enqueue.
+- **F:** `@wiki` planner fan-out (wiki+CRM+practices, max 3, fail closed);
+  `operations/project-registry.md`; `@wiki sync now <platform>` via
+  `platform_sync.py`.
+- **G:** External mount `kind: personal` → `employee_wiki/{member}/`
+  (`sync: private`); weekly `orphan_discovery` → `admin/notion-orphan-review/`
+  (never auto-adopt); console Review prefix wired.
+- Docs: operations / external_wiki / employee_wiki; plan E–G marked shipped.
+
 ## 2026-07-22 — Sessions C+D shipped (Review + SSO)
 
 - **C:** `/review` aggregates admin action items (import/mount/knowledge,

@@ -22,6 +22,7 @@ _NOTION_ALLOW = frozenset(
         "operations/notion/page_system.py",
         "operations/notion/deprecated_collector.py",
         "operations/notion/stale_review.py",
+        "operations/notion/orphan_discovery.py",
         "operations/notion/notion_onboarding.py",
         "operations/notion_manager.py",
         "employee_wiki/employee_wiki_onboarding.py",

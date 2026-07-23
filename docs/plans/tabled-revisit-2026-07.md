@@ -146,9 +146,9 @@ Onboarding / one-shot install paths are out of this diagram (foundation `company
 | **B** | `company-wiki` create + monthly upstream sync PR | **Shipped 2026-07-22** |
 | **C** | Console Review (all admin action items) + Costs (LLM+VM) | **Shipped 2026-07-22** |
 | **D** | Google Workspace SSO + multi-admin allow-list | **Shipped 2026-07-22** |
-| **E** | Encyclopedia absorb lanes + soft length + burst distill | Wiki quality |
-| **F** | `@wiki` planner fan-out + project registry + `@wiki sync now` | Q&A |
-| **G** | Personal wiki mount kind + weekly Notion orphan discovery | Ingest |
+| **E** | Encyclopedia absorb lanes + soft length + burst distill | **Shipped 2026-07-22** |
+| **F** | `@wiki` planner fan-out + project registry + `@wiki sync now` | **Shipped 2026-07-22** |
+| **G** | Personal wiki mount kind + weekly Notion orphan discovery | **Shipped 2026-07-22** |
 | **H** | Citation-only Query (console/CLI) | Admin query |
 | **I** | Gmail `security_triage` + warm intro + Linear-Done archive | Ops mail |
 | **J** | `who_knows` index | Expertise hints |

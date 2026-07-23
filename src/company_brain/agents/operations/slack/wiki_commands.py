@@ -17,6 +17,7 @@ COMMAND_PREFIXES = frozenset(
         "help",
         "?",
         "threads",
+        "sync",
         "register",
         "plan",
         "partner",
@@ -53,6 +54,9 @@ def handle_wiki_command(
     if first in {"threads", "open-threads"} or cmd in {"open threads"}:
         return _list_threads(channel_id, thread_ts, slack_user_id)
 
+    if first == "sync":
+        return _sync_now(channel_id, thread_ts, raw)
+
     if first not in COMMAND_PREFIXES:
         return {"status": "not_command"}
 
@@ -70,6 +74,7 @@ def _help_text() -> str:
     return (
         "*@wiki commands*\n"
         "• `@wiki <question>` — search the wiki (scoped to this channel)\n"
+        "• `@wiki sync now <platform>` — kick sync (notion, crm, github, posthog)\n"
         "• `@wiki threads` — your open Slack threads\n"
         "• `@wiki register event <name> [on YYYY-MM-DD]` — register a company event\n"
         "• `@wiki plan event <slug>` — assisted planning doc\n"
@@ -79,6 +84,36 @@ def _help_text() -> str:
         "• `@wiki research leads from event <slug>` — queue attendee lead research "
         "(CSV via CLI if needed)\n"
         "• `@wiki help` — this message"
+    )
+
+
+def _sync_now(channel_id: str, thread_ts: str, raw: str) -> dict[str, Any]:
+    from company_brain.wiki.platform_sync import sync_platform
+
+    parts = raw.split()
+    # sync now notion | sync notion
+    platform = ""
+    if len(parts) >= 3 and parts[1].lower() == "now":
+        platform = parts[2]
+    elif len(parts) >= 2:
+        platform = parts[1]
+    if not platform:
+        return _reply(
+            channel_id,
+            thread_ts,
+            "Usage: `@wiki sync now <platform>` (notion, crm, github, posthog).",
+        )
+    result = sync_platform(platform)
+    if result.get("status") == "ok":
+        return _reply(
+            channel_id,
+            thread_ts,
+            f"Sync kicked for *{result.get('platform')}*: `{result.get('result')}`",
+        )
+    return _reply(
+        channel_id,
+        thread_ts,
+        f"Sync failed: {result.get('reason')}. Supported: {result.get('supported')}",
     )
 
 

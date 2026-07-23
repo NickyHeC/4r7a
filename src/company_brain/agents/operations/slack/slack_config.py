@@ -151,6 +151,15 @@ def thread_absorb_min_age_hours() -> int:
         return 12
 
 
+def thread_absorb_burst_min_messages() -> int:
+    """Min thread messages before burst distill (Session E)."""
+    raw = slack_platform_cfg().get("thread_absorb_burst_min_messages", 12)
+    try:
+        return max(3, int(raw))
+    except (TypeError, ValueError):
+        return 12
+
+
 def slack_is_configured() -> bool:
     from company_brain.agents.operations.slack import slack_client
 

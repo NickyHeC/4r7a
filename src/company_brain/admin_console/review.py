@@ -27,6 +27,7 @@ _PREFIX_QUEUES: tuple[tuple[str, str, str], ...] = (
     ("import_review", "admin/import-review/", "Import review"),
     ("mount_review", "admin/mount-review/", "Mount review"),
     ("knowledge_review", "admin/knowledge-review/", "Knowledge paste review"),
+    ("notion_orphan", "admin/notion-orphan-review/", "Notion orphan review"),
     ("offboard", "hr/offboard-proposal/", "Offboard proposal"),
     ("maintain", "admin/maintain/", "Admin maintain"),
 )

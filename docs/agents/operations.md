@@ -592,9 +592,11 @@ flowchart TD
 | `customer_support.py` | Via intake specialists | Classify customer mail/Slack → wiki + Linear + `#customer-support` |
 | `customer_intake.py` | Events hot lane + manager | Slack Connect / customer channels → orchestrator |
 | `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; dispatches `action_items` / `customer_intake` |
-| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL wiki Q&A via hybrid lexical retrieve + Notion citations |
-| `thread_absorb.py` | Daily via manager / CLI | Distill closed/aged internal threads → `raw/entries` (no LLM); skips Connect/customer |
-| `wiki_commands.py` | `@wiki` mention | `threads`, `help`; blocked in Connect channels |
+| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL Q&A via planner fan-out (wiki + CRM + practices, max 3; fail closed) + Notion citations |
+| `wiki_planner.py` | Via `ask_wiki` | Parallel retrieve; project registry prefixes when channel has `project:` or registry channel match |
+| `thread_absorb.py` | Daily via manager / CLI | Distill closed/aged internal threads → `raw/entries` (no LLM); long threads get burst distill first; skips Connect/customer |
+| `burst_distill.py` | Via `thread_absorb` | Segment long threads by idle gap / speaker shift; structured bullets (not an agent) |
+| `wiki_commands.py` | `@wiki` mention | `threads`, `help`, `sync now <platform>` (notion/crm/github/posthog); blocked in Connect channels |
 | `internal_meeting_scheduler.py` | `@wiki` meeting keywords | Propose/book slots on primary calendar |
 | `thread_watcher.py` | Via manager | Poll backup; runs triage on each message |
 | `open_thread_monitor.py` | Via manager | Rebuild `employee_wiki/{member}/open-thread.md` from open routing records |
@@ -608,7 +610,11 @@ flowchart TD
 
 **Retrieval:** shared [`wiki/retrieve.py`](../../src/company_brain/wiki/retrieve.py) — title boost +
 term frequency + simple IDF + age decay (no embeddings). Scope for humans =
-channel `wiki_prefixes` (default project scope); agents use `bridge.departments`.
+channel `wiki_prefixes`, or project registry prefixes from
+`operations/project-registry.md` / channel `project:`; agents use `bridge.departments`.
+Encyclopedia absorb uses urgency lanes (`urgent` / `normal` / `bulk` in
+`config/wiki.yaml` → `absorb`) and soft length guidance (~800–1200 words); skips
+while the fleet pause gate is active.
 
 **CLI:** `company-brain slack events`, `slack sync-channels`, `slack thread-absorb [--force]`,
 `slack channel list|tag|enable-connect`, `slack onboarding estimate|run`, `weave events`,
@@ -658,6 +664,7 @@ flowchart TD
   NM --> ST[stale_review]
   NM --> DC[deprecated_collector]
   NM --> TS[task_scanner]
+  NM --> OD[orphan_discovery weekly]
   NM --> CRM[crm Notion sync]
   NM --> WV[weave approval poll]
   SP -->|Notion ahead / merge| MD[(wiki MD)]
@@ -666,6 +673,7 @@ flowchart TD
   CA -->|admin choice| MD
   PS -->|relocate / stub TTL| MD
   ST --> RQ[review.md]
+  OD --> OR[admin/notion-orphan-review]
   DC -->|Archive parent| N[(Notion pages)]
   AG[department agents] -->|write_wiki_page| MD
   MD --> NS[NotionSync push]
@@ -690,6 +698,7 @@ flowchart TD
 | `stale_review.py` | Via manager | Flag idle active pages → `operations/notion/review.md` (+ optional review DB) |
 | `deprecated_collector.py` | Via manager | Archive Notion page under Archive parent when all four eligibility rules hold |
 | `task_scanner.py` | Via manager | Query updated task DB rows; link by Linear ID (read-first) |
+| `orphan_discovery.py` | Weekly via manager | Crawl configured teamspace roots; unbound pages → `admin/notion-orphan-review/` (Adopt / Ignore / Archive; never auto-adopt) |
 | `task_sync.py` | Via propagation / Granola ingest | Create or update Notion row for a binding |
 | `db.py` / `conflict_store.py` | — | Helpers (not agents) |
 

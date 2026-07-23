@@ -56,6 +56,7 @@ class NotionManager(BaseAgent):
         from company_brain.agents.operations.notion.deprecated_collector import (
             DeprecatedCollectorAgent,
         )
+        from company_brain.agents.operations.notion.orphan_discovery import OrphanDiscoveryAgent
         from company_brain.agents.operations.notion.page_system import PageSystemAgent
         from company_brain.agents.operations.notion.stale_review import StaleReviewAgent
         from company_brain.agents.operations.notion.sync_pull import SyncPullAgent
@@ -74,6 +75,7 @@ class NotionManager(BaseAgent):
         results["stale_review"] = self._run_agent(runtime, StaleReviewAgent)
         results["deprecated_collector"] = self._run_agent(runtime, DeprecatedCollectorAgent)
         results["task_scanner"] = self._run_agent(runtime, TaskScannerAgent, once=True)
+        results["orphan_discovery"] = self._run_agent(runtime, OrphanDiscoveryAgent)
         results["crm_sync"] = self._run_callable(
             "crm_sync",
             lambda: sync_all_crm(config=self.config),

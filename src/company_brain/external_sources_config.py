@@ -26,6 +26,9 @@ class ExternalSourceSpec(BaseModel):
     contact: str = ""
     description: str = ""
     default_sync: str = "company"
+    # external → wiki/external/{source}/; personal → employee_wiki/{member_key}/
+    kind: str = "external"
+    member_key: str = ""
     mounts: list[MountRecord] = Field(default_factory=list)
 
 
@@ -43,6 +46,8 @@ class ExternalSourcesConfig(BaseModel):
         contact: str = "",
         description: str = "",
         default_sync: str = "company",
+        kind: str = "external",
+        member_key: str = "",
     ) -> ExternalSourceSpec:
         key = source_slug_key(source_key)
         if key not in self.sources:
@@ -51,7 +56,20 @@ class ExternalSourcesConfig(BaseModel):
                 contact=contact,
                 description=description,
                 default_sync=default_sync,
+                kind=kind or "external",
+                member_key=member_key or "",
             )
+        else:
+            spec = self.sources[key]
+            updates: dict = {}
+            if kind:
+                updates["kind"] = kind
+            if member_key:
+                updates["member_key"] = member_key
+            if default_sync:
+                updates["default_sync"] = default_sync
+            if updates:
+                self.sources[key] = spec.model_copy(update=updates)
         return self.sources[key]
 
     def append_mount(self, source_key: str, record: MountRecord) -> None:

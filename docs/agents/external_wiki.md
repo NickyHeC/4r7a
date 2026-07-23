@@ -1,8 +1,10 @@
 # External Wiki Mount — Agent Handbook
 
-Admin-only one-shot import of external Markdown wikis into the **company building**
-at `wiki/external/{source}/`. Shared helpers reuse the employee zip import scan and
-duplicate detection patterns; targets, provenance, and sync defaults differ.
+Admin-only one-shot import of Markdown wikis. Default **`kind: external`** promotes
+into the **company building** at `wiki/external/{source}/`. **`kind: personal`**
+(with `member_key`) promotes into `employee_wiki/{member}/` with `sync: private`
+after the same quarantine → scan → admin review path. Shared helpers reuse the
+employee zip import scan and duplicate detection patterns.
 
 **Config:** [`config/external_sources.yaml`](../../config/external_sources.yaml) (source registry),
 [`config/operations.yaml`](../../config/operations.yaml) → `external_wiki`.
@@ -62,14 +64,20 @@ Employee zip import reviews live under `admin/import-review/` (top-level `admin`
 
 | Content | Default `sync:` | Notion teamspace |
 |---------|-----------------|------------------|
-| Promoted external pages | `company` (per-source override in registry) | Company |
+| Promoted external pages (`kind: external`) | `company` (per-source override in registry) | Company |
+| Promoted personal pages (`kind: personal`) | `private` | Member personal teamspace (when mirrored) |
 | Mount review pages | `admin_only` | Admin |
 | Content catalog | `admin_only` | Admin (`section_teamspace: admin → admin`) |
+
+Register personal sources with `kind: personal` and `member_key` in
+`config/external_sources.yaml`. Promote still requires admin approval.
 
 ---
 
 ## What this does and does not do
 
-**Does:** one-shot mount, duplicate linking, provenance stamping, admin audit trail, fleet TOC.
+**Does:** one-shot mount (company or personal), duplicate linking (external kind),
+provenance stamping, admin audit trail, fleet TOC.
 
-**Does not (v1):** live sync, bidirectional Notion pull, member-initiated mounts, cryptographic provenance.
+**Does not (v1):** live sync, bidirectional Notion pull, member-initiated self-mount,
+cryptographic provenance.

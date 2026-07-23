@@ -144,6 +144,24 @@ article_types:
     structure: ["Definition", "Context", "Related Terms"]
     length_target: [10, 20]
 
+# Encyclopedia absorb: urgency lanes + soft length guidance (no hard verify fail).
+absorb:
+  encyclopedia_word_soft_cap: [800, 1200]
+  soft_cap_guidance: true
+  # Tag → lane (urgent processed first). Override or extend as needed.
+  tag_lanes:
+    urgent: urgent
+    admin_paste: urgent
+    knowledge_paste: urgent
+    security: urgent
+    normal: normal
+    slack: normal
+    thread: normal
+    encyclopedia: normal
+    bulk: bulk
+    notion_orphan: bulk
+    historical: bulk
+
 # Writing conventions applied by the formatter and enforced during cleanup.
 writing_standards:
   tone: "factual"

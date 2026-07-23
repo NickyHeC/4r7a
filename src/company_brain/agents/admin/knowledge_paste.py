@@ -212,8 +212,13 @@ class KnowledgePasteAgent(BaseAgent):
                 source_id=import_id,
                 title=title,
                 content=content.strip(),
-                metadata={"import_id": import_id, "pasted_at": now, "pasted_by": "admin"},
-                tags=["admin_paste"],
+                metadata={
+                    "import_id": import_id,
+                    "pasted_at": now,
+                    "pasted_by": "admin",
+                    "absorb_lane": "urgent",
+                },
+                tags=["admin_paste", "urgent"],
             )
             entries_dir = resolve_raw_dir() / "entries"
             entries_dir.mkdir(parents=True, exist_ok=True)

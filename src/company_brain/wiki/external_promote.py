@@ -61,7 +61,11 @@ def promote_external_mount(
     default_sync: str | None = None,
     rebuild_catalog: bool = True,
 ) -> ExternalPromoteResult:
-    """Move approved quarantine files into ``wiki/external/{source}/``."""
+    """Move approved quarantine files into ``wiki/external/{source}/``.
+
+    When the source ``kind`` is ``personal``, promote into
+    ``employee_wiki/{member_key}/`` with ``sync: private`` instead.
+    """
     store = store or LocalWikiStore()
     key = source_slug(source_key)
     quarantine = external_quarantine_rel(key, import_id)
@@ -71,6 +75,20 @@ def promote_external_mount(
 
     sources_cfg = load_external_sources()
     spec = sources_cfg.get(key)
+    kind = str((spec.kind if spec else "external") or "external").strip().lower()
+    if kind == "personal":
+        return _promote_personal_mount(
+            key,
+            import_id,
+            store=store,
+            sources_cfg=sources_cfg,
+            spec=spec,
+            decisions=decisions,
+            remove_quarantine=remove_quarantine,
+            mounted_by=mounted_by,
+            default_sync=default_sync or "private",
+        )
+
     sync_default = default_sync or (spec.default_sync if spec else "company")
 
     report = parse_duplicate_report(store.read_text(report_path))
@@ -165,6 +183,108 @@ def promote_external_mount(
         dropped=dropped,
         layout_map=layout_map,
     )
+
+
+def _promote_personal_mount(
+    key: str,
+    import_id: str,
+    *,
+    store: WikiStore,
+    sources_cfg: ExternalSourcesConfig,
+    spec: Any,
+    decisions: dict[str, str] | None,
+    remove_quarantine: bool,
+    mounted_by: str,
+    default_sync: str,
+) -> ExternalPromoteResult:
+    """Promote into employee wiki with migrate-names + sync: private."""
+    from company_brain.wiki.employee_publish import write_employee_wiki_page
+    from company_brain.wiki.employee_store import LocalEmployeeWikiStore
+    from company_brain.wiki.store import MarkdownDoc
+
+    member = str((spec.member_key if spec else "") or key).strip()
+    if not member:
+        raise ValueError("personal mount requires member_key on the external source")
+
+    quarantine = external_quarantine_rel(key, import_id)
+    report = parse_duplicate_report(store.read_text(f"{quarantine}duplicate_report.json"))
+    decisions = decisions or {}
+    layout_map: dict[str, str] = {}
+    promoted: list[str] = []
+    linked: list[str] = []
+    dropped: list[str] = []
+    mounted_at = utc_now_iso()
+    emp_store = LocalEmployeeWikiStore()
+    sync_label = default_sync or "private"
+
+    for verdict in report.files:
+        action = decisions.get(verdict.path) or _default_action(verdict)
+        if action in {"drop", "link"}:
+            # Personal mounts: skip link stubs into company wiki; drop/link → drop
+            dropped.append(verdict.path)
+            continue
+        dest = _propose_personal_dest(member, verdict.path)
+        body = _read_quarantine_file(store, quarantine, verdict.path)
+        rewritten = _rewrite_wikilinks(body, layout_map)
+        title = migrate_title(_title_from_import(verdict.path, rewritten), rel_path=dest)
+        write_employee_wiki_page(
+            dest,
+            title,
+            rewritten,
+            member=member,
+            mode=UPDATE,
+            sync=sync_label,
+            store=emp_store,
+            mirror_notion=False,
+        )
+        doc = emp_store.read(dest)
+        fm = dict(doc.frontmatter or {})
+        fm.update(
+            {
+                "source": "personal_mount",
+                "external_source": key,
+                "external_path": verdict.path,
+                "import_id": import_id,
+                "mounted_at": mounted_at,
+            }
+        )
+        emp_store.write(dest, MarkdownDoc(frontmatter=fm, body=doc.body))
+        promoted.append(dest)
+        layout_map[verdict.path] = dest
+
+    _record_mount(
+        sources_cfg,
+        key,
+        import_id=import_id,
+        mounted_by=mounted_by,
+        file_count=len(promoted),
+        quarantine=quarantine,
+        promote_prefix=f"employee_wiki/{member}/",
+    )
+    if remove_quarantine:
+        qpath = store.abspath(quarantine.rstrip("/"))
+        if qpath.exists():
+            shutil.rmtree(qpath)
+    return ExternalPromoteResult(
+        import_id=import_id,
+        source=key,
+        promoted=promoted,
+        linked=linked,
+        dropped=dropped,
+        layout_map=layout_map,
+    )
+
+
+def _propose_personal_dest(member: str, quarantine_path: str) -> str:
+    rel = migrate_rel_path(quarantine_path.lstrip("/"), volume="employee")
+    if not rel.endswith(".md"):
+        stem = PurePosixPath(rel).name
+        parent = PurePosixPath(rel).parent.as_posix()
+        slug = stem.replace("_", "-")
+        rel = f"{parent}/{slug}.md" if parent not in {".", ""} else f"{slug}.md"
+    if rel.startswith(f"{member}/"):
+        return rel
+    return f"{member}/{rel}".replace("//", "/")
 
 
 def _default_action(verdict: FileDuplicateVerdict) -> str:
@@ -305,6 +425,7 @@ def _record_mount(
     mounted_by: str,
     file_count: int,
     quarantine: str,
+    promote_prefix: str | None = None,
 ) -> None:
     if source_key not in cfg.sources:
         cfg.ensure_source(source_key)
@@ -316,7 +437,7 @@ def _record_mount(
             mounted_by=mounted_by,
             file_count=file_count,
             quarantine_path=quarantine,
-            promote_prefix=external_promote_prefix(source_key),
+            promote_prefix=promote_prefix or external_promote_prefix(source_key),
             status="active",
         ),
     )

@@ -51,6 +51,7 @@ voice. Let direct quotes (max 2 per article) carry any emotional weight.
 config/wiki.yaml (typically 20–150 lines). When a topic grows large, split it \
 into its own page under the same theme (anti-cram) rather than one long dump. \
 Prefer several focused pages over one unread wall of text.
+{SOFT_CAP}
 - Do NOT edit _index.md, _backlinks.json, or _absorb_log.json; those are rebuilt \
 automatically.
 """
@@ -74,15 +75,22 @@ class AbsorbWriter:
 
     def run(self, *, since=None) -> dict[str, Any]:
         from company_brain.llm.run_budget import run_budget_scope
+        from company_brain.runtime.fleet_gate import should_start_work
+
+        if not should_start_work():
+            logger.info("Absorb skipped — fleet pause gate")
+            return {"absorbed": 0, "batches": 0, "reason": "fleet_paused"}
 
         with run_budget_scope("absorb"):
             return self._run_inner(since=since)
 
     def _run_inner(self, *, since=None) -> dict[str, Any]:
+        from company_brain.wiki.absorb_lanes import sort_entries_by_lane
+
         entries = (
             self.pipeline.load_entries_since(since) if since else self.pipeline.load_unabsorbed()
         )
-        entries.sort(key=lambda e: e.timestamp)
+        entries = sort_entries_by_lane(entries)
         if not entries:
             logger.info("No unabsorbed entries to process")
             return {"absorbed": 0, "batches": 0}
@@ -106,6 +114,13 @@ class AbsorbWriter:
         logger.info("Absorb complete: %d entries, %d pages synced", len(entries), len(synced))
         return {"absorbed": len(entries), "batches": len(batches), "synced": len(synced)}
 
+    def _system_prompt(self) -> str:
+        from company_brain.wiki.absorb_lanes import soft_cap_prompt_blurb
+
+        blurb = soft_cap_prompt_blurb()
+        soft = (blurb + "\n") if blurb else ""
+        return SYSTEM_PROMPT.replace("{SOFT_CAP}", soft)
+
     async def _absorb_batch(self, batch: list[RawEntry]) -> None:
         from claude_agent_sdk import ClaudeAgentOptions
 
@@ -117,7 +132,7 @@ class AbsorbWriter:
             allowed_tools=["Read", "Write", "Edit", "Glob", "Grep"],
             permission_mode="acceptEdits",
             cwd=str(self.wiki_dir),
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=self._system_prompt(),
             env=llm_claude.options_env(),
             **llm_claude.model_kwargs(self.model, agent_name="absorb"),
         )
