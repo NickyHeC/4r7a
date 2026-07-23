@@ -195,6 +195,8 @@ gmail:
         visible: false
       - name: "Warm intro"
         visible: false
+      - name: Security
+        visible: false
       - name: Decision
         visible: false
     cold_inbound_parent: Cold Inbound
@@ -274,6 +276,10 @@ slack_platform:
   onboarding:
     default_backfill_days: 30
     absorb_on_backfill: false
+
+# Derived expertise index (people / Slack / Granola). Rebuild weekly via slack_manager.
+who_knows:
+  min_score: 2.0
 
 # Notion platform (operations/notion_manager + operations/notion/) —
 # page sync, @wiki, conflicts, page_system, archive/stale, CRM, Weave, tasks.

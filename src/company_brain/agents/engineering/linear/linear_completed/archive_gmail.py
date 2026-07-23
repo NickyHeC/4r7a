@@ -23,6 +23,10 @@ class ArchiveGmailAgent(BaseAgent):
         self._bindings = TaskBindingStore()
 
     def run(self, *, binding: TaskBinding, linear_status: str, **kwargs: Any) -> dict[str, Any]:
+        # Only bound inbox_task / team_on_it threads — never inbox sweep
+        if str(binding.task_class or "") not in {"inbox_action", "team_on_it"}:
+            return {"status": "skipped", "reason": "not_inbox_task_binding"}
+
         gmail = binding.platforms.get("gmail") or {}
         message_id = gmail.get("message_id")
         mailbox = gmail.get("mailbox") or "me"

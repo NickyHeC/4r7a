@@ -83,10 +83,19 @@ Employee pages carry a `sync:` frontmatter label resolved by
 
 ---
 
+## Citation Query (admin / grants)
+
+Managers/admins search employee (and company) scopes via console **Query** or
+`company-brain query`. Enforcement uses `members.yaml` `query_grants` (owner grants
+prefixes to other member keys) with **admin bypass**. Results are snippets + Notion
+citations (MD path when unbound); expand one page at a time. After offboard,
+`wiki_archive` pushes `archive/employee/{member}` — Query can materialize that git
+branch when the live tree is gone.
+
 ## What this does and does not do
 
 - **Does:** record attributed work events, materialize factual work logs, quarantine and
-  vet imports, mirror per `sync:` labels.
+  vet imports, mirror per `sync:` labels; citation-only Query under grants.
 - **Does not:** evaluate or score employees, dual-write from platform agents, auto-promote
   to the company wiki without an explicit submit + admin approval, or pull Notion → MD
   (deferred).

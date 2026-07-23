@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Query{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Citation Query</h1>
+  <p class="muted">
+    Snippets + Notion citations (MD path when unbound). Admin session bypasses
+    <code>query_grants</code>. Expand one result at a time — not a full dump.
+  </p>
+  <form method="get" action="/query">
+    <label for="q">Question</label>
+    <input id="q" type="text" name="q" value="{{ q or '' }}" placeholder="e.g. Q2 runway" />
+    <label for="as_member">As member (optional; empty = admin)</label>
+    <input id="as_member" type="text" name="as_member" value="{{ as_member or '' }}" placeholder="alice" />
+    <p style="margin-top:0.75rem">
+      <button type="submit">Search</button>
+    </p>
+  </form>
+</div>
+
+{% if expanded %}
+<div class="card">
+  <h2>Expanded</h2>
+  {% if expanded.status == 'ok' %}
+    <p><strong>{{ expanded.title }}</strong></p>
+    <p class="muted">
+      {{ expanded.rel_path }} · {{ expanded.volume }}
+      {% if expanded.citation %} · <a href="{{ expanded.citation }}" target="_blank" rel="noopener">citation</a>{% endif %}
+    </p>
+    <pre class="assist">{{ expanded.body }}</pre>
+  {% else %}
+    <p class="flash err">{{ expanded.status }} — {{ expanded.reason or '' }}</p>
+  {% endif %}
+  <p><a class="btn secondary" href="/query?q={{ q|urlencode }}&as_member={{ as_member|urlencode }}">Back to results</a></p>
+</div>
+{% endif %}
+
+{% if result %}
+<div class="card">
+  <h2>Results ({{ result.hits|length }})</h2>
+  {% if result.hits %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Cite</th>
+        <th>Snippet</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for hit in result.hits %}
+      <tr>
+        <td>{{ hit.title }}<br /><span class="muted">{{ hit.rel_path }} · {{ hit.volume }}</span></td>
+        <td>
+          {% if hit.citation.startswith('http') %}
+            <a href="{{ hit.citation }}" target="_blank" rel="noopener">Notion</a>
+          {% else %}
+            <span class="muted">{{ hit.citation }}</span>
+          {% endif %}
+        </td>
+        <td class="muted">{{ hit.snippet[:180] }}{% if hit.snippet|length > 180 %}…{% endif %}</td>
+        <td>
+          <a href="/query?q={{ q|urlencode }}&as_member={{ as_member|urlencode }}&expand={{ hit.rel_path|urlencode }}&volume={{ hit.volume|urlencode }}&member={{ hit.member|urlencode }}">Expand</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No matching pages in granted scope.</p>
+  {% endif %}
+  {% if result.people_hints %}
+  <h2 style="margin-top:1rem">People who may know</h2>
+  <ul>
+    {% for p in result.people_hints %}
+    <li>{{ p.name or p.member }} — <span class="muted">{{ p.reason }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

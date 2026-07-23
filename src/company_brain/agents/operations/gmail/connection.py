@@ -37,6 +37,7 @@ class ConnectionAgent(BaseAgent):
 
     def run(self, **kwargs: Any) -> dict[str, Any]:
         updated = 0
+        warm = 0
         for record in self._pending():
             try:
                 message = rest.get_message(record.message_id, mailbox=self.mailbox)
@@ -48,10 +49,30 @@ class ConnectionAgent(BaseAgent):
                     segment="connection",
                 ):
                     updated += 1
+                if "Warm intro" in (record.domain_tags or []):
+                    if self._notify_warm_intro(record, from_):
+                        warm += 1
                 self._store.mark_handled(record, SPECIALIST_KEY)
             except Exception:
                 self.logger.exception("Connection CRM failed for %s", record.message_id)
-        return {"updated": updated}
+        return {"updated": updated, "warm_intro_notified": warm}
+
+    def _notify_warm_intro(self, record, from_: str) -> bool:
+        from company_brain.agents.operations.shared.gmail_config import slack_cfg
+        from company_brain.agents.operations.shared.operations_slack import channel_notifier
+        from company_brain.notify import ACTIONABLE, Signal
+
+        subject = (record.extracted or {}).get("subject") or ""
+        text = (
+            f"Warm intro from confirmed connection `{from_}` — {subject[:100]}. "
+            "Optional draft only (never send)."
+        )
+        try:
+            channel = str(slack_cfg().get("ingest_channel") or "#ingest")
+            return channel_notifier(channel).emit(Signal(text=text, severity=ACTIONABLE))
+        except Exception:
+            self.logger.exception("Warm intro notify failed")
+            return False
 
     def _pending(self):
         tags = {"People"}

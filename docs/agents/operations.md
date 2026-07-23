@@ -403,9 +403,22 @@ Ops comms per vendor. Finance costs in **`subscription_audit`**.
 
 Excludes `contact_type: investor`. Two-way mail can auto-promote to `connection` via
 **`thread_watcher`** + `crm/promotion.py` (dismissive outbound replies excluded).
+**Warm intro** is tagged only when the introducer (From) is a CRM **confirmed
+connection**; low confidence → no-op. Notifies `actionable` (optional draft never send).
 
 **Promotion:** `customer` / `investor` segments only via signed contract or manual
 index edit — never auto-promoted from inbound.
+
+### `security_triage.py`
+
+| | |
+|---|---|
+| **Tags** | `Security` (all profiles; heuristic-first) |
+| **Destination** | `operations/gmail/security-log.md` (append) |
+| **Notify** | `alert` |
+
+Never archives. Runs before auto-archive cold/newsletter paths. Borderline matches
+still log for human review.
 
 ---
 
@@ -588,11 +601,12 @@ flowchart TD
 
 | Agent | Schedule | Description |
 |-------|----------|-------------|
-| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches watcher/monitor/intake; daily `channel_registry` + `thread_absorb` |
+| `slack_manager.py` | Persistent (`poll_interval_minutes`) | Dispatches watcher/monitor/intake; daily `channel_registry` + `thread_absorb`; weekly `who_knows` |
+| `who_knows.py` | Weekly via manager | Rebuild `people/_who-knows` from people/Slack/Granola (Connect excluded); hints for `@wiki` / Query |
 | `customer_support.py` | Via intake specialists | Classify customer mail/Slack → wiki + Linear + `#customer-support` |
 | `customer_intake.py` | Events hot lane + manager | Slack Connect / customer channels → orchestrator |
 | `ingest_triage.py` | Events API + poll backup | Tier 0/1 classify → routing records; dispatches `action_items` / `customer_intake` |
-| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL Q&A via planner fan-out (wiki + CRM + practices, max 3; fail closed) + Notion citations |
+| `ask_wiki.py` | `@wiki` mention (Events) | Channel ACL Q&A via planner fan-out (wiki + CRM + practices, max 3; fail closed) + Notion citations + who_knows people hints (no DMs) |
 | `wiki_planner.py` | Via `ask_wiki` | Parallel retrieve; project registry prefixes when channel has `project:` or registry channel match |
 | `thread_absorb.py` | Daily via manager / CLI | Distill closed/aged internal threads → `raw/entries` (no LLM); long threads get burst distill first; skips Connect/customer |
 | `burst_distill.py` | Via `thread_absorb` | Segment long threads by idle gap / speaker shift; structured bullets (not an agent) |

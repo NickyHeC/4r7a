@@ -11,6 +11,18 @@ top. Each entry: date, summary, key changes, and the commit it landed in (or
 
 ---
 
+## 2026-07-22 — Sessions H+I+J shipped (Query / Gmail / who_knows)
+
+- **H:** Citation-only Query (`wiki/citation_query.py`) — `query_grants` + admin
+  bypass; snippets + Notion cite; expand one; console `/query` + CLI
+  `company-brain query`; archive branch materialize after offboard.
+- **I:** `security_triage` (never archive, `alert` + security-log); warm intro
+  only when From is CRM confirmed connection; `archive_gmail` gated to
+  inbox_task bindings + idempotent.
+- **J:** `who_knows` weekly index (`people/_who-knows`); Connect excluded;
+  hints on `@wiki` + Query (no DMs).
+- Docs: admin / employee_wiki / operations; plan H–J marked shipped.
+
 ## 2026-07-22 — Sessions E+F+G shipped (absorb / @wiki / mounts)
 
 - **E:** Absorb lanes (`urgent`/`normal`/`bulk`) + soft encyclopedia length in

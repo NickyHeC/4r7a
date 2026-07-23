@@ -149,9 +149,9 @@ Onboarding / one-shot install paths are out of this diagram (foundation `company
 | **E** | Encyclopedia absorb lanes + soft length + burst distill | **Shipped 2026-07-22** |
 | **F** | `@wiki` planner fan-out + project registry + `@wiki sync now` | **Shipped 2026-07-22** |
 | **G** | Personal wiki mount kind + weekly Notion orphan discovery | **Shipped 2026-07-22** |
-| **H** | Citation-only Query (console/CLI) | Admin query |
-| **I** | Gmail `security_triage` + warm intro + Linear-Done archive | Ops mail |
-| **J** | `who_knows` index | Expertise hints |
+| **H** | Citation-only Query (console/CLI) | **Shipped 2026-07-22** |
+| **I** | Gmail `security_triage` + warm intro + Linear-Done archive | **Shipped 2026-07-22** |
+| **J** | `who_knows` index | **Shipped 2026-07-22** |
 | **K** | Ramp LLM reconcile + Discord progress dedupe | Finance/product |
 | **L** | `process_scout` + self-heal draft PRs + wiki maintenance ops + doc hygiene + offboard checklist + `social_profiles` stub | Admin cluster |
 

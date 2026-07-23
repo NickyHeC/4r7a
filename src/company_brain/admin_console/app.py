@@ -299,6 +299,48 @@ def create_app():
             ),
         )
 
+    @app.get("/query", response_class=HTMLResponse)
+    async def query_page(request: Request):
+        denied = _require(request)
+        if denied:
+            return denied
+        from company_brain.wiki.citation_query import citation_query, expand_result
+
+        q = (request.query_params.get("q") or "").strip()
+        as_member = (request.query_params.get("as_member") or "").strip()
+        expand = (request.query_params.get("expand") or "").strip()
+        volume = (request.query_params.get("volume") or "").strip()
+        member = (request.query_params.get("member") or "").strip()
+        expanded = None
+        result = None
+        if expand:
+            expanded = expand_result(
+                expand,
+                as_member=as_member,
+                admin_bypass=True,
+                volume=volume,
+                member=member,
+            )
+        elif q:
+            result = citation_query(
+                q,
+                as_member=as_member,
+                admin_bypass=True,
+                limit=12,
+            )
+        return _render(
+            request,
+            "query.html",
+            _ctx(
+                request,
+                "query",
+                q=q,
+                as_member=as_member,
+                result=result.to_dict() if result else None,
+                expanded=expanded,
+            ),
+        )
+
     @app.get("/wiki", response_class=HTMLResponse)
     async def wiki_page(request: Request):
         denied = _require(request)

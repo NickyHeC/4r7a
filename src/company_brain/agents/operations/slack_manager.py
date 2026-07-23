@@ -21,6 +21,7 @@ from company_brain.config import AppConfig
 
 CHANNEL_REGISTRY_DAILY_KEY = "slack_manager:channel_registry_date"
 THREAD_ABSORB_DAILY_KEY = "slack_manager:thread_absorb_date"
+WHO_KNOWS_WEEK_KEY = "slack_manager:who_knows_week"
 
 
 class SlackManager(BaseAgent):
@@ -70,6 +71,11 @@ class SlackManager(BaseAgent):
         if self._should_run_thread_absorb():
             self._run_agent(runtime, ThreadAbsorbAgent)
             self._state.set(THREAD_ABSORB_DAILY_KEY, datetime.now().date().isoformat())
+        if self._should_run_who_knows():
+            from company_brain.agents.operations.who_knows import WhoKnowsAgent
+
+            self._run_agent(runtime, WhoKnowsAgent)
+            self._state.set(WHO_KNOWS_WEEK_KEY, _iso_week_key(datetime.now()))
 
     def _should_run_channel_registry(self) -> bool:
         today = datetime.now().date().isoformat()
@@ -79,8 +85,16 @@ class SlackManager(BaseAgent):
         today = datetime.now().date().isoformat()
         return self._state.get(THREAD_ABSORB_DAILY_KEY) != today
 
+    def _should_run_who_knows(self) -> bool:
+        return self._state.get(WHO_KNOWS_WEEK_KEY) != _iso_week_key(datetime.now())
+
     def _run_agent(self, runtime: Any, agent_cls: type, **kwargs: Any) -> None:
         try:
             runtime.run(agent_cls, self.config, **kwargs)
         except Exception:
             self.logger.exception("%s dispatch failed", agent_cls.__name__)
+
+
+def _iso_week_key(when: datetime) -> str:
+    iso = when.isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"

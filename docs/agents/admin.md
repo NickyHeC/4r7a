@@ -54,13 +54,13 @@ Connect steps: [`project_install.md`](../../project_install.md) Step 0–3.
 ## Admin console — how it runs
 
 Logged-in HTMX UI + FastAPI on the wiki host (not the member bridge). Panes:
-Status, Review, Costs, Wiki, Dispatch, Assist.
+Status, Review, Query, Costs, Wiki, Dispatch, Assist.
 
 ```mermaid
 flowchart TD
   CLI[company-brain admin console] --> Srv[FastAPI :8780]
   Srv --> Login[password or Google SSO]
-  Login --> Panes[Status Review Costs Wiki Dispatch Assist]
+  Login --> Panes[Status Review Query Costs Wiki Dispatch Assist]
   Managers[Persistent managers] -->|record_heartbeat| HB[state.json]
   Panes --> HB
   Panes --> Wiki[write_wiki_page / retrieve]
@@ -74,10 +74,13 @@ flowchart TD
 |---------|-------------|
 | Status | Fleet pause/resume + redeploy cue; manager heartbeats (stale after `stale_minutes`) |
 | Review | Union of admin action items (import/mount/knowledge reviews, conflicts, weave queue, offboard, redeploy, …); triage + deep-links only |
+| Query | Citation-only search (`wiki/citation_query.py`); snippets + Notion cite; expand one result; admin bypasses `query_grants` |
 | Costs | LLM `budget_status` + optional VM estimate (`costs.vm_hourly_usd`) + Mercury reconcile |
 | Wiki | Full-tree search (`retrieve`) / read / edit via `write_wiki_page` |
 | Dispatch | Allow-list in `config/admin_console.yaml`; Force bypasses `should_run` (audited) |
 | Assist | LLM tools; wiki edits + dispatches require UI confirm |
+
+**CLI twin:** `company-brain query "…" [--as-member KEY] [--expand PATH]`
 
 **Package:** `src/company_brain/admin_console/` (not an agent).
 **CLI:** `company-brain admin console [--host] [--port]`

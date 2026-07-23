@@ -153,6 +153,7 @@ def _dispatch_agent_classes() -> dict[str, type]:
     from company_brain.agents.operations.gmail.ingest_queue_review import IngestQueueReviewAgent
     from company_brain.agents.operations.gmail.investor_tracker import InvestorTrackerAgent
     from company_brain.agents.operations.gmail.receipt_router import ReceiptRouterAgent
+    from company_brain.agents.operations.gmail.security_triage import SecurityTriageAgent
     from company_brain.agents.operations.gmail.team_on_it import TeamOnItAgent
     from company_brain.agents.operations.gmail.vendor_tracker import VendorTrackerAgent
 
@@ -170,6 +171,7 @@ def _dispatch_agent_classes() -> dict[str, type]:
         "inbound_crm": InboundCrmAgent,
         "vendor_tracker": VendorTrackerAgent,
         "connection": ConnectionAgent,
+        "security_triage": SecurityTriageAgent,
         "ingest_queue_review": IngestQueueReviewAgent,
         "receipt_router": ReceiptRouterAgent,
     }

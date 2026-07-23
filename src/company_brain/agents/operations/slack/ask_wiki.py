@@ -71,6 +71,15 @@ class AskWikiAgent(BaseAgent):
             )
 
         answer = self._compose_answer(text, snippets)
+        try:
+            from company_brain.wiki.who_knows import format_people_hints, suggest_people
+
+            hints = suggest_people(text, limit=3)
+            extra = format_people_hints(hints)
+            if extra:
+                answer = (answer or "").rstrip() + extra
+        except Exception:
+            self.logger.debug("who_knows hints skipped", exc_info=True)
         return self._reply(channel_id, thread_ts, answer)
 
     def _compose_answer(self, query: str, snippets: list[dict[str, Any]]) -> str:

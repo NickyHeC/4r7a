@@ -30,6 +30,7 @@ ALL_GMAIL_AGENTS = frozenset(
         "inbound_crm",
         "vendor_tracker",
         "connection",
+        "security_triage",
         "inbox_task",
         "team_on_it",
         "duplicate_across_mailboxes",
@@ -52,6 +53,7 @@ MANAGER_DISPATCH_ORDER = [
     "inbound_crm",
     "vendor_tracker",
     "connection",
+    "security_triage",
     "ingest_queue_review",
     "receipt_router",
 ]
@@ -208,6 +210,10 @@ def normalize_domain_tags(tags: list[str], *, mailbox: str | None = None) -> lis
         if tag == "Investor" and not spec.investor:
             continue
         if tag == "Warm intro" and not spec.warm_intro:
+            continue
+        # Security always retained (never drop from triage)
+        if tag == "Security":
+            out.append(tag)
             continue
         if not spec.cold_inbound_nested and tag.startswith(f"{parent}/"):
             had_cold = True

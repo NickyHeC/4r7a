@@ -67,6 +67,26 @@ def classify_message(message: dict[str, Any], *, mailbox: str = "me") -> TriageR
         }
     )
 
+    # Security (never archive) — before auto-archive paths; all profiles
+    from company_brain.agents.operations.shared.security_heuristics import security_match
+
+    sec = security_match(subject, from_hdr, snippet)
+    if sec.get("matched"):
+        result.domain_tags.append("Security")
+        result.attention = "1. Action"
+        result.archive_now = False
+        result.mark_read = False
+        result.extracted["security_confidence"] = sec.get("confidence")
+        result.extracted["security_reasons"] = list(sec.get("reasons") or [])
+        return _finalize(result, mailbox=mailbox)
+
+    # Warm intro — introducer must be CRM confirmed connection; else no-op
+    if spec.warm_intro and spec.allows_domain("Warm intro"):
+        if _is_warm_intro(headers.get("from", ""), subject, snippet):
+            result.domain_tags.append("Warm intro")
+            result.attention = result.attention or "2. Reply"
+            return _finalize(result, mailbox=mailbox)
+
     # AI meeting notes
     if spec.allows_domain("AI Meeting Notes"):
         if any(s in from_hdr for s in AI_MEETING_SENDERS) or "meeting notes" in subject:
@@ -214,3 +234,32 @@ def _is_people(from_hdr: str, subject: str, snippet: str) -> bool:
         return False
     people_terms = ("nice to meet", "connect you with", "introducing", "pleasure meeting")
     return any(w in blob for w in people_terms)
+
+
+INTRO_HINTS = (
+    "wanted to introduce",
+    "like to introduce",
+    "introducing you",
+    "introduce you to",
+    "meet each other",
+    "connect the two of you",
+    "cc'ing",
+    "ccing",
+)
+
+
+def _is_warm_intro(from_hdr: str, subject: str, snippet: str) -> bool:
+    """True only when intro language AND sender is a confirmed CRM connection."""
+    blob = f"{subject} {snippet}".lower()
+    if not any(h in blob for h in INTRO_HINTS) and "intro" not in subject:
+        return False
+    # Low-confidence intro language without confirmed introducer → no-op
+    try:
+        from company_brain.crm.registry import lookup_contact
+
+        entry = lookup_contact(from_hdr)
+    except Exception:
+        return False
+    if entry is None:
+        return False
+    return str(entry.segment or "") == "connection"

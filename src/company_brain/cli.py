@@ -102,27 +102,49 @@ def absorb(since: datetime | None, model: str | None) -> None:
     )
 
 
-@main.command()
+@main.command("query")
 @click.argument("question")
-def query(question: str) -> None:
-    """Query the wiki for information."""
-    config = load_config()
+@click.option(
+    "--as-member",
+    default="",
+    help="Member key for query_grants (omit / admin → admin bypass)",
+)
+@click.option("--expand", default="", help="Expand one result by wiki rel_path")
+@click.option("--limit", default=8, show_default=True, type=int)
+@click.option("--no-company", is_flag=True, help="Search employee scopes only")
+def query(
+    question: str,
+    as_member: str,
+    expand: str,
+    limit: int,
+    no_company: bool,
+) -> None:
+    """Citation-only Query (snippets + Notion cite; grant-aware)."""
+    from company_brain.wiki.citation_query import (
+        citation_query,
+        expand_result,
+        format_cli_results,
+    )
 
-    if not config.notion.is_initialized:
-        click.secho("Wiki not initialized. Run 'company-brain init' first.", fg="red")
-        sys.exit(1)
-
-    index = _load_index()
-    results = index.search(question)
-
-    if not results:
-        click.echo("No matching articles found.")
+    if expand:
+        out = expand_result(expand, as_member=as_member)
+        if out.get("status") != "ok":
+            click.secho(f"Expand failed: {out}", fg="red")
+            sys.exit(1)
+        click.echo(f"# {out.get('title')}")
+        click.echo(f"cite: {out.get('citation')}")
+        click.echo(f"path: {out.get('rel_path')} [{out.get('volume')}]")
+        click.echo()
+        click.echo(out.get("body") or "")
         return
 
-    click.echo(f"Found {len(results)} relevant articles:")
-    for article in results:
-        status = "published" if article.is_published else "draft"
-        click.echo(f"  [{status}] {article.title} ({article.section}/{article.type})")
+    result = citation_query(
+        question,
+        as_member=as_member,
+        limit=limit,
+        include_company=not no_company,
+    )
+    click.echo(format_cli_results(result))
 
 
 @main.command()
